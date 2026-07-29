@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FormulaLab — Test suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBFAF9; --ink:#17191C; --text-2:#5F646B; --muted:#9A9EA4;
+  --line-1:#EBE8E4; --line-2:#EFECE8; --line-3:#F3F1ED; --line-4:#E4E1DC;
+  --green:#16A05C; --green-dark:#0B6E3E; --green-tint:#F2FAF5;
+  --red:#A4463C; --red-tint:#FBEFEC;
+  --amber:#946200; --amber-tint:#FDF6E3;
+  --dark:#17191C;
+  --sans:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono','Consolas','Menlo',monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+.wrap{max-width:1080px;margin:0 auto;padding:36px 24px 60px}
+
+.head{display:flex;align-items:baseline;gap:22px;flex-wrap:wrap;margin-bottom:24px}
+.head h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:0}
+.head .sub{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.head .spacer{flex:1}
+.head button{border:1px solid var(--line-4);background:#fff;color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 18px;border-radius:999px;cursor:pointer}
+.head button:hover{background:var(--line-2)}
+.head button.primary{background:var(--green);border-color:var(--green);color:#fff}
+.head button.primary:hover{background:var(--green-dark);border-color:var(--green-dark)}
+
+.summary{background:#fff;border:1px solid var(--line-1);border-radius:12px;padding:18px 22px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:baseline}
+.summary .stat{display:flex;flex-direction:column;gap:2px}
+.summary .stat .k{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.summary .stat .v{font-size:24px;font-weight:600;letter-spacing:-.5px;font-family:var(--mono)}
+.summary .stat.pass .v{color:var(--green-dark)}
+.summary .stat.fail .v{color:var(--red)}
+.summary .stat.time .v{color:var(--text-2)}
+.summary .stat.total .v{color:var(--ink)}
+.summary .spacer{flex:1}
+.summary .verdict{font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:6px}
+.summary .verdict.ok{background:var(--green-tint);color:var(--green-dark)}
+.summary .verdict.bad{background:var(--red-tint);color:var(--red)}
+.summary .verdict.idle{background:var(--line-2);color:var(--muted)}
+
+.section{background:#fff;border:1px solid var(--line-1);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.section .shead{padding:11px 18px;background:#FCFBFA;border-bottom:1px solid var(--line-1);display:flex;align-items:center;gap:12px;font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.section .shead .stitle{color:var(--ink);flex:1;letter-spacing:.06em}
+.section .shead .count{font-weight:500}
+.section .shead .count.ok{color:var(--green-dark)}
+.section .shead .count.bad{color:var(--red)}
+.trow{display:grid;grid-template-columns:22px 1fr auto;gap:14px;padding:8px 18px;border-bottom:1px solid var(--line-3);align-items:center;font-size:13px}
+.trow:last-child{border-bottom:none}
+.trow .mark{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700;flex:none}
+.trow.pass .mark{background:var(--green)}
+.trow.fail .mark{background:var(--red)}
+.trow .name{color:var(--ink);word-break:break-word}
+.trow.pass .name{color:var(--text-2)}
+.trow .ms{font:500 11px var(--mono);color:var(--muted);text-align:right;white-space:nowrap}
+.trow .detail{grid-column:2 / -1;margin-top:4px;padding:8px 10px;background:var(--red-tint);border:1px solid #E8CFC9;border-radius:6px;font:12px var(--mono);color:var(--red);white-space:pre-wrap;word-break:break-word}
+.trow.pass .detail{display:none}
+
+.hidden{display:none}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.note code{font:12px var(--mono);background:var(--line-2);padding:1px 5px;border-radius:3px}
+</style>
+</head>
+<body>
+
+<iframe id="app" src="excel-practice (1).html" style="width:1px;height:1px;position:absolute;left:-9999px;top:-9999px;visibility:hidden"></iframe>
+
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <div class="sub">FormulaLab · Regression harness</div>
+      <h1>Test suite</h1>
+    </div>
+    <div class="spacer"></div>
+    <button id="btn-run" class="primary">▶  Run tests</button>
+  </div>
+
+  <div class="summary">
+    <div class="stat total"><span class="k">Total</span><span class="v" id="s-total">–</span></div>
+    <div class="stat pass"><span class="k">Passed</span><span class="v" id="s-pass">–</span></div>
+    <div class="stat fail"><span class="k">Failed</span><span class="v" id="s-fail">–</span></div>
+    <div class="stat time"><span class="k">Elapsed</span><span class="v" id="s-time">–</span></div>
+    <div class="spacer"></div>
+    <span class="verdict idle" id="s-verdict">Idle</span>
+  </div>
+
+  <div id="results"></div>
+
+  <p class="note">Tests run against the live app in a hidden iframe (<code>excel-practice (1).html</code>). Every test resets state before running. If browser blocks cross-frame file:// access, serve the folder over http (<code>npx serve</code>) and reopen.</p>
+
+</div>
+
+<script>
+"use strict";
+
+const iframe = document.getElementById("app");
+const btn = document.getElementById("btn-run");
+const resultsEl = document.getElementById("results");
+const S_TOTAL = document.getElementById("s-total");
+const S_PASS  = document.getElementById("s-pass");
+const S_FAIL  = document.getElementById("s-fail");
+const S_TIME  = document.getElementById("s-time");
+const S_VERDICT = document.getElementById("s-verdict");
+
+/* -------- tiny test framework -------- */
+const suites = []; // [{section, tests: [{name, fn}]}]
+function suite(section, fn){ const s={section,tests:[]}; suites.push(s); fn((name,tfn)=>s.tests.push({name,tfn})); }
+
+function eq(a,b,eps=1e-9){
+  if(typeof a==="number"&&typeof b==="number"){ if(!isFinite(a)||!isFinite(b)) return a===b; return Math.abs(a-b)<eps; }
+  return String(a)===String(b);
+}
+function evalTo(win, formula, expected){
+  const src = formula[0]==="=" ? formula.slice(1) : formula;
+  try{
+    const v = win.evalStr(src, new Set());
+    return { pass: eq(v,expected), actual: fmt(v), expected: fmt(expected) };
+  }catch(e){
+    return { pass:false, actual: "threw " + (win.isErr(e)?e.__err:(e&&e.message||String(e))), expected: fmt(expected) };
+  }
+}
+function throwsError(win, formula, code){
+  const src = formula[0]==="=" ? formula.slice(1) : formula;
+  try{
+    const v = win.evalStr(src, new Set());
+    return { pass:false, actual: fmt(v), expected: code };
+  }catch(e){
+    const got = win.isErr(e) ? e.__err : String(e);
+    return { pass: got===code, actual: got, expected: code };
+  }
+}
+function fmt(v){
+  if(v===null||v===undefined) return String(v);
+  if(typeof v==="string") return JSON.stringify(v);
+  return String(v);
+}
+function withCells(win, map, fn){
+  const before = {};
+  for(const ref in map){ before[ref] = win.getCell(ref) ? {...win.getCell(ref)} : null; win.setRaw(ref, map[ref]); }
+  try{ return fn(); }
+  finally{
+    for(const ref in map){
+      if(before[ref]==null) delete win._cells_direct(ref);
+      else { win._cells_direct_set(ref, before[ref]); }
+    }
+  }
+}
+/* fallback cell manipulation — we can just delete directly */
+function resetCells(win){ Object.keys(win._cells).forEach(k=>delete win._cells[k]); }
+
+/* -------- suites -------- */
+
+suite("Engine · Arithmetic & operators", t => {
+  const w = () => iframe.contentWindow;
+  t("=1+2 → 3",                () => evalTo(w(), "=1+2", 3));
+  t("=10-3 → 7",               () => evalTo(w(), "=10-3", 7));
+  t("=4*5 → 20",               () => evalTo(w(), "=4*5", 20));
+  t("=10/4 → 2.5",             () => evalTo(w(), "=10/4", 2.5));
+  t("=2^10 → 1024",            () => evalTo(w(), "=2^10", 1024));
+  t("=1+2*3 → 7 (precedence)", () => evalTo(w(), "=1+2*3", 7));
+  t("=(1+2)*3 → 9 (parens)",   () => evalTo(w(), "=(1+2)*3", 9));
+  t("=-5+8 → 3 (unary minus)", () => evalTo(w(), "=-5+8", 3));
+  t("=50% → 0.5",              () => evalTo(w(), "=50%", 0.5));
+  t("=\"a\"&\"b\" → \"ab\"",   () => evalTo(w(), '="a"&"b"', "ab"));
+  t("=1=1 → true",             () => evalTo(w(), "=1=1", true));
+  t("=1<>2 → true",            () => evalTo(w(), "=1<>2", true));
+  t("=5>=5 → true",            () => evalTo(w(), "=5>=5", true));
+  t("=\"a\"<\"b\" → true",     () => evalTo(w(), '="a"<"b"', true));
+});
+
+suite("Engine · Math functions", t => {
+  const w = () => iframe.contentWindow;
+  t("=SUM(1,2,3) → 6",              () => evalTo(w(), "=SUM(1,2,3)", 6));
+  t("=SUM() → 0",                    () => evalTo(w(), "=SUM()", 0));
+  t("=AVERAGE(2,4,6) → 4",           () => evalTo(w(), "=AVERAGE(2,4,6)", 4));
+  t("=MIN(3,1,2) → 1",               () => evalTo(w(), "=MIN(3,1,2)", 1));
+  t("=MAX(3,1,2) → 3",               () => evalTo(w(), "=MAX(3,1,2)", 3));
+  t("=MEDIAN(1,2,3,4,5) → 3",        () => evalTo(w(), "=MEDIAN(1,2,3,4,5)", 3));
+  t("=MEDIAN(1,2,3,4) → 2.5",        () => evalTo(w(), "=MEDIAN(1,2,3,4)", 2.5));
+  t("=PRODUCT(2,3,4) → 24",          () => evalTo(w(), "=PRODUCT(2,3,4)", 24));
+  t("=ABS(-7) → 7",                  () => evalTo(w(), "=ABS(-7)", 7));
+  t("=SQRT(16) → 4",                 () => evalTo(w(), "=SQRT(16)", 4));
+  t("=POWER(3,4) → 81",              () => evalTo(w(), "=POWER(3,4)", 81));
+  t("=MOD(10,3) → 1",                () => evalTo(w(), "=MOD(10,3)", 1));
+  t("=INT(4.9) → 4",                 () => evalTo(w(), "=INT(4.9)", 4));
+  t("=INT(-4.1) → -5",               () => evalTo(w(), "=INT(-4.1)", -5));
+  t("=ROUND(3.567,1) → 3.6",         () => evalTo(w(), "=ROUND(3.567,1)", 3.6));
+  t("=ROUND(2.5,0) → 3",             () => evalTo(w(), "=ROUND(2.5,0)", 3));
+  t("=ROUNDUP(3.1,0) → 4",           () => evalTo(w(), "=ROUNDUP(3.1,0)", 4));
+  t("=ROUNDDOWN(3.9,0) → 3",         () => evalTo(w(), "=ROUNDDOWN(3.9,0)", 3));
+});
+
+suite("Engine · Counting", t => {
+  const w = () => iframe.contentWindow;
+  t("=COUNT(1,\"a\",2,3) → 3",              () => evalTo(w(), '=COUNT(1,"a",2,3)', 3));
+  t("=COUNTA(1,\"a\",\"\",3) → 3",          () => evalTo(w(), '=COUNTA(1,"a","",3)', 3));
+  t("with range: COUNT ignores text", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1", 1); win.setRaw("A2", "text"); win.setRaw("A3", 3); win.setRaw("A4", 5);
+    return evalTo(win, "=COUNT(A1:A4)", 3);
+  });
+  t("=COUNTBLANK(A1:A5) with 2 filled → 3", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1", 10); win.setRaw("A3", 20);
+    return evalTo(win, "=COUNTBLANK(A1:A5)", 3);
+  });
+});
+
+suite("Engine · Logical / conditional", t => {
+  const w = () => iframe.contentWindow;
+  t("=IF(TRUE,\"y\",\"n\") → y",              () => evalTo(w(), '=IF(TRUE,"y","n")', "y"));
+  t("=IF(FALSE,\"y\",\"n\") → n",             () => evalTo(w(), '=IF(FALSE,"y","n")', "n"));
+  t("=IF(5>3,\"y\",\"n\") → y",               () => evalTo(w(), '=IF(5>3,"y","n")', "y"));
+  t("nested IF grading",                        () => evalTo(w(), '=IF(80>=75,"A",IF(80>=50,"B","C"))', "A"));
+  t("=IFERROR(1/0,\"err\") → err",           () => evalTo(w(), '=IFERROR(1/0,"err")', "err"));
+  t("=IFERROR(10,\"err\") → 10",             () => evalTo(w(), '=IFERROR(10,"err")', 10));
+  t("=AND(TRUE,TRUE) → true",                 () => evalTo(w(), "=AND(TRUE,TRUE)", true));
+  t("=AND(TRUE,FALSE) → false",               () => evalTo(w(), "=AND(TRUE,FALSE)", false));
+  t("=OR(FALSE,TRUE) → true",                 () => evalTo(w(), "=OR(FALSE,TRUE)", true));
+  t("=OR(FALSE,FALSE) → false",               () => evalTo(w(), "=OR(FALSE,FALSE)", false));
+  t("=NOT(TRUE) → false",                     () => evalTo(w(), "=NOT(TRUE)", false));
+});
+
+suite("Engine · Conditional aggregation", t => {
+  const w = () => iframe.contentWindow;
+  t("SUMIF over region column", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1","East"); win.setRaw("B1",100);
+    win.setRaw("A2","West"); win.setRaw("B2",50);
+    win.setRaw("A3","East"); win.setRaw("B3",200);
+    return evalTo(win, '=SUMIF(A1:A3,"East",B1:B3)', 300);
+  });
+  t("COUNTIF with operator criteria", () => {
+    const win = w(); resetCells(win);
+    for(let i=1;i<=6;i++) win.setRaw("A"+i, i*10);  // 10,20,30,40,50,60
+    return evalTo(win, '=COUNTIF(A1:A6,">=30")', 4);
+  });
+  t("AVERAGEIF on matching rows", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1","x"); win.setRaw("B1",10);
+    win.setRaw("A2","y"); win.setRaw("B2",20);
+    win.setRaw("A3","x"); win.setRaw("B3",30);
+    return evalTo(win, '=AVERAGEIF(A1:A3,"x",B1:B3)', 20);
+  });
+  t("SUMIFS with two conditions", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1","E"); win.setRaw("B1",50);
+    win.setRaw("A2","E"); win.setRaw("B2",200);
+    win.setRaw("A3","W"); win.setRaw("B3",300);
+    return evalTo(win, '=SUMIFS(B1:B3,A1:A3,"E",B1:B3,">100")', 200);
+  });
+  t("COUNTIFS", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1","x"); win.setRaw("B1",1);
+    win.setRaw("A2","x"); win.setRaw("B2",5);
+    win.setRaw("A3","y"); win.setRaw("B3",10);
+    return evalTo(win, '=COUNTIFS(A1:A3,"x",B1:B3,">2")', 1);
+  });
+});
+
+suite("Engine · Text", t => {
+  const w = () => iframe.contentWindow;
+  t("=LEN(\"hello\") → 5",            () => evalTo(w(), '=LEN("hello")', 5));
+  t("=UPPER(\"abc\") → ABC",          () => evalTo(w(), '=UPPER("abc")', "ABC"));
+  t("=LOWER(\"ABC\") → abc",          () => evalTo(w(), '=LOWER("ABC")', "abc"));
+  t("=PROPER(\"hello world\") → Hello World", () => evalTo(w(), '=PROPER("hello world")', "Hello World"));
+  t("=LEFT(\"hello\",3) → hel",       () => evalTo(w(), '=LEFT("hello",3)', "hel"));
+  t("=RIGHT(\"hello\",3) → llo",      () => evalTo(w(), '=RIGHT("hello",3)', "llo"));
+  t("=MID(\"hello\",2,3) → ell",      () => evalTo(w(), '=MID("hello",2,3)', "ell"));
+  t("=TRIM(\"  a b  c  \") → a b c",  () => evalTo(w(), '=TRIM("  a b  c  ")', "a b c"));
+  t("=CONCAT(\"x\",\"y\",\"z\") → xyz", () => evalTo(w(), '=CONCAT("x","y","z")', "xyz"));
+  t("=FIND(\"l\",\"hello\") → 3",     () => evalTo(w(), '=FIND("l","hello")', 3));
+  t("=SUBSTITUTE(\"a-b-c\",\"-\",\"/\") → a/b/c", () => evalTo(w(), '=SUBSTITUTE("a-b-c","-","/")', "a/b/c"));
+  t("=TEXTJOIN(\",\",TRUE,\"a\",\"\",\"b\") → a,b", () => evalTo(w(), '=TEXTJOIN(",",TRUE,"a","","b")', "a,b"));
+});
+
+suite("Engine · Lookups", t => {
+  const w = () => iframe.contentWindow;
+  function setupPriceTable(win){
+    resetCells(win);
+    win.setRaw("A1","Item"); win.setRaw("B1","Price");
+    win.setRaw("A2","Apple"); win.setRaw("B2",30);
+    win.setRaw("A3","Banana"); win.setRaw("B3",10);
+    win.setRaw("A4","Cherry"); win.setRaw("B4",120);
+  }
+  t("VLOOKUP exact match hit", () => { const win=w(); setupPriceTable(win); return evalTo(win, '=VLOOKUP("Cherry",A1:B4,2,FALSE)', 120); });
+  t("VLOOKUP exact match miss → #N/A", () => { const win=w(); setupPriceTable(win); return throwsError(win, '=VLOOKUP("Guava",A1:B4,2,FALSE)', "#N/A"); });
+  t("HLOOKUP hit", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1","Q1"); win.setRaw("B1","Q2"); win.setRaw("C1","Q3");
+    win.setRaw("A2",100); win.setRaw("B2",200); win.setRaw("C2",300);
+    return evalTo(win, '=HLOOKUP("Q2",A1:C2,2,FALSE)', 200);
+  });
+  t("INDEX / MATCH combined", () => { const win=w(); setupPriceTable(win); return evalTo(win, '=INDEX(B2:B4,MATCH("Banana",A2:A4,0))', 10); });
+  t("XLOOKUP hit", () => { const win=w(); setupPriceTable(win); return evalTo(win, '=XLOOKUP("Cherry",A2:A4,B2:B4)', 120); });
+  t("XLOOKUP miss with fallback → Missing", () => { const win=w(); setupPriceTable(win); return evalTo(win, '=XLOOKUP("Guava",A2:A4,B2:B4,"Missing")', "Missing"); });
+});
+
+suite("Engine · Dates", t => {
+  const w = () => iframe.contentWindow;
+  t("=DAYS(DATE(2026,4,30),DATE(2026,1,15)) → 105", () => evalTo(w(), '=DAYS(DATE(2026,4,30),DATE(2026,1,15))', 105));
+  t("=YEAR(DATE(2026,4,30)) → 2026", () => evalTo(w(), '=YEAR(DATE(2026,4,30))', 2026));
+  t("=MONTH(DATE(2026,4,30)) → 4",   () => evalTo(w(), '=MONTH(DATE(2026,4,30))', 4));
+  t("=DAY(DATE(2026,4,30)) → 30",     () => evalTo(w(), '=DAY(DATE(2026,4,30))', 30));
+  t("=TEXT(DATE(2026,4,30),\"yyyy-mm-dd\") → 2026-04-30", () => evalTo(w(), '=TEXT(DATE(2026,4,30),"yyyy-mm-dd")', "2026-04-30"));
+});
+
+suite("Engine · Cell refs & ranges", t => {
+  const w = () => iframe.contentWindow;
+  t("A1 reference reads value", () => {
+    const win = w(); resetCells(win); win.setRaw("A1", 42);
+    return evalTo(win, "=A1", 42);
+  });
+  t("Formula reads formula", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1", 5); win.setRaw("A2", "=A1*2");
+    return evalTo(win, "=A2+A1", 15);
+  });
+  t("Range in SUM", () => {
+    const win = w(); resetCells(win);
+    for(let i=1;i<=5;i++) win.setRaw("A"+i, i);  // 1..5
+    return evalTo(win, "=SUM(A1:A5)", 15);
+  });
+  t("Text concat with cell", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1", "hello"); win.setRaw("A2", " world");
+    return evalTo(win, "=A1&A2", "hello world");
+  });
+  t("2D range in AVERAGE", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1",1); win.setRaw("A2",2); win.setRaw("B1",3); win.setRaw("B2",4);
+    return evalTo(win, "=AVERAGE(A1:B2)", 2.5);
+  });
+});
+
+suite("Engine · Errors", t => {
+  const w = () => iframe.contentWindow;
+  t("=1/0 → #DIV/0!",                () => throwsError(w(), "=1/0", "#DIV/0!"));
+  t("=SQRT(-1) → #NUM!",              () => throwsError(w(), "=SQRT(-1)", "#NUM!"));
+  t("=NOTAFUNC() → #NAME?",          () => throwsError(w(), "=NOTAFUNC()", "#NAME?"));
+  t("=VLOOKUP with bad col → #REF!", () => {
+    const win = w(); resetCells(win); win.setRaw("A1","x"); win.setRaw("B1",1);
+    return throwsError(win, '=VLOOKUP("x",A1:B1,5,FALSE)', "#REF!");
+  });
+  t("Circular reference → #REF!", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1", "=B1"); win.setRaw("B1", "=A1");
+    try{ win.cellValue("A1", new Set()); return { pass:false, actual:"no throw", expected:"#REF!" }; }
+    catch(e){ const c = win.isErr(e) ? e.__err : "?"; return { pass: c==="#REF!", actual: c, expected: "#REF!" }; }
+  });
+  t("#N/A on unmatched XLOOKUP (no fallback)", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1","a"); win.setRaw("A2","b"); win.setRaw("B1",1); win.setRaw("B2",2);
+    return throwsError(win, '=XLOOKUP("z",A1:A2,B1:B2)', "#N/A");
+  });
+});
+
+suite("Engine · shiftFormula", t => {
+  const w = () => iframe.contentWindow;
+  t("=A1 shifted (1,1) → =B2",           () => ({ pass: w().shiftFormula("=A1",1,1)==="=B2", actual: w().shiftFormula("=A1",1,1), expected: "=B2" }));
+  t("=$A$1 stays fixed",                  () => ({ pass: w().shiftFormula("=$A$1",1,1)==="=$A$1", actual: w().shiftFormula("=$A$1",1,1), expected: "=$A$1" }));
+  t("=$A1 col fixed, row shifts",         () => ({ pass: w().shiftFormula("=$A1",1,1)==="=$A2", actual: w().shiftFormula("=$A1",1,1), expected: "=$A2" }));
+  t("=A$1 row fixed, col shifts",         () => ({ pass: w().shiftFormula("=A$1",1,1)==="=B$1", actual: w().shiftFormula("=A$1",1,1), expected: "=B$1" }));
+  t("=SUM(A1:A5) shifts to =SUM(A2:A6)", () => ({ pass: w().shiftFormula("=SUM(A1:A5)",1,0)==="=SUM(A2:A6)", actual: w().shiftFormula("=SUM(A1:A5)",1,0), expected: "=SUM(A2:A6)" }));
+  t("strings inside IF are not shifted", () => {
+    const got = w().shiftFormula('=IF(A1>0,"A1","B2")',1,0);
+    return { pass: got==='=IF(A2>0,"A1","B2")', actual: got, expected: '=IF(A2>0,"A1","B2")' };
+  });
+  t("out-of-grid shift → #REF!", () => {
+    const got = w().shiftFormula("=A1",-5,0);
+    return { pass: got==="=#REF!", actual: got, expected: "=#REF!" };
+  });
+});
+
+suite("Data · All exercise solutions pass their own checker", t => {
+  const w = () => iframe.contentWindow;
+  const exIds = () => Object.keys(w().EX);
+  // We build one test per exercise id — but the list is only known after iframe loads.
+  // Use a placeholder mechanism: register a dynamic pusher.
+  t("__dynamic__:exercises", () => runExerciseSolutionTests(w()));
+});
+
+function runExerciseSolutionTests(win){
+  // returns { pass: bool, subs: [{name,pass,actual?,expected?}] }
+  const subs = [];
+  const ids = Object.keys(win.EX);
+  for(const id of ids){
+    const ex = win.EX[id];
+    try{
+      // Reset
+      win.currentEx = null; win.currentExId = null; win.currentCourse = null;
+      win.doneEx.clear();
+      // Open exercise (loads data, sets targetRefs, etc.)
+      win.openEx(id);
+      // Fill in the solution
+      if(ex.pick){
+        for(const ref in ex.pick) win.setRaw(ref, ex.pick[ref].answer);
+      } else if(ex.targetRange){
+        const [start,end] = ex.targetRange.split(":");
+        const flat = win.rangeCells(start,end).flat();
+        const base = win.parseRef(start);
+        for(const ref of flat){
+          const p = win.parseRef(ref);
+          const shifted = win.shiftFormula(ex.solution, p.r-base.r, p.c-base.c);
+          win.setRaw(ref, shifted);
+        }
+      } else {
+        win.setRaw(ex.target, ex.solution);
+      }
+      // Run the checker
+      win.checkEx(ex);
+      const rb = iframe.contentDocument.getElementById("resBox");
+      const ok = rb && rb.classList.contains("ok");
+      subs.push({
+        name: id + " (" + ex.lvl + ") — " + ex.title,
+        pass: !!ok,
+        actual: ok ? "pass" : (rb ? rb.textContent.slice(0,140) : "no resBox"),
+        expected: "pass"
+      });
+    }catch(e){
+      subs.push({ name: id + " — " + (ex.title||""), pass: false, actual: "threw: " + (e&&e.message||String(e)), expected: "pass" });
+    }
+  }
+  const passed = subs.filter(s=>s.pass).length;
+  return { pass: passed===subs.length, subs, actual: passed+"/"+subs.length+" passed", expected: subs.length+"/"+subs.length };
+}
+
+suite("UI · DOM structure", t => {
+  const doc = () => iframe.contentDocument;
+  const win = () => iframe.contentWindow;
+  t("view-landing exists",            () => ({ pass: !!doc().getElementById("view-landing"), actual: !!doc().getElementById("view-landing"), expected: true }));
+  t("view-courses exists",            () => ({ pass: !!doc().getElementById("view-courses"), actual: !!doc().getElementById("view-courses"), expected: true }));
+  t("view-course exists",             () => ({ pass: !!doc().getElementById("view-course"), actual: !!doc().getElementById("view-course"), expected: true }));
+  t("view-app exists",                () => ({ pass: !!doc().getElementById("view-app"), actual: !!doc().getElementById("view-app"), expected: true }));
+  t("grid table has ROWS*COLS cells", () => {
+    const w = win(); const n = doc().querySelectorAll("#grid tbody td").length;
+    return { pass: n === w.COLS * w.ROWS, actual: n, expected: w.COLS * w.ROWS };
+  });
+  t("AI assistant fully removed",     () => {
+    const gone = !doc().getElementById("aibtn") && !doc().getElementById("aidrawer") && !doc().getElementById("aiq");
+    return { pass: gone, actual: gone, expected: true };
+  });
+  t("Streak counter present in titlebar", () => ({ pass: !!doc().getElementById("ws-streak"), actual: !!doc().getElementById("ws-streak"), expected: true }));
+  t("Concept panel has hintBox slot", () => {
+    win().openEx("sum");
+    const has = !!doc().getElementById("hintBox");
+    return { pass: has, actual: has, expected: true };
+  });
+  t("Concept panel has solutionBox slot", () => {
+    win().openEx("sum");
+    const has = !!doc().getElementById("solutionBox");
+    return { pass: has, actual: has, expected: true };
+  });
+});
+
+suite("Design · Tokens and fonts", t => {
+  const doc = () => iframe.contentDocument;
+  t("Google Fonts link present (Instrument Sans)", () => {
+    const links = [...doc().querySelectorAll("link[rel='stylesheet']")].map(l=>l.href);
+    const has = links.some(h => h.includes("Instrument+Sans"));
+    return { pass: has, actual: has, expected: true };
+  });
+  t("--paper CSS var defined", () => {
+    const v = getComputedStyle(doc().documentElement).getPropertyValue("--paper").trim();
+    return { pass: v.length>0, actual: v||"(empty)", expected: "non-empty" };
+  });
+  t("--green CSS var is the design green (#16A05C)", () => {
+    const v = getComputedStyle(doc().documentElement).getPropertyValue("--green").trim().toLowerCase();
+    return { pass: v==="#16a05c", actual: v, expected: "#16a05c" };
+  });
+  t("Difficulty badge classes: easy/medium/hard (not basic/core/adv)", () => {
+    const w = iframe.contentWindow;
+    const seen = new Set(Object.values(w.EX).map(e=>e.lvl));
+    const oldTiers = ["basic","core","adv"].filter(x=>seen.has(x));
+    return { pass: oldTiers.length===0, actual: "seen=" + [...seen].sort().join(","), expected: "easy,medium,hard" };
+  });
+});
+
+suite("UI · State transitions", t => {
+  const win = () => iframe.contentWindow;
+  const doc = () => iframe.contentDocument;
+  t("show('courses') activates that view",  () => {
+    win().show("courses");
+    const on = doc().getElementById("view-courses").classList.contains("on");
+    return { pass: on, actual: on, expected: true };
+  });
+  t("openSandbox() clears currentEx & shows blank workspace", () => {
+    win().openSandbox();
+    return { pass: win().currentEx===null, actual: win().currentEx===null, expected: true };
+  });
+  t("openEx('sum') sets currentExId and shows workspace", () => {
+    win().openEx("sum");
+    const okId = win().currentExId==="sum";
+    const okView = doc().getElementById("view-app").classList.contains("on");
+    return { pass: okId && okView, actual: "currentExId="+win().currentExId+" appOn="+okView, expected: "currentExId=sum appOn=true" };
+  });
+  t("pass() adds to doneEx", () => {
+    const w = win();
+    w.doneEx.clear();
+    w.openEx("sum");
+    w.setRaw("B7", w.EX.sum.solution);
+    w.checkEx(w.EX.sum);
+    return { pass: w.doneEx.has("sum"), actual: w.doneEx.has("sum"), expected: true };
+  });
+});
+
+/* -------- runner -------- */
+
+function statusPill(text, cls){ S_VERDICT.textContent = text; S_VERDICT.className = "verdict " + cls; }
+
+function render(sectionResults){
+  resultsEl.innerHTML = "";
+  for(const {section, tests} of sectionResults){
+    const wrap = document.createElement("div"); wrap.className = "section";
+    const head = document.createElement("div"); head.className = "shead";
+    const passed = tests.filter(x=>x.pass).length;
+    const allOk = passed===tests.length;
+    head.innerHTML = `<span class="stitle">${section}</span><span class="count ${allOk?'ok':'bad'}">${passed} / ${tests.length}</span>`;
+    wrap.appendChild(head);
+    for(const test of tests){
+      const row = document.createElement("div"); row.className = "trow " + (test.pass?"pass":"fail");
+      row.innerHTML = `
+        <span class="mark">${test.pass?'✓':'✗'}</span>
+        <span class="name">${escapeHtml(test.name)}</span>
+        <span class="ms">${test.ms.toFixed(1)}ms</span>
+        ${test.pass?"":`<div class="detail">expected: ${escapeHtml(String(test.expected))}\nactual:   ${escapeHtml(String(test.actual))}</div>`}
+      `;
+      wrap.appendChild(row);
+    }
+    resultsEl.appendChild(wrap);
+  }
+}
+function escapeHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+async function runAll(){
+  btn.disabled = true;
+  statusPill("Running…", "idle");
+  const startAll = performance.now();
+  const sectionResults = [];
+  let total=0, passed=0;
+
+  for(const {section, tests} of suites){
+    const outTests = [];
+    for(const {name, tfn} of tests){
+      const t0 = performance.now();
+      let out;
+      try{
+        const r = tfn();
+        if(r === true) out = { pass:true };
+        else if(r && typeof r==="object" && "subs" in r){
+          // Expand dynamic sub-tests into individual rows
+          out = null;
+          for(const sub of r.subs){
+            outTests.push({ name: sub.name, pass: sub.pass, actual: sub.actual, expected: sub.expected, ms: 0 });
+          }
+        }
+        else if(r && typeof r==="object" && "pass" in r) out = { pass: r.pass, actual: r.actual, expected: r.expected };
+        else out = { pass:false, actual: String(r), expected: "truthy" };
+      }catch(e){
+        out = { pass:false, actual: "threw: " + (e&&e.message||String(e)), expected: "no throw" };
+      }
+      if(out){
+        out.ms = performance.now() - t0;
+        out.name = name;
+        outTests.push(out);
+      }
+    }
+    for(const r of outTests){ total++; if(r.pass) passed++; }
+    sectionResults.push({ section, tests: outTests });
+  }
+
+  const elapsed = performance.now() - startAll;
+  S_TOTAL.textContent = total;
+  S_PASS.textContent  = passed;
+  S_FAIL.textContent  = total - passed;
+  S_TIME.textContent  = elapsed.toFixed(0) + " ms";
+  statusPill(passed===total ? "All passed" : (total-passed)+" failed", passed===total ? "ok" : "bad");
+  render(sectionResults);
+  btn.disabled = false;
+  btn.textContent = "▶  Re-run tests";
+}
+
+let iframeReady = false;
+iframe.addEventListener("load", ()=>{ iframeReady = true; btn.disabled = false; statusPill("Ready", "idle"); });
+btn.disabled = true;
+
+btn.addEventListener("click", () => {
+  if(!iframeReady){ statusPill("App not loaded", "bad"); return; }
+  try{
+    // Sanity — is Engine there?
+    if(!iframe.contentWindow || !iframe.contentWindow.Engine){
+      statusPill("Cannot access app (cross-frame block)", "bad");
+      resultsEl.innerHTML = `<div class="section"><div class="shead"><span class="stitle" style="color:var(--red)">Blocked</span></div>
+        <div class="trow fail"><span class="mark">✗</span>
+          <span class="name">Browser blocked script access to the iframe. Serve the folder over HTTP (<code>npx serve</code>) and reopen this file at <code>http://localhost:PORT/test.html</code>.</span>
+          <span class="ms"></span></div></div>`;
+      return;
+    }
+    runAll();
+  }catch(e){
+    statusPill("Runner error", "bad");
+    resultsEl.innerHTML = `<pre style="color:var(--red);padding:20px">${escapeHtml(e.stack||e.message||String(e))}</pre>`;
+  }
+});
+</script>
+</body>
+</html>

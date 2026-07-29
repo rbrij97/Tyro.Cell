@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "Bash(ls \"C:\\\\Users\\\\Brij\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\6b071ef6-c84d-4809-8dbe-cf62e05a4283\\\\043690da-fa10-4ed7-b296-425eabab779e\\\\skills\\\\docx\\\\node_modules\" 2>&1 | head -5)",
+      "Bash(npm --version)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(node build-decisions-log.js)",
+      "Bash(python \"C:\\\\Users\\\\Brij\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\6b071ef6-c84d-4809-8dbe-cf62e05a4283\\\\043690da-fa10-4ed7-b296-425eabab779e\\\\skills\\\\docx\\\\scripts\\\\office\\\\soffice.py\" --headless --convert-to pdf \"C:\\\\Users\\\\Brij\\\\OneDrive\\\\Desktop\\\\Project Tyro Cell\\\\docs\\\\decisions-log-2026-07-21.docx\" --outdir \"C:\\\\Users\\\\Brij\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Brij-OneDrive-Desktop-Project-Tyro-Cell\\\\83eea091-b567-4dc6-924b-203a2890f9eb\\\\scratchpad\")",
+      "Read(//c/Program Files \\\\\\(x86\\\\\\)/Microsoft/Edge/Application/**)",
+      "Read(//c/Program Files/Microsoft/Edge/Application/**)",
+      "Bash(ls -la \"C:\\\\Users\\\\Brij\\\\Downloads\\\\Auto-save and chat access.zip\" 2>&1)",
+      "Bash(unzip -l \"C:\\\\Users\\\\Brij\\\\Downloads\\\\Auto-save and chat access.zip\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\Brij\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Brij-OneDrive-Desktop-Project-Tyro-Cell\\\\83eea091-b567-4dc6-924b-203a2890f9eb\\\\scratchpad\\\\design-review\")",
+      "Bash(unzip -o \"C:\\\\Users\\\\Brij\\\\Downloads\\\\Auto-save and chat access.zip\")",
+      "Bash(node build-decisions-log-v2.js)"
+    ]
+  }
+}

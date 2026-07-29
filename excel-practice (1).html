@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FormulaLab — Practice spreadsheet formulas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..600;1,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBFAF9; --ink:#17191C; --text-1:#40474F; --text-2:#5F646B; --text-3:#6B7076;
+  --muted:#9A9EA4; --hint:#B9BCC1;
+  --line-1:#EBE8E4; --line-2:#EFECE8; --line-3:#F3F1ED; --line-4:#E4E1DC;
+  --green:#16A05C; --green-dark:#0B6E3E; --green-tint:#F2FAF5; --green-select:#CDEFDC;
+  --amber:#946200; --amber-tint:#FDF6E3; --amber-line:#E8C77D;
+  --red:#A4463C; --red-tint:#FBEFEC; --red-line:#E8CFC9;
+  --dark:#17191C; --dark-2:#2A2C30;
+  --sans:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:'Instrument Serif',Georgia,serif;
+  --mono:'JetBrains Mono','Consolas','Menlo',monospace;
+  --r-sm:6px; --r-md:10px; --r-lg:16px; --r-pill:999px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow:hidden}
+a{color:var(--green);text-decoration:none}
+a:hover{color:var(--green-dark)}
+::selection{background:var(--green-select)}
+button{font-family:inherit;color:inherit}
+
+.view{display:none;height:100%}
+.view.on{display:flex;flex-direction:column}
+
+/* ---------- shared: eyebrow, buttons ---------- */
+.eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.btn{border:1px solid var(--line-4);background:#fff;color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 14px;border-radius:var(--r-pill);cursor:pointer;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--line-2)}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--green-dark);border-color:var(--green-dark)}
+.btn.big{padding:12px 22px;font-size:15px}
+.btn:disabled{opacity:.35;cursor:default}
+
+/* ---------- pagenav (landing / courses / detail) ---------- */
+.pagenav{position:sticky;top:0;z-index:20;background:rgba(251,250,249,.82);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid transparent;transition:border-color .3s;display:flex;align-items:center;gap:12px 24px;padding:13px 24px;flex-wrap:wrap}
+.pagenav.scrolled{border-bottom-color:var(--line-1)}
+.pagenav .brand{display:flex;align-items:center;gap:9px;color:var(--ink);font-size:15.5px;font-weight:600;letter-spacing:-.2px;cursor:pointer}
+.pagenav .brand-mark{width:22px;height:22px;border-radius:6px;background:var(--green);display:grid;place-items:center;color:#fff;font:700 12px var(--mono)}
+.pagenav .spacer{flex:1}
+.pagenav nav{display:flex;gap:22px;font-size:13.5px;color:var(--text-2)}
+.pagenav nav a{color:var(--text-2);cursor:pointer}
+.pagenav nav a:hover{color:var(--ink)}
+.pagenav .cta-link{color:var(--green);font-size:13.5px;font-weight:600;cursor:pointer}
+.pagescroll{flex:1;overflow-y:auto}
+.pagewrap{max-width:1080px;margin:0 auto;padding:48px 24px 80px}
+
+/* ---------- landing hero ---------- */
+.hero{padding:64px 0 22px;text-align:center}
+.hero .eyebrow{margin-bottom:22px}
+.hero h1{font-size:clamp(38px,6vw,72px);line-height:1.02;letter-spacing:-1.8px;font-weight:600;margin:0 auto 22px;max-width:900px;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--green)}
+.hero p.lede{font-size:18px;line-height:1.55;color:var(--text-3);margin:0 auto 28px;max-width:560px;text-wrap:pretty}
+.hero .cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.hero .proof{display:flex;justify-content:center;align-items:center;gap:16px;flex-wrap:wrap;font:italic 400 18px var(--serif);color:#8E9298}
+.hero .proof .dot{width:3px;height:3px;border-radius:50%;background:#D6D3CE}
+
+.featrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:34px;margin-top:72px;border-top:1px solid var(--line-1);padding-top:40px}
+.feat .fx{font:500 13.5px var(--mono);color:var(--green);margin-bottom:12px;display:block}
+.feat h3{font-size:17px;font-weight:600;margin:0 0 7px;letter-spacing:-.2px}
+.feat p{font-size:14.5px;line-height:1.6;color:var(--text-3);margin:0}
+
+/* ---------- courses list ---------- */
+.pgtitle{font-size:40px;line-height:1.08;letter-spacing:-1.4px;font-weight:600;margin:0 0 8px}
+.pgsub{color:var(--text-3);font-size:16px;margin:0 0 26px;max-width:60ch}
+.actionrow{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+
+.ccard{background:#fff;border:1px solid var(--line-1);border-radius:var(--r-lg);padding:22px 26px;margin-bottom:14px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.ccard:hover{border-color:var(--line-4);box-shadow:0 6px 18px -12px rgba(23,25,28,.14)}
+.ccard-meta{font:500 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.ccard h3{font-size:24px;font-weight:600;letter-spacing:-.6px;margin:8px 0 10px}
+.ccard .cdesc{font-size:14.5px;line-height:1.6;color:var(--text-3);margin:0 0 14px;max-width:66ch}
+.ccard .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.tag{font:500 11.5px var(--mono);color:var(--text-2);background:var(--line-2);border-radius:var(--r-sm);padding:4px 10px}
+.ccard-foot{display:flex;align-items:center;gap:16px;margin-top:18px;flex-wrap:wrap}
+.ccard-pbar{flex:1;min-width:120px;height:4px;background:var(--line-2);border-radius:2px;overflow:hidden}
+.ccard-pbar>div{height:100%;background:var(--green);border-radius:2px}
+.ccard-pnote{font:500 12px var(--mono);color:var(--text-2)}
+.ccard-cta{font-size:14px;font-weight:600;color:var(--green)}
+
+/* ---------- course detail ---------- */
+.cstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:22px;padding:22px 0;border-top:1px solid var(--line-1);border-bottom:1px solid var(--line-1);margin-bottom:28px}
+.cstat .k{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.cstat .v{font-size:15px;font-weight:600}
+.progress-row{display:flex;align-items:center;gap:14px;margin-bottom:26px;flex-wrap:wrap}
+
+.module{background:#fff;border:1px solid var(--line-1);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden}
+.module.collapsed .exrow{display:none}
+.module.collapsed .mhead{border-bottom-color:transparent}
+#coursedetail.solo-mode .module.collapsed{display:none}
+#coursedetail.solo-mode .cstats,#coursedetail.solo-mode .progress-row{display:none}
+.back-to-all{display:none;font:500 11px var(--mono);color:var(--green-dark);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:6px 12px;border:1px solid var(--line-1);border-radius:var(--r-pill);background:#fff;margin-bottom:14px}
+.back-to-all:hover{background:var(--green-tint);border-color:var(--green)}
+#coursedetail.solo-mode .back-to-all{display:inline-block}
+.mhead{padding:12px 18px;background:#FCFBFA;border-bottom:1px solid var(--line-1);display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;transition:background .1s}
+.mhead:hover{background:var(--green-tint)}
+.mhead .chev{font-family:var(--mono);font-size:11px;color:var(--muted);width:12px;text-align:center;transition:transform .15s}
+.module.collapsed .mhead .chev{transform:rotate(-90deg)}
+.mhead .mtag{font:500 11px var(--mono);color:var(--muted);letter-spacing:.1em}
+.mhead .mtitle{font-size:15.5px;font-weight:600;letter-spacing:-.2px;flex:1}
+.mhead .mprog{font:500 12px var(--mono);color:var(--muted)}
+.exrow{padding:12px 18px;display:grid;grid-template-columns:24px 32px 1fr auto auto;gap:16px;align-items:center;border-bottom:1px solid var(--line-3);cursor:pointer;transition:background .1s;font-size:14px}
+.exrow:last-child{border-bottom:none}
+.exrow:hover{background:var(--green-tint)}
+.exrow .tick{width:20px;height:20px;border-radius:50%;border:1.5px solid #C6C9CD;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
+.exrow.done .tick{background:var(--green);border-color:var(--green)}
+.exrow .exnum{font:400 11.5px var(--mono);color:var(--hint)}
+.exrow .exsyn{font:500 12px var(--mono);color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exrow .badge{font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:4px;justify-self:end}
+.exrow .exgo{font-size:13px;font-weight:600;color:var(--green);white-space:nowrap}
+.badge.easy{background:#E3EDF7;color:#2B5B8A}
+.badge.medium{background:#FDF1DD;color:#946200}
+.badge.hard{background:#F6E3E3;color:#93342C}
+
+/* ---------- workspace ---------- */
+#titlebar{flex:none;display:flex;align-items:center;gap:12px 18px;padding:11px 20px;background:var(--dark);color:#fff;flex-wrap:wrap;font-size:13px}
+#titlebar .brand{display:flex;align-items:center;gap:9px;color:#fff;font-size:14.5px;font-weight:600;letter-spacing:-.2px;cursor:pointer}
+#titlebar .brand-mark{width:21px;height:21px;border-radius:6px;background:var(--green);display:grid;place-items:center;color:#fff;font:700 11.5px var(--mono)}
+#titlebar .sep{font:400 12px var(--mono);color:#6E737A}
+#titlebar .crumb{color:#A7ABB1;cursor:pointer;font-size:13px}
+#titlebar .crumb:hover{color:#fff}
+#titlebar .crumb.current{color:#fff;cursor:default}
+#titlebar .spacer{flex:1}
+#titlebar .streak{font:500 11.5px var(--mono);letter-spacing:.14em;color:#8E9298;text-transform:uppercase}
+#titlebar .streak b{color:#fff;font-weight:700}
+
+#exbar{flex:none;display:flex;align-items:center;gap:10px 14px;padding:11px 20px;border-bottom:1px solid var(--line-1);background:#fff;flex-wrap:wrap}
+#exbar .badge{font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:5px}
+#exbar .extitle{font-size:15.5px;font-weight:600;letter-spacing:-.3px}
+#exbar .exmod{font:italic 400 15px var(--serif);color:var(--muted)}
+#exbar .spacer{flex:1;min-width:12px}
+#exbar .actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#exbar .btn{padding:8px 14px;font-size:13px}
+#exbar .btn.check{background:var(--green);border-color:var(--green);color:#fff;font-weight:600;padding:9px 18px}
+#exbar .btn.check:hover{background:var(--green-dark);border-color:var(--green-dark)}
+#exbar .btn.nav{padding:8px 12px;min-width:36px}
+
+#toolbar{flex:none;display:flex;align-items:center;gap:8px;padding:8px 16px;background:#fff;border-bottom:1px solid var(--line-1);flex-wrap:wrap}
+.tbtn{border:1px solid transparent;background:none;padding:5px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;color:var(--text-2);font-family:inherit}
+.tbtn:hover{background:var(--green-tint);color:var(--green-dark)}
+.tbtn.active{background:var(--green-tint);color:var(--green-dark);border-color:var(--green-select)}
+.tsep{width:1px;height:18px;background:var(--line-1);margin:0 4px}
+#toolbar .hint{font-size:12px;color:var(--muted)}
+#toolbar .hint code{font-family:var(--mono);background:var(--line-2);padding:1px 5px;border-radius:3px}
+
+#formulabar{flex:none;display:flex;align-items:center;gap:9px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line-1)}
+#namebox{min-width:52px;padding:5px 8px;border:1px solid var(--line-4);border-radius:var(--r-sm);font:12px var(--mono);text-align:center;color:var(--text-2);background:#fff}
+#fx{font:italic 14px var(--serif);color:#A0A4AA}
+#formulainput{flex:1;padding:7px 11px;border:1px solid var(--line-4);border-radius:var(--r-sm);font:13px var(--mono);background:#fff;color:var(--ink)}
+#formulainput:focus,#namebox:focus{outline:2px solid var(--green);outline-offset:-1px}
+
+#main{flex:1;display:flex;min-height:0}
+#concept{flex:0 1 300px;min-width:260px;max-width:320px;background:#fff;border-right:1px solid var(--line-1);overflow-y:auto;padding:22px 20px;display:none}
+#concept.on{display:block}
+#concept .eyebrow{margin-bottom:10px}
+#concept h2{font-size:19px;font-weight:600;letter-spacing:-.4px;margin:0 0 12px}
+#concept .cbody{font-size:14px;line-height:1.65;color:var(--text-1);margin:0 0 14px}
+#concept .cbody p{margin:0 0 10px}
+#concept .cbody b.term{color:var(--green-dark);font-weight:600}
+#concept .cbody code{font:12.5px var(--mono);background:var(--line-2);border-radius:3px;padding:1px 5px}
+#concept .cbody .formula,#concept .formula{font:500 13px var(--mono);color:var(--green-dark);background:var(--green-tint);border-radius:8px;padding:11px 13px;margin:8px 0 16px;display:block;word-break:break-word}
+#concept .task{font-size:14.5px;line-height:1.6;color:var(--ink);margin:10px 0 12px}
+.task-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:500 12px var(--mono);color:var(--amber);margin-bottom:16px}
+.task-meta .lb{color:var(--muted)}
+.task-meta .tcell{background:var(--amber-tint);border-radius:5px;padding:3px 8px}
+.hintbox{margin-top:16px;padding-left:14px;border-left:2px solid var(--amber-line);display:none}
+.hintbox .eyebrow{color:#B07813;margin-bottom:6px}
+.hintbox p{font-size:13.5px;line-height:1.6;color:var(--text-2);margin:0}
+.solutionbox{margin-top:16px;padding-left:14px;border-left:2px solid #DCD9D4;display:none}
+.solutionbox .eyebrow{margin-bottom:6px}
+.solutionbox p{font:500 13px var(--mono);color:var(--ink);margin:0;word-break:break-word}
+.nudgebox{margin-top:16px;padding:12px 14px;background:var(--amber-tint);border:1px solid var(--amber-line);border-radius:8px;display:none}
+.nudgebox .eyebrow{color:#B07813;margin-bottom:6px}
+.nudgebox p{font-size:13.5px;line-height:1.55;color:var(--amber);margin:0}
+.nudgebox p b{color:var(--amber);font-weight:600}
+.result{margin-top:18px;padding:12px 14px;border-radius:8px;display:none;font-size:13.5px;line-height:1.55}
+.result.ok{display:block;background:var(--green-tint);border:1px solid #DCEFE4;color:var(--green-dark)}
+.result.bad{display:block;background:var(--red-tint);border:1px solid var(--red-line);color:var(--red)}
+.result code{font:12px var(--mono);background:rgba(255,255,255,.6);border-radius:3px;padding:1px 5px}
+
+#gridwrap{flex:1;overflow:auto;background:#F7F6F4;position:relative;padding:14px}
+table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1px solid var(--line-4);border-radius:var(--r-md);overflow:hidden}
+#grid th,#grid td{border:1px solid var(--line-3);font-size:13px;height:26px;position:relative}
+#grid th{background:#F8F7F5;color:var(--muted);font:400 11.5px var(--mono);position:sticky;z-index:2;user-select:none;padding:0 6px}
+#grid thead th{top:0}
+#grid tbody th{left:0;width:38px;min-width:38px;text-align:center}
+#grid thead th.corner{left:0;z-index:4;width:38px;min-width:38px}
+#grid th.hl{color:var(--green-dark);background:var(--green-tint);font-weight:600}
+#grid td{width:110px;min-width:110px;padding:0 8px;white-space:nowrap;overflow:hidden;cursor:cell;background:#fff;font:12.5px var(--mono)}
+#grid td.num{text-align:right}
+#grid td.bool{text-align:center}
+#grid td.err{color:var(--red);font-weight:600;text-align:center}
+#grid td.b{font-weight:700}
+#grid td.i{font-style:italic}
+#grid td.u{text-decoration:underline}
+#grid td.insel{background:var(--green-tint)}
+#grid td.sel{outline:2px solid var(--green);outline-offset:-2px;background:#fff}
+#grid td.target{background:var(--amber-tint);box-shadow:inset 0 0 0 2px #E8A33D}
+#grid td.pt{outline:2px dashed #2B6CB0;outline-offset:-2px;background:#E8F0FA}
+#grid td.fillprev{outline:1px dashed var(--green);outline-offset:-1px;background:#EEF6F1}
+#fillhandle{position:absolute;width:8px;height:8px;background:var(--green);border:1px solid #fff;cursor:crosshair;z-index:6;display:none}
+#grid td input{position:absolute;inset:0;width:100%;height:100%;border:2px solid var(--green);padding:0 6px;font:12.5px var(--mono);z-index:5;border-radius:3px}
+#grid td select{position:absolute;inset:0;width:100%;height:100%;border:2px solid var(--green);font:12.5px inherit;z-index:5;background:#fff;border-radius:3px}
+#grid td input:focus,#grid td select:focus{outline:none}
+
+#statusbar{flex:none;display:flex;align-items:center;gap:20px;padding:8px 16px;background:#fff;border-top:1px solid var(--line-1);font:400 11.5px var(--mono);color:var(--text-3);flex-wrap:wrap}
+#statusbar .spacer{flex:1}
+#statusbar .keys{color:#A0A4AA}
+
+/* Right panel */
+#panel{width:300px;min-width:260px;background:#fff;border-left:1px solid var(--line-1);display:flex;flex-direction:column;min-height:0}
+#paneltabs{display:flex;border-bottom:1px solid var(--line-1);flex-shrink:0}
+#paneltabs button{flex:1;border:none;background:#FCFBFA;padding:10px 0;font-size:11.5px;font-weight:600;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em}
+#paneltabs button.on{color:var(--green-dark);border-bottom-color:var(--green);background:#fff}
+.pbody{flex:1;overflow-y:auto;padding:14px;display:none}
+.pbody.on{display:block}
+.outline .omod{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0}
+.outline .oex{padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);margin-bottom:6px;font-size:13px;cursor:pointer;display:flex;gap:10px;align-items:center;transition:background .1s,border-color .1s}
+.outline .oex:hover{border-color:var(--line-4);background:#FCFBFA}
+.outline .oex.cur{border-color:var(--green);background:var(--green-tint);color:var(--green-dark);font-weight:600}
+.outline .oex .tick{width:14px;height:14px;border-radius:50%;border:1.5px solid #C6C9CD;flex-shrink:0}
+.outline .oex.done .tick{background:var(--green);border-color:var(--green)}
+.ol-back{font:500 10.5px var(--mono);color:var(--green-dark);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:6px 12px;border:1px solid var(--line-1);border-radius:var(--r-pill);background:#fff;margin-bottom:14px;display:inline-block}
+.ol-back:hover{background:var(--green-tint);border-color:var(--green)}
+.ol-modhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
+.ol-modhead .ol-prog{font:500 11px var(--mono);color:var(--muted)}
+.ol-next{margin-top:14px;padding:12px 14px;background:var(--green);border:1px solid var(--green);border-radius:var(--r-md);color:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:background .1s;display:flex;align-items:center;justify-content:center;gap:8px}
+.ol-next:hover{background:var(--green-dark)}
+.ol-next small{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.8}
+.fnref details{border:1px solid var(--line-1);border-radius:var(--r-sm);margin-bottom:6px;background:#FCFBFA}
+.fnref summary{padding:8px 12px;cursor:pointer;font:600 12.5px var(--mono);color:var(--green-dark);list-style:none}
+.fnref summary::before{content:"▸ ";color:var(--muted)}
+.fnref details[open] summary::before{content:"▾ "}
+.fnref details[open]{background:#fff}
+.fnref .fd{padding:0 12px 10px;font-size:12.5px;line-height:1.55;color:var(--text-1)}
+.fnref .fd .syn{font:12px var(--mono);color:var(--ink);display:block;margin-bottom:4px}
+.fnref code{font:12px var(--mono);background:var(--line-2);border-radius:3px;padding:1px 5px}
+.fncat{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.fncat:first-child{margin-top:0}
+
+@media (max-width:900px){
+  #main{flex-direction:column}
+  #concept{max-width:none;max-height:34%;border-right:none;border-bottom:1px solid var(--line-1)}
+  #panel{width:100%;max-height:38%;border-left:none;border-top:1px solid var(--line-1)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ VIEW: LANDING ============ -->
+<div class="view on" id="view-landing">
+  <div class="pagenav">
+    <span class="brand" data-go="landing"><span class="brand-mark">f</span>FormulaLab</span>
+    <span class="spacer"></span>
+    <nav>
+      <a data-go="courses">Courses</a>
+      <a data-go="sandbox">Sandbox</a>
+    </nav>
+    <a class="cta-link" data-go="courses">Start free →</a>
+  </div>
+  <div class="pagescroll">
+    <div class="pagewrap">
+      <section class="hero">
+        <div class="eyebrow">For finance interview prep</div>
+        <h1>Learn spreadsheet formulas by <em>writing them</em>, not watching them.</h1>
+        <p class="lede">A working spreadsheet grid with a real formula engine, structured courses, and instant answer checking.</p>
+        <div class="cta-row">
+          <button class="btn primary big" data-go="courses">Browse courses</button>
+          <button class="btn big" data-go="sandbox">Open blank sheet</button>
+        </div>
+        <div class="proof">
+          <span>No install</span>
+          <span class="dot"></span>
+          <span>No licence</span>
+          <span class="dot"></span>
+          <span>No video queue</span>
+        </div>
+      </section>
+      <section class="featrow">
+        <div class="feat">
+          <span class="fx">=SUM(B2:B6)</span>
+          <h3>Real formula engine</h3>
+          <p>45+ functions, cell references, ranges, error values, point-mode range selection with arrow keys — the mechanics of Excel, in the browser.</p>
+        </div>
+        <div class="feat">
+          <span class="fx">✓ Check Answer</span>
+          <h3>Verified practice</h3>
+          <p>Each exercise checks your result and that you used the intended function — hard-coded answers fail. Hints and solutions on demand.</p>
+        </div>
+        <div class="feat">
+          <span class="fx">A → B → C</span>
+          <h3>Structured courses</h3>
+          <p>Guided paths from basic aggregation to lookups and financial-statement metrics, with per-module progress tracking.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VIEW: COURSES ============ -->
+<div class="view" id="view-courses">
+  <div class="pagenav">
+    <span class="brand" data-go="landing"><span class="brand-mark">f</span>FormulaLab</span>
+    <span class="spacer"></span>
+    <nav>
+      <a data-go="courses">Courses</a>
+      <a data-go="sandbox">Sandbox</a>
+    </nav>
+  </div>
+  <div class="pagescroll">
+    <div class="pagewrap">
+      <h2 class="pgtitle">Two paths, one grid.</h2>
+      <p class="pgsub">Pick a path. Progress is in-memory for now — use Export to save it to a file, Import to restore.</p>
+      <div class="actionrow">
+        <button class="btn" id="btnExportProg">Export progress</button>
+        <button class="btn" id="btnImportProg">Import progress</button>
+        <input type="file" id="progFile" accept="application/json" style="display:none">
+      </div>
+      <div id="coursecards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VIEW: COURSE DETAIL ============ -->
+<div class="view" id="view-course">
+  <div class="pagenav">
+    <span class="brand" data-go="landing"><span class="brand-mark">f</span>FormulaLab</span>
+    <span class="spacer"></span>
+    <nav>
+      <a data-go="courses">Courses</a>
+      <a data-go="sandbox">Sandbox</a>
+    </nav>
+  </div>
+  <div class="pagescroll"><div class="pagewrap" id="coursedetail"></div></div>
+</div>
+
+<!-- ============ VIEW: WORKSPACE ============ -->
+<div class="view" id="view-app">
+  <div id="titlebar">
+    <span class="brand" data-go="landing"><span class="brand-mark">f</span>FormulaLab</span>
+    <span class="sep">/</span>
+    <span class="crumb" data-go="courses">Courses</span>
+    <span class="sep" id="ws-sep2" style="display:none">/</span>
+    <span class="crumb current" id="ws-crumb">Sandbox</span>
+    <span class="spacer"></span>
+    <span class="streak">Streak · <b id="ws-streak">0</b></span>
+  </div>
+  <div id="exbar" style="display:none">
+    <span class="badge" id="ex-badge">easy</span>
+    <span class="extitle" id="ex-title"></span>
+    <span class="exmod" id="ex-mod"></span>
+    <span class="spacer"></span>
+    <div class="actions">
+      <button class="btn nav" id="btnPrev" title="Previous">←</button>
+      <button class="btn" id="btnHint">Hint</button>
+      <button class="btn" id="btnSolution">Solution</button>
+      <button class="btn" id="btnResetEx">Reset</button>
+      <button class="btn check" id="btnCheck">Check answer</button>
+      <button class="btn nav" id="btnNext" title="Next">→</button>
+    </div>
+  </div>
+  <div id="toolbar">
+    <button class="tbtn" id="btnBold" title="Bold (Ctrl+B)"><b>B</b></button>
+    <button class="tbtn" id="btnItalic" title="Italic (Ctrl+I)"><i>I</i></button>
+    <button class="tbtn" id="btnUnder" title="Underline (Ctrl+U)"><u>U</u></button>
+    <span class="tsep"></span>
+    <button class="tbtn" id="btnClear">Clear cell</button>
+    <button class="tbtn" id="btnClearAll">Clear sheet</button>
+    <span class="tsep"></span>
+    <span class="hint"><code>=</code> starts a formula · Enter confirms · Esc cancels · F2 edits · arrows select refs</span>
+  </div>
+  <div id="formulabar">
+    <input id="namebox" value="A1" spellcheck="false" aria-label="Cell name box">
+    <span id="fx">fx</span>
+    <input id="formulainput" spellcheck="false" autocomplete="off" aria-label="Formula bar" placeholder="Value or formula — e.g. =SUM(A1:A5)">
+  </div>
+  <div id="main">
+    <div id="concept"></div>
+    <div id="gridwrap"><table id="grid" aria-label="Spreadsheet grid"></table><div id="fillhandle" title="Fill handle — drag to copy with relative references"></div></div>
+    <div id="panel">
+      <div id="paneltabs">
+        <button class="on" data-tab="outline">Outline</button>
+        <button data-tab="funcs">Functions</button>
+      </div>
+      <div class="pbody on outline" id="tab-outline"></div>
+      <div class="pbody fnref" id="tab-funcs"></div>
+    </div>
+  </div>
+  <div id="statusbar">
+    <span id="st-mode">Ready</span>
+    <span id="st-agg"></span>
+    <span class="spacer"></span>
+    <span class="keys">Enter confirms · Esc cancels · F2 edits · arrows move</span>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   ENGINE MODULE  —  formula engine, cell storage, coordinate system.
+   Pure logic, no DOM. Everything from here to the ENGINE PUBLIC API block
+   below is engine-internal. Grid UI consumes it only via the `Engine`
+   namespace object, so this whole section is portable — the same code can
+   later run in Node for server-side answer re-verification.
+   ========================================================================= */
+const COLS = 16, ROWS = 60;
+const colName = i => { let s=""; i++; while(i>0){ s=String.fromCharCode(65+(i-1)%26)+s; i=Math.floor((i-1)/26);} return s; };
+const COLNAMES = Array.from({length:COLS},(_,i)=>colName(i));
+let cells = {};
+let sel = {r:1,c:0};
+let selEnd = null;
+let editing = null;
+let targetRefs = [];
+
+const refOf=(r,c)=>COLNAMES[c]+r;
+function parseRef(s){ const m=String(s).trim().toUpperCase().match(/^\$?([A-Z]{1,2})\$?(\d{1,3})$/); if(!m)return null;
+  const c=COLNAMES.indexOf(m[1]); const r=+m[2]; if(c<0||r<1||r>ROWS)return null; return {r,c}; }
+const getCell=ref=>cells[ref]||null;
+function setRaw(ref,val){ if(val===""||val==null){ if(cells[ref]){delete cells[ref].raw; if(!cells[ref].b&&!cells[ref].i&&!cells[ref].u)delete cells[ref]; else cells[ref].raw="";} }
+  else { (cells[ref]=cells[ref]||{}).raw=String(val); } }
+
+/* ================= FORMULA ENGINE ================= */
+const FErr = code => ({ __err: code });
+const isErr = v => v && typeof v==="object" && v.__err;
+
+function tokenize(src){
+  const toks=[]; let i=0;
+  while(i<src.length){
+    const ch=src[i];
+    if(ch===" "||ch==="\t"){i++;continue;}
+    if(ch==='"'){ let j=i+1,s="";
+      while(j<src.length){ if(src[j]==='"'){ if(src[j+1]==='"'){s+='"';j+=2;} else break; } else {s+=src[j];j++;} }
+      if(j>=src.length) throw FErr("#VALUE!");
+      toks.push({t:"str",v:s}); i=j+1; continue; }
+    if(/[0-9]/.test(ch)||(ch==="."&&/[0-9]/.test(src[i+1]||""))){
+      let j=i; while(j<src.length&&/[0-9.]/.test(src[j]))j++;
+      if((src[j]==="e"||src[j]==="E")&&/[0-9+\-]/.test(src[j+1]||"")){ j++; if(/[+\-]/.test(src[j]))j++; while(/[0-9]/.test(src[j]||""))j++; }
+      toks.push({t:"num",v:parseFloat(src.slice(i,j))}); i=j; continue; }
+    if(/[A-Za-z_$]/.test(ch)){
+      let j=i; while(j<src.length&&/[A-Za-z0-9_.$]/.test(src[j]))j++;
+      const w=src.slice(i,j); i=j;
+      if(src[i]==="("){ toks.push({t:"func",v:w.toUpperCase()}); continue; }
+      if(/^(TRUE|FALSE)$/i.test(w)){ toks.push({t:"bool",v:/^t/i.test(w)}); continue; }
+      if(/^\$?[A-Za-z]{1,2}\$?\d{1,3}$/.test(w)){ toks.push({t:"ref",v:w.replace(/\$/g,"").toUpperCase()}); continue; }
+      throw FErr("#NAME?"); }
+    if(ch==="<"&&src[i+1]==="="){toks.push({t:"op",v:"<="});i+=2;continue;}
+    if(ch===">"&&src[i+1]==="="){toks.push({t:"op",v:">="});i+=2;continue;}
+    if(ch==="<"&&src[i+1]===">"){toks.push({t:"op",v:"<>"});i+=2;continue;}
+    if(src.startsWith("#REF!",i)){toks.push({t:"errtok",v:"#REF!"});i+=5;continue;}
+    if("+-*/^&%(),:=<>".includes(ch)){toks.push({t:"op",v:ch});i++;continue;}
+    throw FErr("#NAME?");
+  }
+  return toks;
+}
+
+function parse(toks){
+  let p=0;
+  const peek=()=>toks[p], eat=()=>toks[p++];
+  const isOp=v=>peek()&&peek().t==="op"&&peek().v===v;
+  function primary(){
+    const t=peek(); if(!t) throw FErr("#VALUE!");
+    if(t.t==="errtok"){eat();throw FErr(t.v);}
+    if(t.t==="num"||t.t==="str"||t.t==="bool"){eat();return{k:t.t,v:t.v};}
+    if(t.t==="ref"){ eat();
+      if(isOp(":")){ eat(); const t2=eat(); if(!t2||t2.t!=="ref") throw FErr("#REF!"); return{k:"range",a:t.v,b:t2.v}; }
+      return{k:"ref",v:t.v}; }
+    if(t.t==="func"){ eat();
+      if(!isOp("(")) throw FErr("#VALUE!"); eat();
+      const args=[];
+      if(!isOp(")")){ args.push(expr()); while(isOp(",")){eat();args.push(expr());} }
+      if(!isOp(")")) throw FErr("#VALUE!"); eat();
+      return{k:"call",fn:t.v,args}; }
+    if(isOp("(")){ eat(); const e=expr(); if(!isOp(")")) throw FErr("#VALUE!"); eat(); return e; }
+    throw FErr("#VALUE!");
+  }
+  function postfix(){ let e=primary(); while(isOp("%")){eat(); e={k:"pct",e};} return e; }
+  function unary(){ if(isOp("-")){eat();return{k:"neg",e:unary()};} if(isOp("+")){eat();return unary();} return postfix(); }
+  function power(){ let l=unary(); while(isOp("^")){eat(); l={k:"bin",op:"^",l,r:unary()};} return l; }
+  function mul(){ let l=power(); while(isOp("*")||isOp("/")){const o=eat().v; l={k:"bin",op:o,l,r:power()};} return l; }
+  function add(){ let l=mul(); while(isOp("+")||isOp("-")){const o=eat().v; l={k:"bin",op:o,l,r:mul()};} return l; }
+  function concat(){ let l=add(); while(isOp("&")){eat(); l={k:"bin",op:"&",l,r:add()};} return l; }
+  function expr(){ let l=concat();
+    while(peek()&&peek().t==="op"&&["=","<",">","<=",">=","<>"].includes(peek().v)){
+      const o=eat().v; l={k:"bin",op:o,l,r:concat()}; }
+    return l; }
+  const e=expr();
+  if(p<toks.length) throw FErr("#VALUE!");
+  return e;
+}
+
+function cellValue(ref, visiting){
+  const c=getCell(ref);
+  const raw=c&&c.raw!=null?String(c.raw):"";
+  if(raw==="") return "";
+  if(raw[0]==="="){
+    if(visiting.has(ref)) throw FErr("#REF!");
+    visiting.add(ref);
+    try{ return evalStr(raw.slice(1),visiting); }
+    finally{ visiting.delete(ref); }
+  }
+  if(/^-?(\d+\.?\d*|\.\d+)([eE][+\-]?\d+)?$/.test(raw.trim())) return parseFloat(raw);
+  if(/^(true|false)$/i.test(raw.trim())) return /^t/i.test(raw.trim());
+  return raw;
+}
+function evalStr(src,visiting){ return evalNode(parse(tokenize(src)),visiting); }
+
+function rangeCells(a,b){
+  const A=parseRef(a),B=parseRef(b); if(!A||!B) throw FErr("#REF!");
+  const r1=Math.min(A.r,B.r),r2=Math.max(A.r,B.r),c1=Math.min(A.c,B.c),c2=Math.max(A.c,B.c);
+  const out=[];
+  for(let r=r1;r<=r2;r++){const row=[];for(let c=c1;c<=c2;c++)row.push(refOf(r,c));out.push(row);}
+  return out;
+}
+function evalNode(n,visiting){
+  switch(n.k){
+    case "num": case "str": case "bool": return n.v;
+    case "ref": { if(!parseRef(n.v)) throw FErr("#REF!"); return cellValue(n.v,visiting); }
+    case "range": return { __range: rangeCells(n.a,n.b).map(row=>row.map(rf=>cellValue(rf,visiting))) };
+    case "pct": return toNum(scalar(evalNode(n.e,visiting)))/100;
+    case "neg": return -toNum(scalar(evalNode(n.e,visiting)));
+    case "bin": {
+      const L=scalar(evalNode(n.l,visiting)), R=scalar(evalNode(n.r,visiting));
+      switch(n.op){
+        case "+": return toNum(L)+toNum(R);
+        case "-": return toNum(L)-toNum(R);
+        case "*": return toNum(L)*toNum(R);
+        case "/": { const d=toNum(R); if(d===0) throw FErr("#DIV/0!"); return toNum(L)/d; }
+        case "^": return Math.pow(toNum(L),toNum(R));
+        case "&": return toText(L)+toText(R);
+        default: return compare(L,R,n.op);
+      } }
+    case "call": return callFn(n.fn,n.args,visiting);
+  }
+}
+const isRange=v=>v&&typeof v==="object"&&v.__range;
+function scalar(v){ if(isRange(v)){ const f=v.__range; if(f.length===1&&f[0].length===1) return f[0][0]; throw FErr("#VALUE!"); } return v; }
+function toNum(v){
+  if(typeof v==="number"){ if(!isFinite(v)) throw FErr("#NUM!"); return v; }
+  if(typeof v==="boolean") return v?1:0;
+  if(v==="") return 0;
+  if(typeof v==="string"&&/^-?(\d+\.?\d*|\.\d+)([eE][+\-]?\d+)?$/.test(v.trim())) return parseFloat(v);
+  throw FErr("#VALUE!");
+}
+function toText(v){ if(typeof v==="boolean")return v?"TRUE":"FALSE"; if(typeof v==="number")return fmtNum(v); return String(v); }
+function toBool(v){ if(typeof v==="boolean")return v; if(typeof v==="number")return v!==0; if(v==="")return false;
+  if(/^true$/i.test(v))return true; if(/^false$/i.test(v))return false; throw FErr("#VALUE!"); }
+function compare(a,b,op){
+  let res;
+  if(typeof a==="string"||typeof b==="string"){
+    if(typeof a==="string"&&typeof b==="string"){ const x=a.toLowerCase(),y=b.toLowerCase(); res=x<y?-1:x>y?1:0; }
+    else res = typeof a==="string"?1:-1;
+  } else res = toNum(a)<toNum(b)?-1:toNum(a)>toNum(b)?1:0;
+  switch(op){case"=":return res===0;case"<>":return res!==0;case"<":return res<0;case">":return res>0;case"<=":return res<=0;case">=":return res>=0;}
+}
+function flat(args){ const out=[]; for(const a of args){ if(isRange(a)) a.__range.forEach(r=>r.forEach(v=>out.push(v))); else out.push(a);} return out; }
+const numsOnly = vals => vals.filter(v=>typeof v==="number");
+function criteriaTest(crit){
+  if(typeof crit==="number"||typeof crit==="boolean") return v=>{try{return compare(v,crit,"=");}catch(e){return false;}};
+  const s=String(crit); const m=s.match(/^(<=|>=|<>|=|<|>)(.*)$/);
+  let op="=",rhs=s; if(m){op=m[1];rhs=m[2];}
+  const rn=/^-?(\d+\.?\d*|\.\d+)$/.test(rhs.trim())?parseFloat(rhs):rhs;
+  return v=>{ try{ return compare(v,rn,op); }catch(e){ return false; } };
+}
+function reqRange(a){ if(!isRange(a)) throw FErr("#VALUE!"); return a.__range; }
+
+const FUNCS={
+  SUM:a=>numsOnly(flat(a).map(v=>typeof v==="string"&&v!==""&&/^-?[\d.]+$/.test(v.trim())?parseFloat(v):v)).reduce((s,v)=>s+v,0),
+  AVERAGE:a=>{const n=numsOnly(flat(a));if(!n.length)throw FErr("#DIV/0!");return n.reduce((s,v)=>s+v,0)/n.length;},
+  MIN:a=>{const n=numsOnly(flat(a));return n.length?Math.min(...n):0;},
+  MAX:a=>{const n=numsOnly(flat(a));return n.length?Math.max(...n):0;},
+  COUNT:a=>flat(a).filter(v=>typeof v==="number").length,
+  COUNTA:a=>flat(a).filter(v=>v!==""&&v!=null).length,
+  COUNTBLANK:a=>flat(a).filter(v=>v===""||v==null).length,
+  MEDIAN:a=>{const n=numsOnly(flat(a)).sort((x,y)=>x-y);if(!n.length)throw FErr("#NUM!");const m=n.length>>1;return n.length%2?n[m]:(n[m-1]+n[m])/2;},
+  PRODUCT:a=>numsOnly(flat(a)).reduce((s,v)=>s*v,1),
+  COUNTIF:a=>{const rng=flat([a[0]]);const t=criteriaTest(scalar(a[1]));return rng.filter(v=>v!==""&&t(v)).length;},
+  SUMIF:a=>{const rng=reqRange(a[0]).flat();const t=criteriaTest(scalar(a[1]));
+    const sums=a[2]?reqRange(a[2]).flat():rng;
+    let s=0;rng.forEach((v,i)=>{if(v!==""&&t(v)&&typeof sums[i]==="number")s+=sums[i];});return s;},
+  AVERAGEIF:a=>{const rng=reqRange(a[0]).flat();const t=criteriaTest(scalar(a[1]));
+    const src=a[2]?reqRange(a[2]).flat():rng;let s=0,c=0;
+    rng.forEach((v,i)=>{if(v!==""&&t(v)&&typeof src[i]==="number"){s+=src[i];c++;}});
+    if(!c)throw FErr("#DIV/0!");return s/c;},
+  IF:(a,vis,nodes)=>{const c=toBool(scalar(evalNode(nodes[0],vis)));
+    if(c)return nodes[1]!=null?scalar(evalNode(nodes[1],vis)):true;
+    return nodes[2]!=null?scalar(evalNode(nodes[2],vis)):false;},
+  IFERROR:(a,vis,nodes)=>{try{return scalar(evalNode(nodes[0],vis));}catch(e){return scalar(evalNode(nodes[1],vis));}},
+  AND:a=>flat(a).filter(v=>v!=="").every(v=>toBool(v)),
+  OR:a=>flat(a).filter(v=>v!=="").some(v=>toBool(v)),
+  NOT:a=>!toBool(scalar(a[0])),
+  ROUND:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return Math.round((n*f+(n>=0?1e-9:-1e-9)))/f;},
+  ROUNDUP:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return (n>=0?Math.ceil(n*f-1e-9):Math.floor(n*f+1e-9))/f;},
+  ROUNDDOWN:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return (n>=0?Math.floor(n*f+1e-9):Math.ceil(n*f-1e-9))/f;},
+  ABS:a=>Math.abs(toNum(scalar(a[0]))),
+  SQRT:a=>{const n=toNum(scalar(a[0]));if(n<0)throw FErr("#NUM!");return Math.sqrt(n);},
+  POWER:a=>Math.pow(toNum(scalar(a[0])),toNum(scalar(a[1]))),
+  MOD:a=>{const d=toNum(scalar(a[1]));if(d===0)throw FErr("#DIV/0!");const n=toNum(scalar(a[0]));return n-d*Math.floor(n/d);},
+  INT:a=>Math.floor(toNum(scalar(a[0]))),
+  PI:()=>Math.PI,
+  RAND:()=>Math.random(),
+  RANDBETWEEN:a=>{const lo=Math.ceil(toNum(scalar(a[0]))),hi=Math.floor(toNum(scalar(a[1])));return lo+Math.floor(Math.random()*(hi-lo+1));},
+  LEN:a=>toText(scalar(a[0])).length,
+  UPPER:a=>toText(scalar(a[0])).toUpperCase(),
+  LOWER:a=>toText(scalar(a[0])).toLowerCase(),
+  PROPER:a=>toText(scalar(a[0])).replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase()),
+  TRIM:a=>toText(scalar(a[0])).replace(/\s+/g," ").trim(),
+  LEFT:a=>toText(scalar(a[0])).slice(0,Math.max(0,Math.trunc(toNum(scalar(a[1]??1))))),
+  RIGHT:a=>{const s=toText(scalar(a[0]));const n=Math.max(0,Math.trunc(toNum(scalar(a[1]??1))));return n?s.slice(-n):"";},
+  MID:a=>{const s=toText(scalar(a[0]));const st=Math.trunc(toNum(scalar(a[1])));const n=Math.trunc(toNum(scalar(a[2])));if(st<1||n<0)throw FErr("#VALUE!");return s.slice(st-1,st-1+n);},
+  CONCATENATE:a=>flat(a).map(toText).join(""),
+  CONCAT:a=>flat(a).map(toText).join(""),
+  TEXTJOIN:a=>{const d=toText(scalar(a[0]));const ig=toBool(scalar(a[1]));
+    return flat(a.slice(2)).filter(v=>!ig||v!=="").map(toText).join(d);},
+  FIND:a=>{const i=toText(scalar(a[1])).indexOf(toText(scalar(a[0])),Math.trunc(toNum(scalar(a[2]??1)))-1);if(i<0)throw FErr("#VALUE!");return i+1;},
+  SUBSTITUTE:a=>toText(scalar(a[0])).split(toText(scalar(a[1]))).join(toText(scalar(a[2]))),
+  TODAY:()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)+25569;},
+  NOW:()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)+25569
+           +(d.getHours()*3600+d.getMinutes()*60+d.getSeconds())/86400;},
+  DATE:a=>{const y=Math.trunc(toNum(scalar(a[0]))),m=Math.trunc(toNum(scalar(a[1]))),d=Math.trunc(toNum(scalar(a[2])));
+    return Math.floor(Date.UTC(y,m-1,d)/86400000)+25569;},
+  YEAR:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCFullYear(),
+  MONTH:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCMonth()+1,
+  DAY:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCDate(),
+  DAYS:a=>Math.trunc(toNum(scalar(a[0])))-Math.trunc(toNum(scalar(a[1]))),
+  TEXT:a=>{const v=toNum(scalar(a[0]));const f=toText(scalar(a[1])).toLowerCase();
+    const dt=new Date((v-25569)*86400000);const p2=n=>String(n).padStart(2,"0");
+    return f.replace(/yyyy/g,dt.getUTCFullYear()).replace(/mm/g,p2(dt.getUTCMonth()+1)).replace(/dd/g,p2(dt.getUTCDate()));},
+  SUMIFS:a=>{const sums=reqRange(a[0]).flat();let mask=sums.map(()=>true);
+    for(let i=1;i+1<a.length||i+1===a.length;i+=2){ if(a[i]==null)break;
+      const rng=reqRange(a[i]).flat(); if(rng.length!==sums.length)throw FErr("#VALUE!");
+      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
+    let s=0;sums.forEach((v,j)=>{if(mask[j]&&typeof v==="number")s+=v;});return s;},
+  COUNTIFS:a=>{const first=reqRange(a[0]).flat();let mask=first.map(()=>true);
+    for(let i=0;i+1<a.length;i+=2){
+      const rng=reqRange(a[i]).flat(); if(rng.length!==first.length)throw FErr("#VALUE!");
+      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
+    return mask.filter(Boolean).length;},
+  AVERAGEIFS:a=>{const src=reqRange(a[0]).flat();let mask=src.map(()=>true);
+    for(let i=1;i+1<a.length;i+=2){
+      const rng=reqRange(a[i]).flat(); if(rng.length!==src.length)throw FErr("#VALUE!");
+      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
+    let s=0,c=0;src.forEach((v,j)=>{if(mask[j]&&typeof v==="number"){s+=v;c++;}});
+    if(!c)throw FErr("#DIV/0!");return s/c;},
+  XLOOKUP:(a,vis,nodes)=>{
+    const key=scalar(evalNode(nodes[0],vis));
+    const lr=reqRange(evalNode(nodes[1],vis)).flat();
+    const rr=reqRange(evalNode(nodes[2],vis)).flat();
+    if(lr.length!==rr.length)throw FErr("#VALUE!");
+    for(let i=0;i<lr.length;i++){try{if(compare(lr[i],key,"="))return rr[i];}catch(e){}}
+    if(nodes[3]!=null)return scalar(evalNode(nodes[3],vis));
+    throw FErr("#N/A");},
+  VLOOKUP:a=>{
+    const key=scalar(a[0]); const tbl=reqRange(a[1]); const col=Math.trunc(toNum(scalar(a[2])));
+    const exact = a.length>=4 ? !toBool(scalar(a[3])) : false;
+    if(col<1||col>tbl[0].length) throw FErr("#REF!");
+    if(exact){
+      for(const row of tbl){ try{ if(compare(row[0],key,"=")) return row[col-1]; }catch(e){} }
+      throw FErr("#N/A");
+    } else {
+      let best=null;
+      for(const row of tbl){ try{ if(compare(row[0],key,"<=")) best=row; else break; }catch(e){} }
+      if(!best) throw FErr("#N/A"); return best[col-1];
+    } },
+  HLOOKUP:a=>{
+    const key=scalar(a[0]); const tbl=reqRange(a[1]); const rIdx=Math.trunc(toNum(scalar(a[2])));
+    const exact = a.length>=4 ? !toBool(scalar(a[3])) : false;
+    if(rIdx<1||rIdx>tbl.length) throw FErr("#REF!");
+    const hdr=tbl[0];
+    if(exact){ for(let c=0;c<hdr.length;c++){try{if(compare(hdr[c],key,"="))return tbl[rIdx-1][c];}catch(e){}} throw FErr("#N/A"); }
+    let bc=-1; for(let c=0;c<hdr.length;c++){try{if(compare(hdr[c],key,"<="))bc=c;else break;}catch(e){}}
+    if(bc<0)throw FErr("#N/A"); return tbl[rIdx-1][bc]; },
+  INDEX:a=>{const tbl=reqRange(a[0]);const r=Math.trunc(toNum(scalar(a[1])));const c=a[2]!=null?Math.trunc(toNum(scalar(a[2]))):1;
+    if(r<1||r>tbl.length||c<1||c>tbl[0].length)throw FErr("#REF!");return tbl[r-1][c-1];},
+  MATCH:a=>{const key=scalar(a[0]);const arr=reqRange(a[1]).flat();
+    const type=a[2]!=null?Math.trunc(toNum(scalar(a[2]))):1;
+    if(type===0){for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,"="))return i+1;}catch(e){}}throw FErr("#N/A");}
+    if(type===1){let b=-1;for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,"<="))b=i;else break;}catch(e){}}if(b<0)throw FErr("#N/A");return b+1;}
+    let b=-1;for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,">="))b=i;else break;}catch(e){}}if(b<0)throw FErr("#N/A");return b+1;},
+  ISNUMBER:a=>typeof scalar(a[0])==="number",
+  ISTEXT:a=>typeof scalar(a[0])==="string"&&scalar(a[0])!=="",
+  ISBLANK:a=>scalar(a[0])==="",
+};
+const LAZY = new Set(["IF","IFERROR","XLOOKUP"]);
+function callFn(name,argNodes,visiting){
+  const fn=FUNCS[name]; if(!fn) throw FErr("#NAME?");
+  if(LAZY.has(name)) return fn(null,visiting,argNodes);
+  const args=argNodes.map(n=>evalNode(n,visiting));
+  return fn(args);
+}
+
+/* ================= DISPLAY ================= */
+function fmtNum(n){
+  if(Number.isInteger(n)&&Math.abs(n)<1e15) return String(n);
+  let s=n.toPrecision(10); if(s.includes(".")) s=s.replace(/0+$/,"").replace(/\.$/,"");
+  return s;
+}
+function displayOf(ref){
+  try{
+    const v=cellValue(ref,new Set());
+    if(v==="") return {text:"",cls:""};
+    if(typeof v==="number") return {text:fmtNum(v),cls:"num"};
+    if(typeof v==="boolean") return {text:v?"TRUE":"FALSE",cls:"bool"};
+    return {text:String(v),cls:""};
+  }catch(e){ return {text:isErr(e)?e.__err:"#VALUE!",cls:"err"}; }
+}
+
+/* ========================= ENGINE PUBLIC API =========================
+   The formula engine is exposed as a single namespace object. Everything
+   the UI needs — coordinate math, cell CRUD, evaluation, display formatting,
+   introspection for the checker — is reached through `Engine.*`.
+   `shiftFormula` is attached below where it's defined.
+   ==================================================================== */
+const Engine = {
+  get COLS(){return COLS;}, get ROWS(){return ROWS;}, COLNAMES,
+  refOf, parseRef,
+  getCell, setRaw,
+  cellValue, evalStr,
+  tokenize, parse, evalNode,
+  rangeCells, displayOf, fmtNum,
+  isErr, FErr,
+  get FUNCS(){return FUNCS;},
+  get _cells(){return cells;},
+};
+
+/* =========================================================================
+   GRID UI  —  consumes ENGINE via the public API. Owns DOM, selection,
+   keyboard, mouse, formula bar, fill handle, clipboard, in-cell editing.
+   ========================================================================= */
+const grid=document.getElementById("grid");
+const nameBox=document.getElementById("namebox");
+const fInput=document.getElementById("formulainput");
+const TD={};
+function buildGrid(){
+  const thead=document.createElement("thead");
+  const hr=document.createElement("tr");
+  const corner=document.createElement("th"); corner.className="corner"; hr.appendChild(corner);
+  COLNAMES.forEach(cn=>{const th=document.createElement("th");th.textContent=cn;th.dataset.col=cn;hr.appendChild(th);});
+  thead.appendChild(hr); grid.appendChild(thead);
+  const tb=document.createElement("tbody");
+  for(let r=1;r<=ROWS;r++){
+    const tr=document.createElement("tr");
+    const th=document.createElement("th"); th.textContent=r; th.dataset.row=r; tr.appendChild(th);
+    for(let c=0;c<COLS;c++){
+      const td=document.createElement("td"); const ref=refOf(r,c);
+      td.dataset.ref=ref; TD[ref]=td; tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  }
+  grid.appendChild(tb);
+}
+function renderAll(){
+  for(const ref in TD){
+    const td=TD[ref], d=displayOf(ref), c=getCell(ref);
+    td.textContent=d.text;
+    td.className=d.cls+(c&&c.b?" b":"")+(c&&c.i?" i":"")+(c&&c.u?" u":"");
+    if(targetRefs.includes(ref)) td.classList.add("target");
+  }
+  paintSelection();
+}
+function selRange(){
+  const a=sel, b=selEnd||sel;
+  return {r1:Math.min(a.r,b.r),r2:Math.max(a.r,b.r),c1:Math.min(a.c,b.c),c2:Math.max(a.c,b.c)};
+}
+function paintSelection(){
+  document.querySelectorAll("#grid td.sel,#grid td.insel").forEach(td=>td.classList.remove("sel","insel"));
+  document.querySelectorAll("#grid th.hl").forEach(th=>th.classList.remove("hl"));
+  const {r1,r2,c1,c2}=selRange();
+  for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++) TD[refOf(r,c)].classList.add("insel");
+  const aref=refOf(sel.r,sel.c);
+  TD[aref].classList.add("sel");
+  for(let c=c1;c<=c2;c++) document.querySelector(`th[data-col="${COLNAMES[c]}"]`).classList.add("hl");
+  for(let r=r1;r<=r2;r++) document.querySelector(`th[data-row="${r}"]`).classList.add("hl");
+  nameBox.value=aref;
+  const cc=getCell(aref); fInput.value=cc&&cc.raw!=null?cc.raw:"";
+  updateAgg(); updateToolbar(); positionFillHandle();
+}
+function updateAgg(){
+  const {r1,r2,c1,c2}=selRange(); const el=document.getElementById("st-agg");
+  if(r1===r2&&c1===c2){el.textContent="";return;}
+  let sum=0,cnt=0,n=0;
+  for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++){
+    try{const v=cellValue(refOf(r,c),new Set());
+      if(v!==""&&v!=null)cnt++;
+      if(typeof v==="number"){sum+=v;n++;}
+    }catch(e){}
+  }
+  el.textContent=n?`Sum: ${fmtNum(sum)}   ·   Average: ${fmtNum(sum/n)}   ·   Count: ${cnt}`:`Count: ${cnt}`;
+}
+function updateToolbar(){
+  const c=getCell(refOf(sel.r,sel.c))||{};
+  document.getElementById("btnBold").classList.toggle("active",!!c.b);
+  document.getElementById("btnItalic").classList.toggle("active",!!c.i);
+  document.getElementById("btnUnder").classList.toggle("active",!!c.u);
+}
+function select(r,c,extend){
+  r=Math.max(1,Math.min(ROWS,r)); c=Math.max(0,Math.min(COLS-1,c));
+  if(extend){selEnd={r,c};} else {sel={r,c};selEnd=null;}
+  paintSelection();
+  const td=TD[refOf(extend?selEnd.r:sel.r,extend?selEnd.c:sel.c)];
+  td.scrollIntoView({block:"nearest",inline:"nearest"});
+}
+
+/* ---- point mode ---- */
+let point=null;
+function lastMeaningful(s){let i=s.length-1;while(i>=0&&s[i]===" ")i--;return i>=0?s[i]:"";}
+function refInsertable(s){return s[0]==="="&&"=+-*/^&(,:<>".includes(lastMeaningful(s));}
+function pointText(){const a=point.base,b=point.cur;
+  const r1=Math.min(a.r,b.r),r2=Math.max(a.r,b.r),c1=Math.min(a.c,b.c),c2=Math.max(a.c,b.c);
+  return (r1===r2&&c1===c2)?refOf(r1,c1):refOf(r1,c1)+":"+refOf(r2,c2);}
+function paintPoint(){document.querySelectorAll("#grid td.pt").forEach(t=>t.classList.remove("pt"));
+  if(!point)return;const a=point.base,b=point.cur;
+  for(let r=Math.min(a.r,b.r);r<=Math.max(a.r,b.r);r++)
+    for(let c=Math.min(a.c,b.c);c<=Math.max(a.c,b.c);c++)TD[refOf(r,c)].classList.add("pt");}
+function applyPoint(){const el=point.inputEl;
+  el.value=el.value.slice(0,point.start)+pointText();
+  el.setSelectionRange(el.value.length,el.value.length);
+  if(el!==fInput)fInput.value=el.value;
+  TD[pointText().split(":").pop()]?.scrollIntoView({block:"nearest",inline:"nearest"});
+  paintPoint();}
+function movePoint(dr,dc,extend){
+  point.cur={r:Math.max(1,Math.min(ROWS,point.cur.r+dr)),c:Math.max(0,Math.min(COLS-1,point.cur.c+dc))};
+  if(!extend)point.base={...point.cur};
+  applyPoint();}
+function endPoint(){if(point){point=null;paintPoint();}}
+function handleEditorArrow(e,inputEl,home){
+  const dr=e.key==="ArrowDown"?1:e.key==="ArrowUp"?-1:0;
+  const dc=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;
+  if(point&&point.inputEl===inputEl){e.preventDefault();movePoint(dr,dc,e.shiftKey);return true;}
+  const v=inputEl.value;
+  const atEnd=inputEl.selectionStart===v.length&&inputEl.selectionEnd===v.length;
+  if(atEnd&&refInsertable(v)){
+    e.preventDefault();
+    point={inputEl,start:v.length,base:{...home},cur:{...home}};
+    movePoint(dr,dc,false);
+    return true;
+  }
+  return false;
+}
+function pointFromMouse(inputEl,td){
+  const p=parseRef(td.dataset.ref);
+  if(!point||point.inputEl!==inputEl)point={inputEl,start:inputEl.value.length,base:p,cur:p};
+  else {point.base={...p};point.cur={...p};}
+  applyPoint();
+  const move=ev=>{const t=ev.target.closest&&ev.target.closest("td");
+    if(t){point.cur=parseRef(t.dataset.ref);applyPoint();}};
+  const up=()=>{document.removeEventListener("mouseover",move);document.removeEventListener("mouseup",up);};
+  document.addEventListener("mouseover",move);document.addEventListener("mouseup",up);
+}
+
+/* ---- relative-reference formula shifting ---- */
+function shiftFormula(raw,dr,dc){
+  if(!raw||raw[0]!=="=")return raw;
+  const s=raw; let out="="; let i=1; let inStr=false;
+  while(i<s.length){
+    const ch=s[i];
+    if(inStr){ out+=ch; if(ch==='"'){ if(s[i+1]==='"'){out+='"';i+=2;continue;} inStr=false;} i++; continue; }
+    if(ch==='"'){inStr=true;out+=ch;i++;continue;}
+    const m=/^(\$?)([A-Za-z]{1,2})(\$?)(\d{1,3})/.exec(s.slice(i));
+    const prevOK=!/[A-Za-z0-9_.$]/.test(s[i-1]||"");
+    if(m&&prevOK){
+      const after=s[i+m[0].length]||"";
+      if(!/[A-Za-z0-9_(]/.test(after)){
+        const cAbs=m[1]==="$", rAbs=m[3]==="$";
+        let c=COLNAMES.indexOf(m[2].toUpperCase()), r=+m[4];
+        if(c>=0){
+          if(!cAbs)c+=dc; if(!rAbs)r+=dr;
+          if(c<0||c>=COLS||r<1||r>ROWS) out+="#REF!";
+          else out+=(cAbs?"$":"")+COLNAMES[c]+(rAbs?"$":"")+r;
+          i+=m[0].length; continue;
+        }
+      }
+    }
+    out+=ch;i++;
+  }
+  return out;
+}
+Engine.shiftFormula = shiftFormula;
+
+/* ---- clipboard (Ctrl+C / Ctrl+V) ---- */
+let clip=null;
+function copySelection(){
+  const {r1,r2,c1,c2}=selRange();
+  const g=[];
+  for(let r=r1;r<=r2;r++){const row=[];
+    for(let c=c1;c<=c2;c++){const cc=getCell(refOf(r,c))||{};row.push({raw:cc.raw||"",b:!!cc.b,i:!!cc.i,u:!!cc.u});}
+    g.push(row);}
+  clip={rows:r2-r1+1,cols:c2-c1+1,srcR:r1,srcC:c1,cells:g};
+  document.getElementById("st-mode").textContent="Copied "+clip.rows+"×"+clip.cols;
+}
+function pasteClip(){
+  if(!clip)return;
+  for(let r=0;r<clip.rows;r++)for(let c=0;c<clip.cols;c++){
+    const tr=sel.r+r,tc=sel.c+c; if(tr>ROWS||tc>=COLS)continue;
+    const src=clip.cells[r][c]; const ref=refOf(tr,tc);
+    setRaw(ref,shiftFormula(src.raw,(sel.r+r)-(clip.srcR+r),(sel.c+c)-(clip.srcC+c)));
+    if(src.b||src.i||src.u){const cc=cells[ref]=cells[ref]||{raw:""};cc.b=src.b;cc.i=src.i;cc.u=src.u;}
+  }
+  selEnd={r:Math.min(ROWS,sel.r+clip.rows-1),c:Math.min(COLS-1,sel.c+clip.cols-1)};
+  renderAll();
+}
+/* ---- fill handle ---- */
+const fillHandle=document.getElementById("fillhandle");
+let filling=null;
+function positionFillHandle(){
+  if(editing){fillHandle.style.display="none";return;}
+  const {r2,c2}=selRange(); const td=TD[refOf(r2,c2)];
+  fillHandle.style.display="block";
+  fillHandle.style.left=(td.offsetLeft+td.offsetWidth-5)+"px";
+  fillHandle.style.top=(td.offsetTop+td.offsetHeight-5)+"px";
+}
+function clearFillPrev(){document.querySelectorAll("#grid td.fillprev").forEach(t=>t.classList.remove("fillprev"));}
+function fillTargetFor(p,src){
+  if(p.r>src.r2&&p.c>=src.c1&&p.c<=src.c2) return {dir:"down",r1:src.r2+1,r2:p.r,c1:src.c1,c2:src.c2};
+  if(p.r<src.r1&&p.c>=src.c1&&p.c<=src.c2) return {dir:"up",r1:p.r,r2:src.r1-1,c1:src.c1,c2:src.c2};
+  if(p.c>src.c2&&p.r>=src.r1&&p.r<=src.r2) return {dir:"right",c1:src.c2+1,c2:p.c,r1:src.r1,r2:src.r2};
+  if(p.c<src.c1&&p.r>=src.r1&&p.r<=src.r2) return {dir:"left",c1:p.c,c2:src.c1-1,r1:src.r1,r2:src.r2};
+  return null;
+}
+fillHandle.addEventListener("mousedown",e=>{
+  e.preventDefault();e.stopPropagation();
+  filling={src:selRange(),tgt:null};
+  const move=ev=>{
+    const t=ev.target.closest&&ev.target.closest("td"); if(!t)return;
+    const p=parseRef(t.dataset.ref);
+    filling.tgt=fillTargetFor(p,filling.src);
+    clearFillPrev();
+    if(filling.tgt){const g=filling.tgt;
+      for(let r=g.r1;r<=g.r2;r++)for(let c=g.c1;c<=g.c2;c++)TD[refOf(r,c)].classList.add("fillprev");}
+  };
+  const up=()=>{
+    document.removeEventListener("mouseover",move);document.removeEventListener("mouseup",up);
+    clearFillPrev();
+    if(filling&&filling.tgt)applyFill(filling.src,filling.tgt);
+    filling=null;
+  };
+  document.addEventListener("mouseover",move);document.addEventListener("mouseup",up);
+});
+function applyFill(src,tgt){
+  const H=src.r2-src.r1+1, W=src.c2-src.c1+1;
+  for(let r=tgt.r1;r<=tgt.r2;r++)for(let c=tgt.c1;c<=tgt.c2;c++){
+    let sr,scol;
+    if(tgt.dir==="down"){ sr=src.r1+((r-src.r1)%H); scol=c; }
+    else if(tgt.dir==="up"){ sr=src.r2-((src.r2-r)%H); scol=c; }
+    else if(tgt.dir==="right"){ scol=src.c1+((c-src.c1)%W); sr=r; }
+    else { scol=src.c2-((src.c2-c)%W); sr=r; }
+    const s=getCell(refOf(sr,scol))||{};
+    const ref=refOf(r,c);
+    setRaw(ref,shiftFormula(s.raw||"",r-sr,c-scol));
+    if(s.b||s.i||s.u){const cc=cells[ref]=cells[ref]||{raw:""};cc.b=s.b;cc.i=s.i;cc.u=s.u;}
+  }
+  sel={r:src.r1,c:src.c1};
+  selEnd={r:Math.max(src.r2,tgt.r2),c:Math.max(src.c2,tgt.c2)};
+  if(tgt.dir==="up")sel={r:tgt.r1,c:src.c1},selEnd={r:src.r2,c:src.c2};
+  if(tgt.dir==="left")sel={r:src.r1,c:tgt.c1},selEnd={r:src.r2,c:src.c2};
+  renderAll();
+}
+/* ---- diagnostics for attempt-aware feedback ---- */
+function lev(a,b){const m=[...Array(a.length+1)].map((_,i)=>[i,...Array(b.length)]);
+  for(let j=0;j<=b.length;j++)m[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)
+    m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return m[a.length][b.length];}
+function collectRanges(node,out){out=out||[];if(!node||typeof node!=="object")return out;
+  if(node.k==="range")out.push(node.a+":"+node.b);
+  if(node.l)collectRanges(node.l,out);if(node.r)collectRanges(node.r,out);
+  if(node.e)collectRanges(node.e,out);
+  if(node.args)node.args.forEach(x=>collectRanges(x,out));
+  return out;}
+function nearRange(a,b){
+  const pa=a.split(":").map(parseRef),pb=b.split(":").map(parseRef);
+  if(pa.some(x=>!x)||pb.some(x=>!x))return false;
+  const d=Math.abs(pa[0].r-pb[0].r)+Math.abs(pa[1].r-pb[1].r)+Math.abs(pa[0].c-pb[0].c)+Math.abs(pa[1].c-pb[1].c);
+  return d>0&&d<=2;}
+function diagnose(ex,raw,err,exp,solution){
+  const tips=[]; const up=raw.toUpperCase();
+  if(err){
+    const code=isErr(err)?err.__err:"#VALUE!";
+    if(code==="#NAME?"){
+      (up.match(/([A-Z]+)\(/g)||[]).forEach(f=>{const name=f.slice(0,-1);
+        if(!FUNCS[name]){const sug=Object.keys(FUNCS).find(k=>lev(k,name)<=2);
+          tips.push("Unknown function <code>"+esc(name)+"</code>"+(sug?" — did you mean <code>"+sug+"</code>?":"."));}});
+      if(!tips.length)tips.push("A name in the formula isn't recognized — check spelling and that text is quoted.");
+    }
+    if(code==="#VALUE!"&&/,\s*(<=|>=|<>|<|>)[^"=]/.test(raw))
+      tips.push('Criteria with an operator must be a quoted string: <code>"&gt;=50"</code>.');
+    if(code==="#DIV/0!")tips.push("A divisor evaluates to 0 or blank — check the denominator cell.");
+    if(code==="#N/A")tips.push("Lookup value not found — check exact spelling; use FALSE (VLOOKUP) or 0 (MATCH) for exact match.");
+    if(code==="#REF!")tips.push("A reference is invalid or circular — the formula may reference its own cell.");
+  } else {
+    try{
+      const uR=collectRanges(parse(tokenize(raw.slice(1)))).sort();
+      const sR=collectRanges(parse(tokenize(solution.slice(1)))).sort();
+      if(sR.length&&uR.length===sR.length){
+        for(let i=0;i<uR.length;i++)
+          if(uR[i]!==sR[i]&&nearRange(uR[i],sR[i])){
+            tips.push("Range <code>"+esc(uR[i])+"</code> looks off by one row or column — re-check the boundaries against the data.");break;}
+      }
+      if(sR.length&&!uR.length)tips.push("Expected a range argument (<code>start:end</code>), not individual cells.");
+      if(typeof exp==="number"&&new RegExp("(^|[^0-9.A-Z$])"+String(exp).replace(".","\\.")+"([^0-9.]|$)").test(up))
+        tips.push("The correct number appears typed literally — compute it from cell references instead.");
+    }catch(e){}
+  }
+  return tips.length?"<br>• "+tips.join("<br>• "):"";
+}
+
+/* in-cell editing */
+function startEdit(ref, initial){
+  if(currentEx&&currentEx.pick&&currentEx.pick[ref]){ startPick(ref); return; }
+  if(editing) commitEdit(true);
+  editing=ref;
+  const td=TD[ref];
+  const inp=document.createElement("input");
+  const c=getCell(ref);
+  inp.value = initial!=null ? initial : (c&&c.raw!=null?c.raw:"");
+  td.appendChild(inp); inp.focus();
+  if(initial!=null) inp.setSelectionRange(inp.value.length,inp.value.length); else inp.select();
+  const home=parseRef(ref);
+  const typedStart = initial!=null;
+  inp.addEventListener("input",()=>{fInput.value=inp.value; endPoint();});
+  inp.addEventListener("keydown",e=>{
+    const arrows=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
+    if(arrows.includes(e.key)){
+      if(handleEditorArrow(e,inp,home)){e.stopPropagation();return;}
+      if(typedStart&&inp.value[0]!=="="){
+        e.preventDefault();e.stopPropagation();
+        const dr=e.key==="ArrowDown"?1:e.key==="ArrowUp"?-1:0;
+        const dc=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;
+        commitEdit(true);select(sel.r+dr,sel.c+dc);return;
+      }
+      e.stopPropagation();return;
+    }
+    if(point&&e.key!=="Shift")endPoint();
+    if(e.key==="Enter"){e.preventDefault();commitEdit(true);select(sel.r+1,sel.c);}
+    else if(e.key==="Tab"){e.preventDefault();commitEdit(true);select(sel.r,sel.c+1);}
+    else if(e.key==="Escape"){e.preventDefault();commitEdit(false);}
+    e.stopPropagation();
+  });
+  inp.addEventListener("blur",()=>{ if(editing===ref) commitEdit(true); });
+  fillHandle.style.display="none";
+  document.getElementById("st-mode").textContent="Edit";
+}
+function startPick(ref){
+  if(editing) commitEdit(true);
+  editing=ref;
+  const td=TD[ref];
+  const selEl=document.createElement("select");
+  const cur=(getCell(ref)||{}).raw||"";
+  const opts=[""].concat(currentEx.pick[ref].options);
+  opts.forEach(o=>{const op=document.createElement("option");op.value=o;op.textContent=o||"— select —";if(o===cur)op.selected=true;selEl.appendChild(op);});
+  td.textContent=""; td.appendChild(selEl); selEl.focus();
+  const done=save=>{ if(editing!==ref)return; editing=null;
+    if(save)setRaw(ref,selEl.value); selEl.remove(); renderAll();
+    document.getElementById("st-mode").textContent="Ready"; };
+  selEl.addEventListener("change",()=>done(true));
+  selEl.addEventListener("blur",()=>done(true));
+  selEl.addEventListener("keydown",e=>{ if(e.key==="Escape"){e.preventDefault();done(false);} e.stopPropagation(); });
+  document.getElementById("st-mode").textContent="Pick";
+}
+function commitEdit(save){
+  if(!editing) return;
+  endPoint();
+  const ref=editing; editing=null;
+  const td=TD[ref]; const inp=td.querySelector("input,select");
+  if(inp){ if(save) setRaw(ref,inp.value); inp.remove(); }
+  document.getElementById("st-mode").textContent="Ready";
+  renderAll();
+}
+
+/* events */
+grid.addEventListener("mousedown",e=>{
+  const td=e.target.closest("td"); if(!td)return;
+  const activeInp = editing ? TD[editing].querySelector("input")
+                  : (document.activeElement===fInput ? fInput : null);
+  if(activeInp&&activeInp.tagName==="INPUT"){
+    const v=activeInp.value;
+    if(v[0]==="="&&(refInsertable(v)||(point&&point.inputEl===activeInp))){
+      e.preventDefault();
+      pointFromMouse(activeInp,td);
+      return;
+    }
+    if(editing)return;
+  }
+  const p=parseRef(td.dataset.ref);
+  if(e.shiftKey) select(p.r,p.c,true); else select(p.r,p.c);
+  if(currentEx&&currentEx.pick&&currentEx.pick[td.dataset.ref]){ startPick(td.dataset.ref); return; }
+  const move=ev=>{const t=ev.target.closest&&ev.target.closest("td");if(t){const q=parseRef(t.dataset.ref);select(q.r,q.c,true);}};
+  const up=()=>{document.removeEventListener("mouseover",move);document.removeEventListener("mouseup",up);};
+  document.addEventListener("mouseover",move); document.addEventListener("mouseup",up);
+});
+grid.addEventListener("dblclick",e=>{
+  const td=e.target.closest("td"); if(!td)return;
+  const p=parseRef(td.dataset.ref); select(p.r,p.c); startEdit(td.dataset.ref);
+});
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("view-app").classList.contains("on"))return;
+  if(editing||document.activeElement===fInput||document.activeElement===nameBox)return;
+  const k=e.key;
+  if(k==="ArrowUp"||k==="ArrowDown"||k==="ArrowLeft"||k==="ArrowRight"){
+    e.preventDefault();
+    const base=e.shiftKey?(selEnd||sel):sel;
+    const nr=base.r+(k==="ArrowDown"?1:k==="ArrowUp"?-1:0);
+    const nc=base.c+(k==="ArrowRight"?1:k==="ArrowLeft"?-1:0);
+    select(nr,nc,e.shiftKey); return;
+  }
+  if(k==="Enter"){e.preventDefault();select(sel.r+1,sel.c);return;}
+  if(k==="Tab"){e.preventDefault();select(sel.r,sel.c+(e.shiftKey?-1:1));return;}
+  if(k==="F2"){e.preventDefault();startEdit(refOf(sel.r,sel.c));return;}
+  if(k==="Delete"||k==="Backspace"){e.preventDefault();
+    const {r1,r2,c1,c2}=selRange();
+    for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)setRaw(refOf(r,c),"");
+    renderAll();return;}
+  if((e.ctrlKey||e.metaKey)&&/^c$/i.test(k)){e.preventDefault();copySelection();return;}
+  if((e.ctrlKey||e.metaKey)&&/^v$/i.test(k)){e.preventDefault();pasteClip();return;}
+  if((e.ctrlKey||e.metaKey)&&/^[biu]$/i.test(k)){e.preventDefault();toggleStyle(k.toLowerCase());return;}
+  if(!e.ctrlKey&&!e.metaKey&&!e.altKey&&k.length===1){ startEdit(refOf(sel.r,sel.c),k); e.preventDefault(); }
+});
+fInput.addEventListener("keydown",e=>{
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
+    if(handleEditorArrow(e,fInput,sel))return;
+    return;
+  }
+  if(point&&point.inputEl===fInput&&e.key!=="Shift")endPoint();
+  if(e.key==="Enter"){e.preventDefault();endPoint();setRaw(refOf(sel.r,sel.c),fInput.value);renderAll();select(sel.r+1,sel.c);grid.focus();}
+  if(e.key==="Escape"){e.preventDefault();endPoint();paintSelection();e.target.blur();}
+});
+fInput.addEventListener("blur",()=>{ if(point&&point.inputEl===fInput)endPoint(); });
+nameBox.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();const p=parseRef(nameBox.value);if(p)select(p.r,p.c);e.target.blur();}
+});
+function toggleStyle(s){
+  const {r1,r2,c1,c2}=selRange();
+  const anchor=getCell(refOf(sel.r,sel.c))||{}; const on=!anchor[s];
+  for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++){const ref=refOf(r,c);(cells[ref]=cells[ref]||{raw:cells[ref]?cells[ref].raw:""})[s]=on;}
+  renderAll();
+}
+document.getElementById("btnBold").onclick=()=>toggleStyle("b");
+document.getElementById("btnItalic").onclick=()=>toggleStyle("i");
+document.getElementById("btnUnder").onclick=()=>toggleStyle("u");
+document.getElementById("btnClear").onclick=()=>{const {r1,r2,c1,c2}=selRange();for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)delete cells[refOf(r,c)];renderAll();};
+document.getElementById("btnClearAll").onclick=()=>{cells={};if(!currentEx)targetRefs=[];renderAll();};
+
+/* panel tabs */
+document.querySelectorAll("#paneltabs button").forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll("#paneltabs button").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll(".pbody").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");document.getElementById("tab-"+b.dataset.tab).classList.add("on");};
+});
+
+/* ================= EXERCISES & COURSES ================= */
+/* Shared concept text — variants of the same formula reuse this so the concept panel stays consistent across a deep practice pack. */
+const SUM_CONCEPT = "<p><b class='term'>SUM</b> adds every number in its arguments. Arguments can be single cells, ranges, or a mix.</p><span class='formula'>=SUM(range)<br>=SUM(A1, A3, B1:B5)</span><p>Text and blank cells inside a range are ignored.</p>";
+const AVERAGE_CONCEPT = "<p><b class='term'>AVERAGE</b> returns the arithmetic mean of the numeric values in its arguments — the sum divided by the count of numbers.</p><span class='formula'>=AVERAGE(range)</span><p>Blank and text cells are excluded from both the sum and the count. In finance this is the workhorse for peer-group averages (comps), consensus estimates, historical baselines, and moving averages.</p>";
+const MINMAX_CONCEPT = "<p><b class='term'>MAX</b> and <b class='term'>MIN</b> return the largest and smallest numbers in a range — used individually to identify highs and lows, or subtracted to compute a spread.</p><span class='formula'>=MAX(range)<br>=MIN(range)<br>=MAX(range)-MIN(range)</span><p>Finance uses: 52-week highs / lows, best or worst quarter, yield-spread ranges, sector-return dispersion, bull-case and bear-case broker targets.</p>";
+
+const EX={
+ /* --- SUM · Block A: five easy variants (2-column, direct SUM) --- */
+ sum:{lvl:"easy",title:"TCS — Weekly billing (₹ Cr)",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"Five daily TCS billing figures. Compute the weekly total in B9. Rows 7-8 are yours to use as workspace if you want to sketch anything.",
+  data:{A1:"Day",B1:"Billing (₹ Cr)",A2:"Mon",B2:340,A3:"Tue",B3:358,A4:"Wed",B4:342,A5:"Thu",B5:371,A6:"Fri",B6:365,A9:"Weekly total"},
+  target:"B9",requires:["SUM("],solution:"=SUM(B2:B6)",hint:"A range is written start:end — e.g. B2:B6."},
+ sum_quarterly:{lvl:"easy",title:"Amazon — Annual revenue FY23 (US$ B)",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"Four quarterly revenue figures for Amazon FY23. Sum to the annual total in B8. Rows 6-7 are workspace.",
+  data:{A1:"Quarter",B1:"Revenue (US$ B)",A2:"Q1 2023",B2:127.4,A3:"Q2 2023",B3:134.4,A4:"Q3 2023",B4:143.1,A5:"Q4 2023",B5:170.0,A8:"FY23 revenue"},
+  target:"B8",requires:["SUM("],solution:"=SUM(B2:B5)",hint:"SUM the four quarters."},
+ sum_weekly:{lvl:"easy",title:"Zomato — Weekly orders (000s)",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"Zomato daily order volume across a full week. Compute the weekly total in B11. Rows 9-10 are workspace.",
+  data:{A1:"Day",B1:"Orders (000s)",A2:"Mon",B2:1240,A3:"Tue",B3:1180,A4:"Wed",B4:1310,A5:"Thu",B5:1420,A6:"Fri",B6:1890,A7:"Sat",B7:2340,A8:"Sun",B8:2510,A11:"Weekly total"},
+  target:"B11",requires:["SUM("],solution:"=SUM(B2:B8)",hint:"Range Mon through Sun — seven values."},
+ sum_regions_blank:{lvl:"easy",title:"HDFC Bank — Regional deposits with a pending line (₹ Cr)",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"Six regional deposit figures for HDFC Bank. One row (Chennai) says 'data pending' — text that SUM ignores automatically. Total in B10. Row 8-9 are workspace.",
+  data:{A1:"Region",B1:"Deposits (₹ Cr)",A2:"Mumbai",B2:380000,A3:"Delhi NCR",B3:290000,A4:"Bangalore",B4:210000,A5:"Chennai",B5:"data pending",A6:"Hyderabad",B6:155000,A7:"Kolkata",B7:130000,A10:"Total (available)"},
+  target:"B10",requires:["SUM("],solution:"=SUM(B2:B7)",hint:"SUM the whole B2:B7 range — SUM skips text cells automatically."},
+ sum_per_month:{lvl:"easy",title:"Reliance — Average monthly revenue FY24 (₹ Cr)",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"Reliance FY24 quarterly revenue. Compute the average MONTHLY revenue in B8 — SUM the four quarters and divide by 12. Rows 6-7 are workspace.",
+  data:{A1:"Quarter",B1:"Revenue (₹ Cr)",A2:"Q1 FY24",B2:231132,A3:"Q2 FY24",B3:231886,A4:"Q3 FY24",B4:227853,A5:"Q4 FY24",B5:236533,A8:"Avg monthly rev"},
+  target:"B8",requires:["SUM("],solution:"=SUM(B2:B5)/12",hint:"Annual = SUM(quarters). Monthly average = annual / 12. Wrap the SUM and divide."},
+
+ /* --- SUM · Block B: five case studies (multi-column, business questions) --- */
+ sum_case_opex:{lvl:"medium",title:"Case: Reliance P&L — Total operating expenses",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"You're on the Energy coverage team. Reliance just filed FY24 annuals and your MD is prepping a client update for Aramco tomorrow morning. She wants one number by end of day: total operating expenses.\n\nThe finance intern pulled the P&L from Capital IQ into the sheet — line items in column A, category tag in column B (Revenue / COGS / OpEx), FY24 rupees in column C.\n\nSum the OpEx-tagged rows into C15. This feeds the operating-leverage discussion, so the number needs to be right, not close. Rows 13-14 are your workspace.",
+  data:{A1:"Line item",B1:"Category",C1:"FY24 (₹ Cr)",A2:"Revenue from operations",B2:"Revenue",C2:875000,A3:"Other operating income",B3:"Revenue",C3:15000,A4:"Cost of materials consumed",B4:"COGS",C4:480000,A5:"Purchases of stock-in-trade",B5:"COGS",C5:190000,A6:"Changes in inventory",B6:"COGS",C6:-5000,A7:"Employee benefits expense",B7:"OpEx",C7:32000,A8:"Finance costs",B8:"OpEx",C8:24000,A9:"Depreciation & amortization",B9:"OpEx",C9:45000,A10:"Selling, general & admin",B10:"OpEx",C10:38000,A11:"Research & development",B11:"OpEx",C11:5500,A12:"Other expenses",B12:"OpEx",C12:12500,A15:"Total OpEx"},
+  target:"C15",requires:["SUM("],solution:"=SUM(C7:C12)",hint:"Column B labels the category. Rows 7 through 12 are all tagged 'OpEx' — SUM their column C values."},
+ sum_case_portfolio_div:{lvl:"medium",title:"Case: Equity portfolio — Total annual dividend income (₹)",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"10 stock positions with shares held, dividend per share, and pre-computed annual dividend income (column D). Compute total portfolio dividend income in D14. Look at what column actually has the number you want. Rows 12-13 are workspace.",
+  data:{A1:"Ticker",B1:"Shares",C1:"Div/share (₹)",D1:"Annual div (₹)",A2:"INFOSYS",B2:2000,C2:20,D2:40000,A3:"TCS",B3:1000,C3:55,D3:55000,A4:"HDFCBANK",B4:1500,C4:20,D4:30000,A5:"ICICIBANK",B5:2500,C5:10,D5:25000,A6:"RELIANCE",B6:800,C6:10,D6:8000,A7:"ITC",B7:7000,C7:6,D7:42000,A8:"HINDUNILVR",B8:600,C8:30,D8:18000,A9:"SBIN",B9:2000,C9:11,D9:22000,A10:"LT",B10:500,C10:30,D10:15000,A11:"BAJFINANCE",B11:200,C11:25,D11:5000,A14:"Total dividend income"},
+  target:"D14",requires:["SUM("],solution:"=SUM(D2:D11)",hint:"Column D already holds the per-position annual dividend. SUM that column — you don't need B or C for this question."},
+ sum_case_subtotal:{lvl:"medium",title:"Case: HDFC deposits by zone — Pan-India total without double-counting",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"HDFC Bank deposits by city, grouped by region with SUBTOTAL rows already computed (rows 5, 9, 13). Compute the pan-India total in B16 without double-counting. Use only the three subtotal rows, OR only the city rows — never both.",
+  data:{A1:"Location",B1:"Deposits (₹ Cr)",A2:"Mumbai",B2:250000,A3:"Pune",B3:80000,A4:"Ahmedabad",B4:50000,A5:"West India subtotal",B5:380000,A6:"Delhi",B6:180000,A7:"Gurugram",B7:60000,A8:"Noida",B8:50000,A9:"North India subtotal",B9:290000,A10:"Bangalore",B10:130000,A11:"Chennai",B11:100000,A12:"Hyderabad",B12:100000,A13:"South India subtotal",B13:330000,A16:"Pan-India total"},
+  target:"B16",requires:["SUM("],solution:"=SUM(B5,B9,B13)",hint:"The three subtotal cells (B5, B9, B13) already summarize their zones. SUM just those three: =SUM(B5,B9,B13)."},
+ sum_case_netcash:{lvl:"medium",title:"Case: Cash flow reconciliation — Net cash flow",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"Reliance FY24 simplified cash flow: four INFLOWS (rows 2-5) and four OUTFLOWS (rows 8-11). Compute net cash flow in B15 = SUM(inflows) − SUM(outflows). Two SUMs in one formula. Rows 13-14 are workspace.",
+  data:{A1:"Item",B1:"Flow (₹ Cr)",A2:"Cash from operations",B2:45000,A3:"Sale of investments",B3:8000,A4:"Interest income",B4:3000,A5:"New borrowings",B5:12000,A7:"— OUTFLOWS —",A8:"Capital expenditure",B8:18000,A9:"Debt repayment",B9:25000,A10:"Dividends paid",B10:5000,A11:"Interest paid",B11:4000,A15:"Net cash flow"},
+  target:"B15",requires:["SUM(","SUM("],solution:"=SUM(B2:B5)-SUM(B8:B11)",hint:"Net = total inflows minus total outflows. Two SUMs, subtracted: =SUM(B2:B5)-SUM(B8:B11)."},
+ sum_case_sector:{lvl:"medium",title:"Case: Portfolio sector allocation — Financials weight (%)",fn:"SUM",
+  concept:SUM_CONCEPT,
+  desc:"13-stock portfolio with sector labels (column B) and weights (column C). Compute the % allocated to Financials in C17. Financials rows are: 4, 5, 9, 11, 14 (HDFCBANK, ICICIBANK, SBIN, BAJFINANCE, KOTAKBANK). SUM their weights — as individual cells inside SUM. Rows 15-16 are workspace.",
+  data:{A1:"Ticker",B1:"Sector",C1:"Weight %",A2:"INFY",B2:"IT",C2:8,A3:"TCS",B3:"IT",C3:12,A4:"HDFCBANK",B4:"Financials",C4:15,A5:"ICICIBANK",B5:"Financials",C5:10,A6:"RELIANCE",B6:"Energy",C6:6,A7:"ITC",B7:"FMCG",C7:5,A8:"HINDUNILVR",B8:"FMCG",C8:4,A9:"SBIN",B9:"Financials",C9:8,A10:"LT",B10:"Industrials",C10:5,A11:"BAJFINANCE",B11:"Financials",C11:7,A12:"ONGC",B12:"Energy",C12:4,A13:"MARUTI",B13:"Auto",C13:6,A14:"KOTAKBANK",B14:"Financials",C14:10,A17:"Financials weight %"},
+  target:"C17",requires:["SUM("],solution:"=SUM(C4,C5,C9,C11,C14)",hint:"SUM the five Financials rows as individual cell arguments: =SUM(C4,C5,C9,C11,C14)."},
+ avg:{lvl:"easy",title:"Infosys — 5-day closing average (₹)",fn:"AVERAGE",
+  concept:AVERAGE_CONCEPT,
+  desc:"Compute Infosys's 5-day mean closing price (B2:B6) — the simplest moving-average building block.",
+  data:{A1:"Day",B1:"Close (₹)",A2:"Mon",B2:1450,A3:"Tue",B3:1462,A4:"Wed",B4:1451,A5:"Thu",B5:1478,A6:"Fri",B6:1483,A7:"5-day avg"},
+  target:"B7",requires:["AVERAGE("],solution:"=AVERAGE(B2:B6)",hint:"Same range syntax as SUM — start:end."},
+ avg_us_pe:{lvl:"easy",title:"US Big Tech — Peer P/E (comps table)",fn:"AVERAGE",
+  concept:AVERAGE_CONCEPT,
+  desc:"IB comps analysis: compute the average trailing P/E across six US Big Tech peers (B2:B7). This is the trading-average line every comps sheet has.",
+  data:{A1:"Company",B1:"Trailing P/E",A2:"Apple",B2:30.8,A3:"Microsoft",B3:36.2,A4:"Alphabet",B4:27.5,A5:"Amazon",B5:45.1,A6:"Meta",B6:26.4,A7:"NVIDIA",B7:68.7,A8:"Peer P/E avg"},
+  target:"B8",requires:["AVERAGE("],solution:"=AVERAGE(B2:B7)",hint:"AVERAGE across all six comps — one range."},
+ avg_nifty_pe:{lvl:"easy",title:"Nifty 50 — Blue-chip P/E (India)",fn:"AVERAGE",
+  concept:AVERAGE_CONCEPT,
+  desc:"Compute the trading P/E average of six Nifty 50 heavyweights — Reliance, TCS, HDFC Bank, Infosys, ICICI Bank, Bharti.",
+  data:{A1:"Company",B1:"P/E",A2:"Reliance",B2:25.3,A3:"TCS",B3:28.7,A4:"HDFC Bank",B4:18.4,A5:"Infosys",B5:24.6,A6:"ICICI Bank",B6:17.9,A7:"Bharti Airtel",B7:32.1,A8:"Nifty avg P/E"},
+  target:"B8",requires:["AVERAGE("],solution:"=AVERAGE(B2:B7)",hint:"Six values — AVERAGE(B2:B7)."},
+ avg_ev_ebitda:{lvl:"easy",title:"NBFC — Peer EV/EBITDA (M&A comps)",fn:"AVERAGE",
+  concept:AVERAGE_CONCEPT,
+  desc:"Trading multiple for an M&A comps table: average EV/EBITDA (x) across six Indian NBFCs (B2:B7).",
+  data:{A1:"Company",B1:"EV/EBITDA (x)",A2:"Bajaj Finance",B2:12.8,A3:"SBI Cards",B3:15.4,A4:"Chola Finance",B4:11.2,A5:"Muthoot Finance",B5:8.6,A6:"Manappuram",B6:6.9,A7:"L&T Finance",B7:10.1,A8:"Trading avg"},
+  target:"B8",requires:["AVERAGE("],solution:"=AVERAGE(B2:B7)",hint:"Average of the six multiples."},
+ avg_target_price:{lvl:"easy",title:"TCS — Sell-side consensus target (₹)",fn:"AVERAGE",
+  concept:AVERAGE_CONCEPT,
+  desc:"Six broker price targets on TCS. Compute the consensus target in B8 — how the sell-side aggregate is quoted.",
+  data:{A1:"Broker",B1:"Target (₹)",A2:"Morgan Stanley",B2:4200,A3:"Goldman Sachs",B3:4350,A4:"JPMorgan",B4:4100,A5:"Motilal Oswal",B5:4450,A6:"Nomura",B6:4180,A7:"Kotak Sec",B7:4280,A8:"Consensus target"},
+  target:"B8",requires:["AVERAGE("],solution:"=AVERAGE(B2:B7)",hint:"AVERAGE of the six broker targets."},
+ avg_jpm_eps:{lvl:"easy",title:"JPMorgan — 4-quarter EPS smoothing (US$)",fn:"AVERAGE",
+  concept:AVERAGE_CONCEPT,
+  desc:"Trailing four-quarter EPS for JPMorgan — the smoothing baseline used to remove seasonality in earnings models.",
+  data:{A1:"Quarter",B1:"EPS (US$)",A2:"Q1 2024",B2:4.44,A3:"Q2 2024",B3:4.40,A4:"Q3 2024",B4:4.37,A5:"Q4 2024",B5:3.65,A6:"4Q trailing avg"},
+  target:"B6",requires:["AVERAGE("],solution:"=AVERAGE(B2:B5)",hint:"Average across the four quarters."},
+ avg_reliance_growth:{lvl:"easy",title:"Reliance — 5-yr revenue growth avg (%)",fn:"AVERAGE",
+  concept:AVERAGE_CONCEPT,
+  desc:"Reliance year-over-year revenue growth over five years. Compute the historical average — a base rate for forecast assumptions.",
+  data:{A1:"Year",B1:"YoY growth %",A2:"FY20",B2:5.4,A3:"FY21",B3:-0.5,A4:"FY22",B4:46.9,A5:"FY23",B5:23.7,A6:"FY24",B6:2.6,A7:"5-yr avg growth"},
+  target:"B7",requires:["AVERAGE("],solution:"=AVERAGE(B2:B6)",hint:"Five yearly figures — AVERAGE(B2:B6). Negative years count too."},
+ avg_sector_yield:{lvl:"easy",title:"S&P 500 — Sector ETF dividend yields (US$)",fn:"AVERAGE",
+  concept:AVERAGE_CONCEPT,
+  desc:"Dividend yield across six S&P 500 sector ETFs. Compute the cross-sector average yield in B8.",
+  data:{A1:"Sector ETF",B1:"Div yield %",A2:"XLE (Energy)",B2:3.4,A3:"XLU (Utilities)",B3:3.1,A4:"XLF (Financials)",B4:1.7,A5:"XLK (Tech)",B5:0.7,A6:"XLV (Healthcare)",B6:1.6,A7:"XLI (Industrials)",B7:1.5,A8:"Cross-sector avg"},
+  target:"B8",requires:["AVERAGE("],solution:"=AVERAGE(B2:B7)",hint:"AVERAGE across all six sectors."},
+ minmax:{lvl:"easy",title:"TCS — Weekly high-low range (₹)",fn:"MAX, MIN",
+  concept:MINMAX_CONCEPT,
+  desc:"5 daily TCS closes. Compute the weekly trading range in B7 using MAX and MIN in a single formula.",
+  data:{A1:"Day",B1:"Close (₹)",A2:"Mon",B2:4185,A3:"Tue",B3:4213,A4:"Wed",B4:4198,A5:"Thu",B5:4245,A6:"Fri",B6:4227,A7:"Weekly range"},
+  target:"B7",requires:["MAX(","MIN("],solution:"=MAX(B2:B6)-MIN(B2:B6)",hint:"Combine: =MAX(range)-MIN(range) in one formula."},
+ max_nifty_high:{lvl:"easy",title:"Nifty 50 — 52-week high (₹)",fn:"MAX",
+  concept:MINMAX_CONCEPT,
+  desc:"12 monthly Nifty 50 closing values. Compute the 52-week high in B14 using MAX.",
+  data:{A1:"Month",B1:"Nifty 50 close",A2:"Jan",B2:21200,A3:"Feb",B3:21900,A4:"Mar",B4:22300,A5:"Apr",B5:22600,A6:"May",B6:22800,A7:"Jun",B7:23100,A8:"Jul",B8:23600,A9:"Aug",B9:24800,A10:"Sep",B10:25100,A11:"Oct",B11:25300,A12:"Nov",B12:24700,A13:"Dec",B13:24200,A14:"52-week high"},
+  target:"B14",requires:["MAX("],solution:"=MAX(B2:B13)",hint:"MAX of the 12 monthly closes."},
+ min_sbi_low:{lvl:"easy",title:"SBI — 52-week low (₹)",fn:"MIN",
+  concept:MINMAX_CONCEPT,
+  desc:"12 monthly closing prices for State Bank of India. Compute the 52-week low in B14 using MIN.",
+  data:{A1:"Month",B1:"SBI close (₹)",A2:"Jan",B2:745,A3:"Feb",B3:758,A4:"Mar",B4:762,A5:"Apr",B5:780,A6:"May",B6:795,A7:"Jun",B7:820,A8:"Jul",B8:840,A9:"Aug",B9:850,A10:"Sep",B10:815,A11:"Oct",B11:790,A12:"Nov",B12:780,A13:"Dec",B13:775,A14:"52-week low"},
+  target:"B14",requires:["MIN("],solution:"=MIN(B2:B13)",hint:"MIN of the 12 monthly closes."},
+ minmax_sensex:{lvl:"easy",title:"SENSEX — Weekly range (₹)",fn:"MAX, MIN",
+  concept:MINMAX_CONCEPT,
+  desc:"5 daily SENSEX closes. Compute the weekly range in B7 — the volatility band traders quote.",
+  data:{A1:"Day",B1:"SENSEX close",A2:"Mon",B2:78450,A3:"Tue",B3:78920,A4:"Wed",B4:79180,A5:"Thu",B5:78650,A6:"Fri",B6:79340,A7:"Weekly range"},
+  target:"B7",requires:["MAX(","MIN("],solution:"=MAX(B2:B6)-MIN(B2:B6)",hint:"MAX minus MIN across the five sessions."},
+ max_yield_spread:{lvl:"easy",title:"US Treasuries — Widest 10Y-2Y spread (bps)",fn:"MAX",
+  concept:MINMAX_CONCEPT,
+  desc:"Monthly 10Y-2Y Treasury yield spread over six months (basis points). Compute the widest spread in B8 with MAX — negative values mean inverted curve.",
+  data:{A1:"Month",B1:"10Y-2Y (bps)",A2:"Jan",B2:-35,A3:"Feb",B3:-28,A4:"Mar",B4:-20,A5:"Apr",B5:-15,A6:"May",B6:-5,A7:"Jun",B7:5,A8:"Widest spread"},
+  target:"B8",requires:["MAX("],solution:"=MAX(B2:B7)",hint:"MAX picks the highest (least-inverted) spread."},
+ max_broker:{lvl:"easy",title:"HDFC Bank — Most bullish broker target (₹)",fn:"MAX",
+  concept:MINMAX_CONCEPT,
+  desc:"6 sell-side broker targets for HDFC Bank. Return the most bullish (highest) target in B8 using MAX.",
+  data:{A1:"Broker",B1:"Target (₹)",A2:"Morgan Stanley",B2:1920,A3:"CLSA",B3:2050,A4:"JPMorgan",B4:1980,A5:"Goldman Sachs",B5:2100,A6:"Kotak Sec",B6:1960,A7:"Motilal Oswal",B7:2040,A8:"Bull-case target"},
+  target:"B8",requires:["MAX("],solution:"=MAX(B2:B7)",hint:"MAX of the six broker targets."},
+ min_worst_eps:{lvl:"easy",title:"Zomato — Worst-quarter EPS (₹)",fn:"MIN",
+  concept:MINMAX_CONCEPT,
+  desc:"Zomato quarterly EPS over eight quarters. Compute the worst-quarter EPS in B10 using MIN — the trough analysts benchmark recovery against.",
+  data:{A1:"Quarter",B1:"EPS (₹)",A2:"Q1 FY23",B2:-0.50,A3:"Q2 FY23",B3:-0.30,A4:"Q3 FY23",B4:-0.20,A5:"Q4 FY23",B5:0.10,A6:"Q1 FY24",B6:0.15,A7:"Q2 FY24",B7:0.20,A8:"Q3 FY24",B8:0.35,A9:"Q4 FY24",B9:0.42,A10:"Worst-qtr EPS"},
+  target:"B10",requires:["MIN("],solution:"=MIN(B2:B9)",hint:"MIN across all eight quarters — negative values count."},
+ minmax_sector:{lvl:"easy",title:"S&P 500 — Sector YTD return dispersion (%)",fn:"MAX, MIN",
+  concept:MINMAX_CONCEPT,
+  desc:"YTD return across six S&P 500 sectors. Compute the dispersion (best minus worst) in B8 — a measure of intra-market divergence.",
+  data:{A1:"Sector",B1:"YTD return %",A2:"Info Tech",B2:25.4,A3:"Communication",B3:18.2,A4:"Financials",B4:12.1,A5:"Healthcare",B5:4.8,A6:"Consumer Staples",B6:-2.1,A7:"Energy",B7:-7.8,A8:"Return dispersion"},
+  target:"B8",requires:["MAX(","MIN("],solution:"=MAX(B2:B7)-MIN(B2:B7)",hint:"MAX (best) minus MIN (worst)."},
+ count:{lvl:"easy",title:"COUNT vs COUNTA",fn:"COUNT, COUNTA",
+  concept:"<p><b class='term'>COUNT</b> counts only numeric cells. <b class='term'>COUNTA</b> counts every non-empty cell, including text.</p><span class='formula'>=COUNT(range)  → numbers only<br>=COUNTA(range) → anything non-empty</span>",
+  desc:"B2:B9 mixes numbers and text. Count only the NUMERIC entries.",
+  data:{A1:"Item",B1:"Qty",A2:"Pens",B2:12,A3:"Ink",B3:"out of stock",A4:"Paper",B4:40,A5:"Clips",B5:7,A6:"Tape",B6:"pending",A7:"Glue",B7:3,A8:"Staples",B8:15,A9:"Boards",B9:"n/a",A10:"Numeric count"},
+  target:"B10",requires:["COUNT("],solution:"=COUNT(B2:B9)",hint:"COUNT ignores text automatically."},
+ if:{lvl:"medium",title:"Decision with IF",fn:"IF",
+  concept:"<p><b class='term'>IF</b> tests a condition and returns one of two values.</p><span class='formula'>=IF(test, value_if_true, value_if_false)</span><p>Text results must be in double quotes. Comparison operators: <code>= &lt;&gt; &lt; &gt; &lt;= &gt;=</code>.</p>",
+  desc:'Pass mark is 40. Return "Pass" if B2 ≥ 40, otherwise "Fail".',
+  data:{A1:"Student",B1:"Marks",A2:"Nikhil",B2:37,C1:"Result"},
+  target:"C2",requires:["IF("],solution:'=IF(B2>=40,"Pass","Fail")',hint:'Text needs double quotes: "Pass".'},
+ countif:{lvl:"medium",title:"Conditional count: COUNTIF",fn:"COUNTIF",
+  concept:"<p><b class='term'>COUNTIF</b> counts cells in a range that satisfy a criterion.</p><span class='formula'>=COUNTIF(range, criteria)</span><p>Criteria with an operator are quoted strings: <code>\">=50\"</code>, <code>\"&lt;&gt;East\"</code>. A bare value matches equality.</p>",
+  desc:"Count how many scores in B2:B9 are 50 or above.",
+  data:{A1:"Student",B1:"Score",A2:"S1",B2:45,A3:"S2",B3:72,A4:"S3",B4:50,A5:"S4",B5:38,A6:"S5",B6:66,A7:"S6",B7:49,A8:"S7",B8:90,A9:"S8",B9:55,A10:"≥50 count"},
+  target:"B10",requires:["COUNTIF("],solution:'=COUNTIF(B2:B9,">=50")',hint:'The criterion is a quoted string: ">=50".'},
+ sumif:{lvl:"medium",title:"Conditional sum: SUMIF",fn:"SUMIF",
+  concept:"<p><b class='term'>SUMIF</b> sums values where a parallel range meets a criterion.</p><span class='formula'>=SUMIF(criteria_range, criteria, sum_range)</span><p>The first range is tested; the third is added. They must be the same size.</p>",
+  desc:'Sum the sales (column C) only for the "East" region (column B).',
+  data:{A1:"Order",B1:"Region",C1:"Sales",A2:1,B2:"East",C2:200,A3:2,B3:"West",C3:150,A4:3,B4:"East",C4:340,A5:4,B5:"North",C5:120,A6:5,B6:"East",C6:90,A7:6,B7:"West",C7:210,A8:"East total"},
+  target:"C8",requires:["SUMIF("],solution:'=SUMIF(B2:B7,"East",C2:C7)',hint:"Three arguments: where to look, what to match, what to add."},
+ round:{lvl:"medium",title:"Precision with ROUND",fn:"ROUND",
+  concept:"<p><b class='term'>ROUND</b> rounds a number to a set count of decimal places. Any expression can be its first argument.</p><span class='formula'>=ROUND(number, digits)</span>",
+  desc:"Compute price per unit = B2/C2, rounded to 2 decimal places, in a single formula.",
+  data:{A1:"Product",B1:"Total ₹",C1:"Units",A2:"Widget",B2:1745,C2:37,D1:"Per unit"},
+  target:"D2",requires:["ROUND("],solution:"=ROUND(B2/C2,2)",hint:"Wrap the division inside ROUND."},
+ concat:{lvl:"medium",title:"Join text with &",fn:"& / CONCAT",
+  concept:"<p>The <b class='term'>&amp;</b> operator joins text values. Literal text — including a single space — goes in double quotes.</p><span class='formula'>=A2&\" \"&B2</span><p><code>CONCAT(...)</code> is the function equivalent.</p>",
+  desc:'Combine first name (A2) and last name (B2) into "First Last" — one space between.',
+  data:{A1:"First",B1:"Last",A2:"Priya",B2:"Sharma",C1:"Full name"},
+  target:"C2",requiresAny:["&","CONCAT"],solution:'=A2&" "&B2',hint:'A literal space is " ".'},
+ nestedif:{lvl:"hard",title:"Nested IF grading",fn:"IF (nested)",
+  concept:"<p>An <b class='term'>IF</b> can contain another IF in its false branch, creating tiers.</p><span class='formula'>=IF(t1,\"A\",IF(t2,\"B\",\"C\"))</span><p>Order tests from strictest to loosest.</p>",
+  desc:'Grade B2: "A" if ≥ 75, "B" if ≥ 50, otherwise "C". One formula, IF inside IF.',
+  data:{A1:"Student",B1:"Marks",A2:"Ishan",B2:63,C1:"Grade"},
+  target:"C2",requires:["IF(","IF("],solution:'=IF(B2>=75,"A",IF(B2>=50,"B","C"))',hint:"The false branch of the outer IF is another IF(...)."},
+ vlookup:{lvl:"hard",title:"Lookup with VLOOKUP",fn:"VLOOKUP",
+  concept:"<p><b class='term'>VLOOKUP</b> finds a value in the first column of a table and returns a value from another column of the same row.</p><span class='formula'>=VLOOKUP(value, table, col_index, FALSE)</span><p><code>FALSE</code> forces exact match — use it unless the first column is sorted.</p>",
+  desc:"The price list is A2:B6. E2 holds an item name. Return its price with an exact-match VLOOKUP.",
+  data:{A1:"Item",B1:"Price",A2:"Apple",B2:30,A3:"Banana",B3:10,A4:"Cherry",B4:120,A5:"Dates",B5:85,A6:"Fig",B6:60,D1:"Query",E1:"Item",D2:"→",E2:"Cherry",E3:"Price"},
+  target:"E4",requires:["VLOOKUP("],solution:"=VLOOKUP(E2,A2:B6,2,FALSE)",hint:"Column index 2 = Price. FALSE = exact match."},
+ indexmatch:{lvl:"hard",title:"INDEX + MATCH",fn:"INDEX, MATCH",
+  concept:"<p><b class='term'>MATCH</b> returns the position of a value in a range; <b class='term'>INDEX</b> returns the value at a position. Combined, they replace VLOOKUP without the left-column restriction.</p><span class='formula'>=INDEX(return_range, MATCH(value, lookup_range, 0))</span>",
+  desc:"Same lookup, the modern way: MATCH finds the row of E2 in A2:A6; INDEX returns that row from B2:B6.",
+  data:{A1:"Item",B1:"Price",A2:"Apple",B2:30,A3:"Banana",B3:10,A4:"Cherry",B4:120,A5:"Dates",B5:85,A6:"Fig",B6:60,E1:"Item",E2:"Dates",E3:"Price"},
+  target:"E4",requires:["INDEX(","MATCH("],solution:"=INDEX(B2:B6,MATCH(E2,A2:A6,0))",hint:"MATCH(...,...,0) = exact; it becomes INDEX's row argument."},
+ rowfill:{lvl:"medium",title:"Row totals & the fill handle",fn:"relative references",
+  concept:"<p>References without <code>$</code> are <b class='term'>relative</b>: when a formula is copied, they shift by the same offset. <code>=B2*C2</code> copied one row down becomes <code>=B3*C3</code>.</p><p>The <b class='term'>fill handle</b> is the small green square at the bottom-right of the selection — drag it to copy the formula across a range. <code>Ctrl+C / Ctrl+V</code> does the same. A <code>$</code> before the column or row (<code>$B$2</code>) locks that part.</p>",
+  desc:"Compute Amount = Price × Qty for every row: write the formula once in D2, then drag the fill handle down to D6.",
+  data:{A1:"Item",B1:"Price",C1:"Qty",D1:"Amount",A2:"Notebook",B2:60,C2:4,A3:"Pen",B3:15,C3:12,A4:"Marker",B4:35,C4:6,A5:"Stapler",B5:180,C5:2,A6:"Tape",B6:25,C6:9},
+  targetRange:"D2:D6",refsRequired:["B2","C2"],solution:"=B2*C2",
+  hint:"One formula in D2 with relative refs; the fill handle shifts B2→B3→B4… automatically."},
+ sumifs2:{lvl:"hard",title:"Two conditions: SUMIFS",fn:"SUMIFS",
+  concept:"<p><b class='term'>SUMIFS</b> sums with multiple criteria. Note the argument order differs from SUMIF: the <b>sum range comes first</b>.</p><span class='formula'>=SUMIFS(sum_range, crit_range1, crit1, crit_range2, crit2, …)</span>",
+  desc:'Sum sales (column C) where region (B) is "East" AND sales are above 100.',
+  data:{A1:"Order",B1:"Region",C1:"Sales",A2:1,B2:"East",C2:200,A3:2,B3:"West",C3:150,A4:3,B4:"East",C4:340,A5:4,B5:"North",C5:120,A6:5,B6:"East",C6:90,A7:6,B7:"West",C7:210,A8:"East > 100"},
+  target:"C8",requires:["SUMIFS("],solution:'=SUMIFS(C2:C7,B2:B7,"East",C2:C7,">100")',
+  hint:"Sum range first, then pairs of (range, criteria). The >100 test runs on the sales column itself."},
+ xlookup1:{lvl:"hard",title:"Modern lookup: XLOOKUP",fn:"XLOOKUP",
+  concept:"<p><b class='term'>XLOOKUP</b> replaces VLOOKUP: separate lookup and return ranges (any direction), exact match by default, and a built-in not-found fallback.</p><span class='formula'>=XLOOKUP(value, lookup_range, return_range, [if_not_found])</span>",
+  desc:'E2 holds an item. Return its price with XLOOKUP; return "Missing" if the item is not in the list.',
+  data:{A1:"Item",B1:"Price",A2:"Apple",B2:30,A3:"Banana",B3:10,A4:"Cherry",B4:120,A5:"Dates",B5:85,A6:"Fig",B6:60,E1:"Item",E2:"Guava",E3:"Price"},
+  target:"E4",requires:["XLOOKUP("],solution:'=XLOOKUP(E2,A2:A6,B2:B6,"Missing")',
+  hint:"Four arguments; the last one handles the not-found case."},
+ datediff:{lvl:"medium",title:"Date arithmetic",fn:"DATE, DAYS",
+  concept:"<p>Dates are stored as <b class='term'>serial numbers</b> (days since 1900), so they subtract like numbers. <b class='term'>DATE(y,m,d)</b> builds one; <b class='term'>DAYS(end, start)</b> or plain subtraction gives the gap. <code>TODAY()</code> returns today's serial.</p><span class='formula'>=DAYS(DATE(2026,3,31), DATE(2026,1,1))</span>",
+  desc:"An invoice is issued on 15 Jan 2026 and due on 30 Apr 2026. Compute the payment window in days in B3, building both dates with DATE.",
+  data:{A1:"Invoice",A2:"Issued",B2:"15 Jan 2026",A3:"Days to pay"},
+  target:"B3",requires:["DATE(","DATE("],solution:"=DAYS(DATE(2026,4,30),DATE(2026,1,15))",
+  hint:"DAYS(end, start) — or subtract one DATE from the other."},
+ /* ---- Financial statements course ---- */
+ grossprofit:{lvl:"easy",title:"Gross profit",fn:"cell arithmetic",
+  concept:"<p><b class='term'>Gross profit</b> is revenue minus cost of revenue (COGS). It measures profitability before operating expenses.</p><span class='formula'>Gross Profit = Revenue − Cost of Revenue</span><p>Data: Tesla FY2023, $ millions (10-K).</p>",
+  desc:"Compute Tesla's FY2023 gross profit in B4 by referencing the cells above — do not type the number.",
+  data:{A1:"Dollars in millions",B1:"FY2023",A2:"Total revenues",B2:96773,A3:"Total cost of revenues",B3:79113,A4:"Gross profit"},
+  target:"B4",refsRequired:["B2","B3"],solution:"=B2-B3",hint:"Subtract one cell reference from the other."},
+ grossmargin:{lvl:"medium",title:"Gross margin %",fn:"ROUND, division",
+  concept:"<p><b class='term'>Gross margin</b> expresses gross profit as a percentage of revenue — how much of each revenue dollar survives direct costs.</p><span class='formula'>Gross Margin % = Gross Profit ÷ Revenue × 100</span>",
+  desc:"Using B2 (revenue) and B4 (gross profit), compute gross margin as a percentage rounded to 1 decimal, in B5.",
+  data:{A1:"Dollars in millions",B1:"FY2023",A2:"Total revenues",B2:96773,A3:"Total cost of revenues",B3:79113,A4:"Gross profit",B4:"=B2-B3",A5:"Gross margin %"},
+  target:"B5",requires:["ROUND("],refsRequired:["B4","B2"],solution:"=ROUND(B4/B2*100,1)",hint:"Divide, multiply by 100, wrap in ROUND(...,1)."},
+ expenseclass:{lvl:"medium",title:"Classify the expenses",fn:"picklist",
+  concept:"<p>On an income statement, <b class='term'>cost of revenues</b> (COGS) sits above gross profit; <b class='term'>operating expenses</b> (R&amp;D, SG&amp;A) sit below it.</p><p>Direct costs of producing the product → COGS. Costs of running the business → Operating expense.</p>",
+  desc:"Classify each Tesla line item: select COGS or Operating expense in each yellow cell (click the cell to open the list).",
+  data:{A1:"TSLA cost & expense line",B1:"Category",A2:"Automotive cost of revenues",A3:"Research and development",A4:"Selling, general and administrative"},
+  pick:{B2:{options:["COGS","Operating expense"],answer:"COGS"},
+        B3:{options:["COGS","Operating expense"],answer:"Operating expense"},
+        B4:{options:["COGS","Operating expense"],answer:"Operating expense"}},
+  solution:"B2 = COGS · B3 = Operating expense · B4 = Operating expense",
+  hint:"Which line is a direct cost of building the cars?"},
+ ncwc:{lvl:"medium",title:"Non-cash working capital",fn:"cell arithmetic",
+  concept:"<p><b class='term'>Non-cash working capital (NCWC)</b> measures liquidity tied up in operations: current assets excluding cash, minus current liabilities.</p><span class='formula'>NCWC = Current Assets − Cash − Current Liabilities</span><p>Cash is excluded because it is not tied up in operations. Data: Tesla, Dec 31 2023, $ millions.</p>",
+  desc:"Enter Tesla's non-cash working capital in B5 using cell references.",
+  data:{A1:"Dollars in millions",B1:"December 31, 2023",A2:"Cash",B2:16398,A3:"Current assets",B3:49616,A4:"Current liabilities",B4:28748,A5:"Non-cash working capital"},
+  target:"B5",refsRequired:["B2","B3","B4"],solution:"=B3-B2-B4",hint:"Start from current assets; subtract cash and current liabilities."},
+ segmentgp:{lvl:"medium",title:"Gross profit by segment (fill down)",fn:"relative refs",
+  concept:"<p>Statement work is repetitive by design: one correct formula, copied down every line. Relative references make <code>=B2-C2</code> valid for every segment row when filled.</p><p>Data below is illustrative, not from a real filing.</p>",
+  desc:"Compute Gross Profit = Revenue − Cost for each segment: formula in D2, fill handle down to D4.",
+  data:{A1:"Segment",B1:"Revenue",C1:"Cost",D1:"Gross profit",A2:"Products",B2:5200,C2:3900,A3:"Services",B3:1800,C3:950,A4:"Subscriptions",B4:1100,C4:310},
+  targetRange:"D2:D4",refsRequired:["B2","C2"],solution:"=B2-C2",
+  hint:"Same principle as the row-totals exercise: relative refs shift per row."},
+ currentratio:{lvl:"medium",title:"Current ratio",fn:"ROUND, division",
+  concept:"<p>The <b class='term'>current ratio</b> compares current assets to current liabilities — a quick solvency test. Above 1 means short-term assets cover short-term obligations.</p><span class='formula'>Current Ratio = Current Assets ÷ Current Liabilities</span>",
+  desc:"Compute the current ratio in B5, rounded to 2 decimals.",
+  data:{A1:"Dollars in millions",B1:"December 31, 2023",A2:"Cash",B2:16398,A3:"Current assets",B3:49616,A4:"Current liabilities",B4:28748,A5:"Current ratio"},
+  target:"B5",requires:["ROUND("],refsRequired:["B3","B4"],solution:"=ROUND(B3/B4,2)",hint:"Assets over liabilities, wrapped in ROUND(...,2)."},
+};
+const COURSES=[
+ {id:"excel",title:"Excel Formula Fundamentals",level:"Beginner / Intermediate",hours:"~5 hours",prereq:"None",
+  desc:"One row per formula. Click a formula to open its practice cases — SUM has 8, others have 1–2 for now with more packs coming. Cases mix real Indian and US company data.",
+  modules:[
+   {title:"SUM",ex:["sum","sum_quarterly","sum_weekly","sum_regions_blank","sum_per_month","sum_case_opex","sum_case_portfolio_div","sum_case_subtotal","sum_case_netcash","sum_case_sector"]},
+   {title:"AVERAGE",ex:["avg","avg_us_pe","avg_nifty_pe","avg_ev_ebitda","avg_target_price","avg_jpm_eps","avg_reliance_growth","avg_sector_yield"]},
+   {title:"MIN & MAX",ex:["minmax","max_nifty_high","min_sbi_low","minmax_sensex","max_yield_spread","max_broker","min_worst_eps","minmax_sector"]},
+   {title:"COUNT & COUNTA",ex:["count"]},
+   {title:"IF",ex:["if","nestedif"]},
+   {title:"COUNTIF",ex:["countif"]},
+   {title:"SUMIF & SUMIFS",ex:["sumif","sumifs2"]},
+   {title:"ROUND",ex:["round"]},
+   {title:"Text join (&, CONCAT)",ex:["concat"]},
+   {title:"Fill handle & relative refs",ex:["rowfill"]},
+   {title:"Dates (DATE, DAYS)",ex:["datediff"]},
+   {title:"VLOOKUP",ex:["vlookup"]},
+   {title:"INDEX + MATCH",ex:["indexmatch"]},
+   {title:"XLOOKUP",ex:["xlookup1"]}]},
+ {id:"fin",title:"Financial Statements Fundamentals",level:"Beginner / Intermediate",hours:"~2 hours",prereq:"Excel Formula Fundamentals (recommended)",
+  desc:"Income-statement and balance-sheet metrics: gross profit and margin on real Tesla FY2023 figures, expense classification, segment fill-down, working capital.",
+  modules:[
+   {title:"Income statement",ex:["grossprofit","grossmargin","expenseclass","segmentgp"]},
+   {title:"Balance sheet & liquidity",ex:["ncwc","currentratio"]}]},
+];
+let currentCourse=null, currentEx=null, currentExId=null;
+const doneEx=new Set();
+
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+const flatEx=course=>course.modules.flatMap(m=>m.ex);
+const courseDone=course=>flatEx(course).filter(id=>doneEx.has(id)).length;
+function moduleForEx(course,exId){
+  if(!course) return null;
+  return course.modules.find(m=>m.ex.includes(exId)) || null;
+}
+function updateStreak(){
+  const el=document.getElementById("ws-streak");
+  if(el) el.textContent = String(doneEx.size);
+}
+
+/* ================= ROUTER ================= */
+function show(view){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  document.getElementById("view-"+view).classList.add("on");
+}
+document.querySelectorAll("[data-go]").forEach(el=>{
+  el.addEventListener("click",()=>{
+    const t=el.dataset.go;
+    if(t==="landing")show("landing");
+    else if(t==="courses"){renderCourses();show("courses");}
+    else if(t==="sandbox")openSandbox();
+  });
+});
+
+/* Scrolled-nav border effect */
+document.querySelectorAll(".pagescroll").forEach(sc=>{
+  sc.addEventListener("scroll",()=>{
+    const nav = sc.parentElement.querySelector(".pagenav");
+    if(nav) nav.classList.toggle("scrolled", sc.scrollTop>4);
+  });
+});
+
+/* ================= PAGES ================= */
+function renderCourses(){
+  const el=document.getElementById("coursecards");
+  el.innerHTML=COURSES.map((c,ci)=>{
+    const total=flatEx(c).length, done=courseDone(c), pct=Math.round(done/total*100);
+    const num = "COURSE " + String(ci+1).padStart(2,"0");
+    const tags = c.modules.map(m=>`<span class="tag">${esc(m.title)}</span>`).join("");
+    const cta = done===0 ? "Start →" : done===total ? "Review →" : "Continue →";
+    return `<div class="ccard" data-course="${c.id}">
+      <div class="ccard-meta">${num} · ${esc(c.level)} · ${esc(c.hours)}</div>
+      <h3>${esc(c.title)}</h3>
+      <div class="cdesc">${esc(c.desc)}</div>
+      <div class="tags">${tags}</div>
+      <div class="ccard-foot">
+        <div class="ccard-pbar"><div style="width:${pct}%"></div></div>
+        <span class="ccard-pnote">${String(done).padStart(2,"0")} / ${String(total).padStart(2,"0")} done</span>
+        <span class="ccard-cta">${cta}</span>
+      </div>
+    </div>`;}).join("");
+  el.querySelectorAll(".ccard").forEach(cd=>cd.onclick=()=>openCourse(cd.dataset.course));
+}
+function openCourse(id){
+  currentCourse=COURSES.find(c=>c.id===id);
+  const c=currentCourse, total=flatEx(c).length, done=courseDone(c), pct=Math.round(done/total*100);
+  const nextId=flatEx(c).find(x=>!doneEx.has(x))||flatEx(c)[0];
+  let runningIdx=0;
+  document.getElementById("coursedetail").innerHTML=`
+    <h2 class="pgtitle">${esc(c.title)}</h2>
+    <p class="pgsub">${esc(c.desc)}</p>
+    <div class="cstats">
+      <div class="cstat"><div class="k">Level</div><div class="v">${esc(c.level)}</div></div>
+      <div class="cstat"><div class="k">Time</div><div class="v">${esc(c.hours)}</div></div>
+      <div class="cstat"><div class="k">Exercises</div><div class="v">${total}</div></div>
+      <div class="cstat"><div class="k">Prerequisites</div><div class="v">${esc(c.prereq)}</div></div>
+    </div>
+    <div class="progress-row">
+      <div class="ccard-pbar" style="flex:1"><div style="width:${pct}%"></div></div>
+      <span class="ccard-pnote">${done} / ${total} done</span>
+      <button class="btn primary" id="courseStart">${done===0?"Start course":done===total?"Review":"Continue"}</button>
+    </div>
+    <button class="back-to-all" id="btnBackToAll">← All formulas</button>
+    ${c.modules.map((m,mi)=>{
+      const md=m.ex.filter(x=>doneEx.has(x)).length;
+      return `<div class="module collapsed" data-mi="${mi}">
+        <div class="mhead">
+          <span class="chev">▸</span>
+          <span class="mtag">M${String(mi+1).padStart(2,"0")}</span>
+          <span class="mtitle">${esc(m.title)}</span>
+          <span class="mprog">${md} / ${m.ex.length}</span>
+        </div>
+        ${m.ex.map(xid=>{
+          const x=EX[xid]; runningIdx++;
+          return `<div class="exrow ${doneEx.has(xid)?"done":""}" data-ex="${xid}">
+            <span class="tick">${doneEx.has(xid)?"✓":""}</span>
+            <span class="exnum">${String(runningIdx).padStart(2,"0")}</span>
+            <span class="exname">${esc(x.title)}</span>
+            <span class="badge ${x.lvl}">${x.lvl}</span>
+            <span class="exgo">${doneEx.has(xid)?'Redo →':'Practice →'}</span>
+          </div>`;}).join("")}
+      </div>`;}).join("")}`;
+  document.getElementById("courseStart").onclick=()=>openEx(nextId);
+  const detail=document.getElementById("coursedetail");
+  detail.querySelectorAll(".exrow").forEach(r=>r.onclick=()=>openEx(r.dataset.ex));
+  detail.querySelectorAll(".mhead").forEach(h=>{
+    h.onclick=()=>{
+      const mod=h.parentElement;
+      // Only one module can be expanded at a time
+      if(mod.classList.contains("collapsed")){
+        detail.querySelectorAll(".module").forEach(m=>m.classList.add("collapsed"));
+        mod.classList.remove("collapsed");
+        detail.classList.add("solo-mode");
+        detail.scrollIntoView({block:"start",behavior:"smooth"});
+      } else {
+        mod.classList.add("collapsed");
+        detail.classList.remove("solo-mode");
+      }
+    };
+  });
+  detail.querySelector("#btnBackToAll").onclick=()=>{
+    detail.querySelectorAll(".module").forEach(m=>m.classList.add("collapsed"));
+    detail.classList.remove("solo-mode");
+  };
+  show("course");
+}
+
+/* ================= WORKSPACE ================= */
+function openSandbox(){
+  currentEx=null; currentExId=null; currentCourse=null;
+  cells={}; targetRefs=[];
+  document.getElementById("exbar").style.display="none";
+  document.getElementById("concept").classList.remove("on");
+  document.getElementById("ws-crumb").textContent="Sandbox";
+  document.getElementById("ws-sep2").style.display="none";
+  updateStreak();
+  renderOutline(); renderAll(); select(1,0); show("app");
+}
+function openEx(exId){
+  const ex=EX[exId]; currentEx=ex; currentExId=exId;
+  hintViewed = false; solutionClickCount = 0;
+  cells={};
+  for(const ref in ex.data) setRaw(ref,ex.data[ref]);
+  for(const ref in ex.data){const p=parseRef(ref);if(p&&(p.r===1))(cells[ref]=cells[ref]||{}).b=true;}
+  targetRefs = ex.pick ? Object.keys(ex.pick)
+             : ex.targetRange ? rangeCells(...ex.targetRange.split(":")).flat()
+             : [ex.target];
+  const first=parseRef(targetRefs[0]); select(first.r,first.c);
+  document.getElementById("exbar").style.display="flex";
+
+  const badge = document.getElementById("ex-badge");
+  badge.textContent = ex.lvl;
+  badge.className = "badge " + ex.lvl;
+  document.getElementById("ex-title").textContent = ex.title;
+  const mod = moduleForEx(currentCourse, exId);
+  document.getElementById("ex-mod").textContent = mod ? mod.title : "";
+
+  if(currentCourse){
+    document.getElementById("ws-crumb").textContent = ex.title;
+    document.getElementById("ws-sep2").style.display = "inline";
+  } else {
+    document.getElementById("ws-crumb").textContent = ex.title;
+    document.getElementById("ws-sep2").style.display = "none";
+  }
+
+  const modOfEx = currentCourse ? currentCourse.modules.find(mm => mm.ex.includes(exId)) : null;
+  const list = modOfEx ? modOfEx.ex : [exId];
+  const idx=list.indexOf(exId);
+  document.getElementById("btnPrev").disabled = idx<=0;
+  document.getElementById("btnNext").disabled = idx>=list.length-1;
+  updateStreak();
+  renderConcept(ex);
+  renderOutline();
+  renderAll();
+  show("app");
+}
+function renderConcept(ex){
+  const cp=document.getElementById("concept");
+  cp.classList.add("on");
+  const paras = String(ex.desc||"").split(/\n\n+/).map(p => `<p class="task">${esc(p.trim())}</p>`).join("");
+  cp.innerHTML=`
+    <div class="eyebrow">Concept</div>
+    <h2>${esc(ex.title)}</h2>
+    <div class="cbody">${ex.concept}</div>
+    <div class="eyebrow">Task</div>
+    ${paras}
+    <div class="task-meta">
+      <span class="lb">Answer${targetRefs.length>1?"s":""}:</span>
+      ${targetRefs.map(r=>`<span class="tcell">${r}</span>`).join(" ")}
+    </div>
+    <div class="hintbox" id="hintBox">
+      <div class="eyebrow">Hint</div>
+      <p>${esc(ex.hint||"")}</p>
+    </div>
+    <div class="nudgebox" id="nudgeBox">
+      <div class="eyebrow">Try the hint first</div>
+      <p>Learning sticks when you struggle a little. Read the hint above, then take another swing at it. Click <b>Solution</b> again if you're still stuck.</p>
+    </div>
+    <div class="solutionbox" id="solutionBox">
+      <div class="eyebrow">Solution</div>
+      <p>${esc(ex.solution||"")}</p>
+    </div>
+    <div class="result" id="resBox"></div>`;
+}
+function renderOutline(){
+  const el=document.getElementById("tab-outline");
+  if(!currentCourse){
+    el.innerHTML=`<p style="font-size:13px;color:var(--muted)">No course active. <a href="#" id="ol-browse" style="color:var(--green-dark);text-decoration:underline">Browse courses</a> or use the sheet freely.</p>`;
+    const a=el.querySelector("#ol-browse"); if(a)a.onclick=e=>{e.preventDefault();renderCourses();show("courses");};
+    return;
+  }
+  const modIdx = currentCourse.modules.findIndex(m => m.ex.includes(currentExId));
+  const mod = modIdx >= 0 ? currentCourse.modules[modIdx] : currentCourse.modules[0];
+  const modDone = mod.ex.filter(x => doneEx.has(x)).length;
+  const modTotal = mod.ex.length;
+  const isComplete = modDone === modTotal;
+  const nextMod = modIdx >= 0 && modIdx < currentCourse.modules.length - 1 ? currentCourse.modules[modIdx + 1] : null;
+
+  el.innerHTML = `
+    <div class="ol-back" id="ol-back-course">← All formulas</div>
+    <div class="ol-modhead">
+      <span class="omod">${esc(mod.title)}</span>
+      <span class="ol-prog">${modDone} / ${modTotal}</span>
+    </div>
+    ${mod.ex.map(xid => `<div class="oex ${doneEx.has(xid)?"done":""} ${xid===currentExId?"cur":""}" data-ex="${xid}">
+      <span class="tick"></span><span>${esc(EX[xid].title)}</span></div>`).join("")}
+    ${isComplete && nextMod ? `
+      <div class="ol-next" id="ol-next-mod">
+        <small>Next section</small>
+        <span>${esc(nextMod.title)} →</span>
+      </div>` : ''}
+    ${isComplete && !nextMod ? `
+      <div class="ol-next" id="ol-back-course-done">
+        <small>Course complete</small>
+        <span>← All formulas</span>
+      </div>` : ''}
+  `;
+  el.querySelector("#ol-back-course").onclick = () => openCourse(currentCourse.id);
+  el.querySelectorAll(".oex").forEach(r => r.onclick = () => openEx(r.dataset.ex));
+  const nextBtn = el.querySelector("#ol-next-mod");
+  if (nextBtn && nextMod) nextBtn.onclick = () => openEx(nextMod.ex[0]);
+  const doneBtn = el.querySelector("#ol-back-course-done");
+  if (doneBtn) doneBtn.onclick = () => openCourse(currentCourse.id);
+}
+
+/* exercise bar */
+let hintViewed = false;
+let solutionClickCount = 0;
+document.getElementById("btnResetEx").onclick=()=>{ if(currentExId) openEx(currentExId); };
+document.getElementById("btnHint").onclick=()=>{
+  hintViewed = true;
+  const h=document.getElementById("hintBox"); if(h) h.style.display="block";
+};
+document.getElementById("btnSolution").onclick=()=>{
+  const s=document.getElementById("solutionBox");
+  const n=document.getElementById("nudgeBox");
+  if(!s || !n) return;
+  if(!hintViewed && solutionClickCount === 0){
+    // Soft nudge: show the hint + a friendly message, defer the solution
+    hintViewed = true;
+    document.getElementById("hintBox").style.display = "block";
+    n.style.display = "block";
+    solutionClickCount = 1;
+    return;
+  }
+  n.style.display = "none";
+  s.style.display = "block";
+  solutionClickCount = 2;
+};
+document.getElementById("btnPrev").onclick=()=>stepEx(-1);
+document.getElementById("btnNext").onclick=()=>stepEx(1);
+function stepEx(d){
+  if(!currentCourse||!currentExId)return;
+  const mod = currentCourse.modules.find(m => m.ex.includes(currentExId));
+  if(!mod) return;
+  const list = mod.ex; const i = list.indexOf(currentExId) + d;
+  if(i>=0 && i<list.length) openEx(list[i]);
+}
+document.getElementById("btnCheck").onclick=()=>{ if(currentEx) checkEx(currentEx); };
+
+/* checker */
+function expectedValue(ex){
+  const saved=cells[ex.target]?{...cells[ex.target]}:null;
+  setRaw(ex.target,ex.solution);
+  let v; try{ v=cellValue(ex.target,new Set()); }catch(e){ v=null; }
+  if(saved)cells[ex.target]=saved; else delete cells[ex.target];
+  return v;
+}
+function expectedAt(ex,ref){
+  const base=parseRef(ex.targetRange.split(":")[0]); const p=parseRef(ref);
+  const sol=shiftFormula(ex.solution,p.r-base.r,p.c-base.c);
+  const saved=cells[ref]?{...cells[ref]}:null;
+  setRaw(ref,sol);
+  let v; try{ v=cellValue(ref,new Set()); }catch(e){ v=null; }
+  if(saved)cells[ref]=saved; else delete cells[ref];
+  return {v,sol};
+}
+function checkEx(ex){
+  if(editing)commitEdit(true);
+  const rb=document.getElementById("resBox"); if(!rb)return;
+  const fail=msg=>{rb.className="result bad";rb.innerHTML=msg;};
+  if(ex.pick){
+    for(const ref in ex.pick){
+      const raw=(getCell(ref)||{}).raw||"";
+      if(raw==="") return fail("Cell "+ref+" is empty — select an option.");
+      if(raw!==ex.pick[ref].answer) return fail("Cell "+ref+" is incorrect. Reconsider whether it is a direct production cost.");
+    }
+    return pass(ex,"All classifications correct.");
+  }
+  if(ex.targetRange){
+    const rc=rangeCells(...ex.targetRange.split(":")).flat();
+    for(const ref of rc){
+      const raw=((getCell(ref)||{}).raw||"");
+      if(!raw) return fail("Cell "+ref+" is empty. Fill the whole range "+ex.targetRange+" — write the first formula, then drag the fill handle.");
+      if(raw[0]!=="=") return fail("Cell "+ref+" holds a plain value. Every cell must contain a formula.");
+      if(!/[A-Z]{1,2}\d/.test(raw.toUpperCase())) return fail("Cell "+ref+" has no cell references — compute from the data, don't type numbers.");
+      let actual; try{ actual=cellValue(ref,new Set()); }
+      catch(e){ return fail("Cell "+ref+" error: <b>"+(isErr(e)?e.__err:"#VALUE!")+"</b>."+diagnose(ex,raw,e,null,ex.solution)); }
+      const {v:exp,sol}=expectedAt(ex,ref);
+      const eq=(typeof exp==="number"&&typeof actual==="number")?Math.abs(exp-actual)<1e-9:String(exp)===String(actual);
+      if(!eq) return fail("Cell "+ref+" returns <b>"+esc(toText(actual))+"</b>, expected <b>"+esc(toText(exp))+"</b>."
+        +(raw.includes("$")?" Check whether $ locks are preventing the reference from shifting.":" If you copied the formula, check that its references shifted to this row.")
+        +diagnose(ex,raw,null,exp,sol));
+    }
+    const firstRef=rc[0]; const up=((getCell(firstRef)||{}).raw||"").toUpperCase();
+    for(const r of (ex.refsRequired||[])) if(!up.includes(r)) return fail("Cell "+firstRef+" must reference <code>"+r+"</code>.");
+    return pass(ex,"All "+rc.length+" cells correct.");
+  }
+  const c=getCell(ex.target); const raw=c&&c.raw?String(c.raw):"";
+  if(!raw) return fail("Target cell "+ex.target+" is empty. Enter a formula starting with <code>=</code>.");
+  if(raw[0]!=="=") return fail("That is a plain value, not a formula. Formulas must start with <code>=</code>.");
+  const up=raw.toUpperCase();
+  if(ex.requiresAny){ if(!ex.requiresAny.some(t=>up.includes(t))) return fail("Use one of: <code>"+ex.requiresAny.join("</code>, <code>")+"</code>."); }
+  else if(ex.requires){
+    const need={}; ex.requires.forEach(t=>need[t]=(need[t]||0)+1);
+    for(const t in need){ const cnt=up.split(t).length-1; if(cnt<need[t]) return fail("This exercise requires "+(need[t]>1?need[t]+"× ":"")+"<code>"+esc(t.replace("(",""))+"</code> in the formula."); }
+  }
+  if(ex.refsRequired){
+    for(const r of ex.refsRequired) if(!up.includes(r)) return fail("Reference cell <code>"+r+"</code> in the formula — do not hard-code numbers.");
+  }
+  let actual; try{ actual=cellValue(ex.target,new Set()); }
+  catch(e){ return fail("Formula error: <b>"+(isErr(e)?e.__err:"#VALUE!")+"</b>."+diagnose(ex,raw,e,null,ex.solution)); }
+  const exp=expectedValue(ex);
+  const eq = (typeof exp==="number"&&typeof actual==="number") ? Math.abs(exp-actual)<1e-9 : String(exp)===String(actual);
+  if(!eq) return fail("Result is <b>"+esc(toText(actual))+"</b>, expected <b>"+esc(toText(exp))+"</b>."+diagnose(ex,raw,null,exp,ex.solution));
+  pass(ex,"<code>"+esc(raw)+"</code> returns "+esc(toText(exp))+".");
+}
+function pass(ex,msg){
+  doneEx.add(currentExId);
+  const rb=document.getElementById("resBox");
+  rb.className="result ok";
+  const list=currentCourse?flatEx(currentCourse):[];
+  const i=list.indexOf(currentExId);
+  const more=currentCourse&&i>=0&&i<list.length-1;
+  rb.innerHTML="✓ Correct — "+msg+(more?" Use <b>Next →</b> to continue.":"");
+  updateStreak(); renderOutline(); renderAll();
+}
+
+/* ================= PROGRESS EXPORT / IMPORT ================= */
+document.getElementById("btnExportProg").onclick=()=>{
+  const blob=new Blob([JSON.stringify({v:1,exported:new Date().toISOString(),done:[...doneEx]},null,1)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="formulalab-progress.json"; a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById("btnImportProg").onclick=()=>document.getElementById("progFile").click();
+document.getElementById("progFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(!Array.isArray(d.done))throw 0;
+      d.done.filter(id=>EX[id]).forEach(id=>doneEx.add(id));
+      renderCourses(); updateStreak();
+    }catch(err){ alert("Invalid progress file."); }
+  };
+  rd.readAsText(f); e.target.value="";
+});
+
+/* ================= FUNCTION REFERENCE ================= */
+const FNDOCS=[
+ ["Math","SUM(range, …)","Adds all numbers.","=SUM(A1:A10)"],
+ ["Math","AVERAGE(range)","Arithmetic mean of numbers.","=AVERAGE(B2:B20)"],
+ ["Math","MIN(range) / MAX(range)","Smallest / largest number.","=MAX(C1:C9)-MIN(C1:C9)"],
+ ["Math","MEDIAN(range)","Middle value.","=MEDIAN(A1:A7)"],
+ ["Math","ROUND(n, digits)","Round to given decimals. Also ROUNDUP / ROUNDDOWN.","=ROUND(B2/C2,2)"],
+ ["Math","ABS · SQRT · POWER · MOD · INT","Absolute value, square root, exponent, remainder, floor.","=MOD(10,3) → 1"],
+ ["Math","RANDBETWEEN(lo, hi)","Random integer in range (recalculates on edit).","=RANDBETWEEN(1,6)"],
+ ["Counting","COUNT(range)","Counts numeric cells only.","=COUNT(B2:B9)"],
+ ["Counting","COUNTA(range)","Counts non-empty cells.","=COUNTA(A1:A60)"],
+ ["Counting","COUNTBLANK(range)","Counts empty cells.","=COUNTBLANK(B2:B9)"],
+ ["Conditional","IF(test, if_true, if_false)","Branching logic; nest for tiers.","=IF(B2>=40,\"Pass\",\"Fail\")"],
+ ["Conditional","IFERROR(value, fallback)","Fallback if the value errors.","=IFERROR(A1/B1,0)"],
+ ["Conditional","COUNTIF(range, criteria)","Count matching cells.","=COUNTIF(B2:B9,\">=50\")"],
+ ["Conditional","SUMIF(range, criteria, [sum_range])","Sum where criteria matches.","=SUMIF(B2:B7,\"East\",C2:C7)"],
+ ["Conditional","SUMIFS(sum_range, cr1, c1, …)","Multi-criteria sum — sum range FIRST.","=SUMIFS(C2:C7,B2:B7,\"East\",C2:C7,\">100\")"],
+ ["Conditional","COUNTIFS(cr1, c1, …)","Multi-criteria count.","=COUNTIFS(B2:B7,\"East\",C2:C7,\">100\")"],
+ ["Conditional","AVERAGEIFS(avg_range, cr1, c1, …)","Multi-criteria average.","=AVERAGEIFS(C2:C7,B2:B7,\"East\")"],
+ ["Conditional","AVERAGEIF(range, criteria, [avg_range])","Average where criteria matches.","=AVERAGEIF(B2:B7,\">100\")"],
+ ["Logical","AND / OR / NOT","Combine boolean tests.","=IF(AND(B2>=40,C2>=40),\"Pass\",\"Fail\")"],
+ ["Text","& operator / CONCAT(…)","Join text pieces.","=A2&\" \"&B2"],
+ ["Text","LEFT / RIGHT / MID","Extract substrings.","=LEFT(A1,3)"],
+ ["Text","LEN · UPPER · LOWER · PROPER · TRIM","Length and case/space cleanup.","=TRIM(A1)"],
+ ["Text","FIND(find, within, [start])","Position of text (case-sensitive).","=FIND(\"@\",A2)"],
+ ["Text","SUBSTITUTE(text, old, new)","Replace all occurrences.","=SUBSTITUTE(A1,\"-\",\"/\")"],
+ ["Text","TEXTJOIN(delim, ignore_empty, …)","Join with a delimiter.","=TEXTJOIN(\", \",TRUE,A1:A5)"],
+ ["Lookup","XLOOKUP(value, lookup_rng, return_rng, [if_not_found])","Modern exact-match lookup with fallback.","=XLOOKUP(E2,A2:A6,B2:B6,\"Missing\")"],
+ ["Lookup","VLOOKUP(value, table, col, FALSE)","Find in first column, return column col.","=VLOOKUP(E2,A2:B6,2,FALSE)"],
+ ["Lookup","HLOOKUP(value, table, row, FALSE)","Horizontal variant.","=HLOOKUP(\"Q2\",A1:E3,2,FALSE)"],
+ ["Lookup","INDEX(range, row, [col])","Value at a position.","=INDEX(B2:B6,3)"],
+ ["Lookup","MATCH(value, range, 0)","Position of value (0 = exact).","=MATCH(\"Cherry\",A2:A6,0)"],
+ ["Info","ISNUMBER / ISTEXT / ISBLANK","Type tests for IF.","=IF(ISBLANK(A1),\"missing\",A1)"],
+ ["Date","DATE(y, m, d)","Builds a date serial number (days since 1900). Dates subtract like numbers.","=DATE(2026,4,30)-DATE(2026,1,15)"],
+ ["Date","TODAY() / NOW()","Current date / date-time as a serial number.","=TODAY()"],
+ ["Date","YEAR / MONTH / DAY(serial)","Extract parts from a date serial.","=YEAR(TODAY())"],
+ ["Date","DAYS(end, start)","Whole days between two dates.","=DAYS(DATE(2026,3,31),DATE(2026,1,1))"],
+ ["Date","TEXT(serial, \"yyyy-mm-dd\")","Format a date serial as text (yyyy, mm, dd tokens).","=TEXT(TODAY(),\"dd/mm/yyyy\")"],
+];
+(function renderFns(){
+  const el=document.getElementById("tab-funcs"); let cat=""; let html="";
+  html+=`<p style="font-size:12px;color:var(--muted);margin-bottom:10px">Cell refs (A1), ranges (A1:B5), $-absolute refs, operators <code>+ - * / ^ &amp; %</code> and comparisons <code>= &lt;&gt; &lt; &gt; &lt;= &gt;=</code> are supported.</p>`;
+  for(const [c,syn,desc,ex] of FNDOCS){
+    if(c!==cat){ html+=`<div class="fncat">${c}</div>`; cat=c; }
+    html+=`<details><summary>${esc(syn.split("(")[0])}</summary><div class="fd"><span class="syn">${esc(syn)}</span>${esc(desc)}<br>Example: <code>${esc(ex)}</code></div></details>`;
+  }
+  el.innerHTML=html;
+})();
+
+/* ================= INIT ================= */
+buildGrid();
+renderOutline();
+renderAll();
+select(1,0);
+updateStreak();
+show("landing");
+</script>
+</body>
+</html>
