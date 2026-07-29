@@ -15,7 +15,9 @@
       "Bash(unzip -l \"C:\\\\Users\\\\Brij\\\\Downloads\\\\Auto-save and chat access.zip\")",
       "Bash(mkdir -p \"C:\\\\Users\\\\Brij\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Brij-OneDrive-Desktop-Project-Tyro-Cell\\\\83eea091-b567-4dc6-924b-203a2890f9eb\\\\scratchpad\\\\design-review\")",
       "Bash(unzip -o \"C:\\\\Users\\\\Brij\\\\Downloads\\\\Auto-save and chat access.zip\")",
-      "Bash(node build-decisions-log-v2.js)"
+      "Bash(node build-decisions-log-v2.js)",
+      "Bash(git config *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
