@@ -1,11 +1,11 @@
 # Exercise catalog
 
-**45 exercises across 2 courses**, defined in the `EX` and `COURSES` objects in `excel-practice (1).html`. Counts verified against the running app.
+**45 exercises across 2 courses**, defined in the `EX` and `COURSES` objects in `app/index.html`. Counts verified against the running app.
 
 By difficulty: **23 easy · 17 medium · 5 hard**
 By answer type: **42 single-target · 2 fill-down range · 1 picklist**
 
-Every exercise's stated solution is asserted to pass its own checker by `test.html` (45/45).
+Every exercise's stated solution is asserted to pass its own checker by `app/test.html` (45/45).
 
 ---
 

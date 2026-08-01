@@ -16,7 +16,7 @@
 >
 > Type: **Instrument Sans** (UI), **Instrument Serif** (italic accents), **JetBrains Mono** (all data, formulas, cell refs, labels). Background is neutral white, not warm paper — cream fought the stark black mark. Corner radii are tight (5–8px) to sit with a hard-edged square logo. Difficulty badges read as **increasing ink density** (light grey → grey → solid black) rather than three unrelated hues.
 >
-> **Applied so far to `demo/` only.** `excel-practice (1).html` still uses the earlier Instrument Sans + `#16A05C` green scheme and the FormulaLab name; `FinCell-pitch.html` still uses the ledger palette and the FinCell name. Neither has been migrated.
+> **Applied so far to `demo/` only.** `app/index.html` still uses the earlier Instrument Sans + `#16A05C` green scheme and the FormulaLab name; `pitch/index.html` still uses the ledger palette and the FinCell name. Neither has been migrated.
 
 ---
 
@@ -26,7 +26,7 @@ Status: **superseded.** Kept for the reasoning, which is still sound; the palett
 
 ## Why this exists
 
-The pitch deck ([FinCell-pitch.html](../FinCell-pitch.html)) already has a distinctive visual identity — warm paper, ink/green ledger tones, monospace numerals, a formula bar used as navigation chrome. The actual product prototype ([excel-practice (1).html](../excel-practice%20%281%29.html)) doesn't share it — it clones Microsoft Excel's own green + Segoe UI, which is the most expected, generic choice available. This doc proposes carrying the pitch's identity into the product instead, so the product looks like *itself*, not like a copy of Excel.
+The pitch deck ([pitch/index.html](../pitch/index.html)) already has a distinctive visual identity — warm paper, ink/green ledger tones, monospace numerals, a formula bar used as navigation chrome. The actual product prototype ([app/index.html](../app/index.html)) doesn't share it — it clones Microsoft Excel's own green + Segoe UI, which is the most expected, generic choice available. This doc proposes carrying the pitch's identity into the product instead, so the product looks like *itself*, not like a copy of Excel.
 
 ## Principles
 
@@ -76,4 +76,4 @@ Do not introduce a purple/blue SaaS gradient, a bright cartoon palette, or Excel
 ## Resolved
 - **Terminal (dark) mode** — not in V1. Light only.
 - **Existing brand work** — resolved: the Tyro.cell mark is now the identity. See the block at the top of this file.
-- **Open:** whether to migrate `excel-practice (1).html` and `FinCell-pitch.html` onto the Tyro.cell name and palette, or leave them until the product settles.
+- **Open:** whether to migrate `app/index.html` and `pitch/index.html` onto the Tyro.cell name and palette, or leave them until the product settles.

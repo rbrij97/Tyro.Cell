@@ -1,6 +1,6 @@
 # Tyro.cell — Overview
 
-> **Naming.** The product is **Tyro.cell**. Earlier material used *FinCell* (pitch deck) and *FormulaLab* (app UI); both names still appear in `FinCell-pitch.html` and `excel-practice (1).html` and have not been renamed yet. Only `demo/` carries the current identity.
+> **Naming.** The product is **Tyro.cell**. Earlier material used *FinCell* (pitch deck) and *FormulaLab* (app UI); both names still appear in `pitch/index.html` and `app/index.html` and have not been renamed yet. Only `demo/` carries the current identity.
 
 ## What this is
 
@@ -10,12 +10,12 @@ A browser-based platform where finance and commerce students in India learn Exce
 
 | File | Role | State |
 |---|---|---|
-| [`excel-practice (1).html`](../excel-practice%20%281%29.html) | **The product.** Single-file app: engine, grid, 45 exercises, 2 courses. | Active build target |
-| [`test.html`](../test.html) | Regression harness for the product. 155 tests. | 155/155 passing |
+| [`app/index.html`](../app/index.html) | **The product.** Single-file app: engine, grid, 45 exercises, 2 courses. | Active build target |
+| [`app/test.html`](../app/test.html) | Regression harness for the product. 155 tests. | 155/155 passing |
 | [`demo/index.html`](../demo/index.html) | Standalone 3-exercise public demo, Tyro.cell branded. | Complete, frozen |
 | [`demo/demo-test.html`](../demo/demo-test.html) | Harness for the demo. 64 tests. | 64/64 passing |
 | [`demo/logo.svg`](../demo/logo.svg) | The Tyro.cell mark. | — |
-| [`FinCell-pitch.html`](../FinCell-pitch.html) | Pitch deck / idea analysis. Also exported to PDF + PPTX. | Stale name, stale claims |
+| [`pitch/index.html`](../pitch/index.html) | Pitch deck / idea analysis. Also exported to PDF + PPTX. | Stale name, stale claims |
 
 ## The problem
 
@@ -71,3 +71,4 @@ Lean, validate-first, in three phases — see [04-roadmap-risks.md](04-roadmap-r
 - [07-monetization.md](07-monetization.md) — revenue channels (proposed)
 - [08-product-changes.md](08-product-changes.md) — the build backlog
 - [09-keyboard-and-functions.md](09-keyboard-and-functions.md) — every function and every key
+- **[10-formulas.md](10-formulas.md) — the formula registry. Start here when deciding what content to write.**

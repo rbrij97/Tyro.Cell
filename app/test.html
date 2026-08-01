@@ -70,7 +70,7 @@ html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sa
 </head>
 <body>
 
-<iframe id="app" src="excel-practice (1).html" style="width:1px;height:1px;position:absolute;left:-9999px;top:-9999px;visibility:hidden"></iframe>
+<iframe id="app" src="index.html" style="width:1px;height:1px;position:absolute;left:-9999px;top:-9999px;visibility:hidden"></iframe>
 
 <div class="wrap">
 
@@ -94,7 +94,7 @@ html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sa
 
   <div id="results"></div>
 
-  <p class="note">Tests run against the live app in a hidden iframe (<code>excel-practice (1).html</code>). Every test resets state before running. If browser blocks cross-frame file:// access, serve the folder over http (<code>npx serve</code>) and reopen.</p>
+  <p class="note">Tests run against the live app in a hidden iframe (<code>app/index.html</code>). Every test resets state before running. Browsers block cross-frame access over <code>file://</code>, so serve the folder over http (<code>npx serve</code>) and open this page at <code>http://localhost:PORT/app/test.html</code>.</p>
 
 </div>
 

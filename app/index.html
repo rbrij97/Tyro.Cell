@@ -2069,7 +2069,7 @@ const KEYDOCS=[
 
 /* ================= TEST HOOKS =================
    Top-level `const`/`let` create global *lexical* bindings, which are NOT
-   properties of `window` — so `test.html` could never see Engine/EX/doneEx
+   properties of `window` — so `app/test.html` could never see Engine/EX/doneEx
    and bailed out with a misleading "cross-frame block" message. Exporting
    them explicitly is what makes the regression harness able to run at all.
    Values that get reassigned (cells, currentEx…) need accessors, not copies. */

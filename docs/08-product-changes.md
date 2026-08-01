@@ -1,6 +1,6 @@
 # Product changes — everything we need to build
 
-Compiled 2026-07-21. **Status updated 2026-08-01.** The complete list of changes to `excel-practice (1).html` (and the future backend). Organized by area, with priority and status per item.
+Compiled 2026-07-21. **Status updated 2026-08-01.** The complete list of changes to `app/index.html` (and the future backend). Organized by area, with priority and status per item.
 
 ## What shipped on 2026-08-01
 
@@ -8,7 +8,7 @@ Compiled 2026-07-21. **Status updated 2026-08-01.** The complete list of changes
 - **H1 closed** — the pitch's shortcut claims are now true.
 - **F1 done** — AI assistant removed.
 - **E1 substantially done** — Course 1 is now heavily Indian-company data. Course 2 is still Tesla-only.
-- **The regression harness was resurrected.** `test.html` had never run once: `Engine`/`EX`/`doneEx`/`isErr` are `const` declarations, which are lexical bindings rather than `window` properties, so the harness bailed on every load behind a misleading "cross-frame block" message. Fixed with an explicit export block — now 155/155.
+- **The regression harness was resurrected.** `app/test.html` had never run once: `Engine`/`EX`/`doneEx`/`isErr` are `const` declarations, which are lexical bindings rather than `window` properties, so the harness bailed on every load behind a misleading "cross-frame block" message. Fixed with an explicit export block — now 155/155.
 - **New:** `demo/` — a standalone 3-exercise public demo with its own harness (64/64), README and the Tyro.cell mark.
 
 **Most valuable next item is now A1/A2** (extract the engine). The demo carries a verbatim copy of the engine, so every fix has to be made twice — that cost is real and growing.
@@ -90,7 +90,7 @@ None of these exist today. All depend on backend (B) being live.
 
 | # | Priority | Item | Notes |
 |---|---|---|---|
-| F1 | ✅ **Decided — remove** | Cut the AI assistant from V1. | Delete `#aibtn`, `#aidrawer`, `askAI()` function, and related `#ailog` / `#aiform` / `#aiq` / `#aisend` / `#aiclose` DOM + JS from `excel-practice (1).html`. Also drop the AI assistant description from `docs/02-features.md` at some point. Frees ~40 lines of code and one whole floating-widget concern. |
+| F1 | ✅ **Decided — remove** | Cut the AI assistant from V1. | Delete `#aibtn`, `#aidrawer`, `askAI()` function, and related `#ailog` / `#aiform` / `#aiq` / `#aisend` / `#aiclose` DOM + JS from `app/index.html`. Also drop the AI assistant description from `docs/02-features.md` at some point. Frees ~40 lines of code and one whole floating-widget concern. |
 | F2 | N/A | ~~Rate-limit assistant~~ | Not applicable — feature removed. |
 | F3 | ✅ **Decided** | Cut from V1. | Confirmed. |
 
@@ -108,7 +108,7 @@ Direction is not settled. Both mockups (Ledger, Workbench) were rejected. Produc
 
 | # | Priority | Item | Notes |
 |---|---|---|---|
-| H1 | **P1** | Trim or fulfill the shortcut claims in `FinCell-pitch.html`. | Pitch names `Ctrl+Shift+→`, `F2`, `F4`, `Alt+=`, `Ctrl+D` as handled — only `F2` is real. Either build the rest (C1–C5) before showing the pitch, or edit the pitch to only claim what's built. Anyone technical will find this gap in 30 seconds. |
+| H1 | **P1** | Trim or fulfill the shortcut claims in `pitch/index.html`. | Pitch names `Ctrl+Shift+→`, `F2`, `F4`, `Alt+=`, `Ctrl+D` as handled — only `F2` is real. Either build the rest (C1–C5) before showing the pitch, or edit the pitch to only claim what's built. Anyone technical will find this gap in 30 seconds. |
 | H2 | **P2** | Update the "88% fidelity" number in the pitch. | Currently made up. Recompute honestly after C1–C10 are built. |
 | H3 | **P2** | Refresh directional market numbers with sourced TAM/SAM/SOM. | The pitch already flags these as directional. Before any capital raise: replace. |
 
@@ -133,7 +133,7 @@ Strategy in `07-monetization.md`. Sequenced sequentially per that plan.
 | Q2 | B1 → B2–B6 | Backend stack | **Supabase** |
 | Q3 | G1 → G2 | Design direction | **Paused — user will direct UI/UX later.** V1 = "simple but unique, this is for me." Do not lock a design direction in advance. |
 | Q4 | G3 | Terminal (dark) mode | **Not in V1** — later. Light mode only. |
-| Q5 | F3 | AI assistant | **Cut from V1.** Remove `#aibtn`, `#aidrawer`, and `askAI()` from `excel-practice (1).html`. |
+| Q5 | F3 | AI assistant | **Cut from V1.** Remove `#aibtn`, `#aidrawer`, and `askAI()` from `app/index.html`. |
 
 **Downstream implications of "V1 is for me":**
 - Server-side answer re-verification (B5) drops from P1 to P2 — Brij isn't going to cheat himself. Still worth building later when external users arrive.
@@ -166,7 +166,7 @@ Strategy in `07-monetization.md`. Sequenced sequentially per that plan.
 - **Full Excel keyboard layer** — fill, undo/redo, `F4`, edge jump, AutoSum, `Ctrl+Enter`; grid is operable without a mouse. In-product **Keys** reference tab.
 - Answer checker with specific-reason diagnostics (`checkEx` / `diagnose`).
 - Manual progress export/import (JSON download) — placeholder for real persistence.
-- **`test.html` — 155 tests, all passing.** Previously never ran at all.
+- **`app/test.html` — 155 tests, all passing.** Previously never ran at all.
 - **`demo/` — standalone 3-exercise public demo**, Tyro.cell branded, own harness at 64/64, own README.
 - Complete pitch deck (HTML + PPTX + PDF) — still under the old FinCell name.
 - Full documentation set: overview → architecture → features → exercises → roadmap → design → gamification → monetization → this doc → keyboard & functions.

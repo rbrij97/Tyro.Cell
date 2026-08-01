@@ -1,4 +1,4 @@
-# Features — `excel-practice (1).html` walkthrough
+# Features — `app/index.html` walkthrough
 
 ## Landing page
 - Hero pitch + two CTAs: "Browse courses" and "Open blank sheet" (sandbox).
@@ -33,7 +33,7 @@
 
 ## Removed: AI assistant
 
-The floating AI chat drawer has been **cut and deleted from the code**. It called the Anthropic Messages API directly from the browser with no key handling, so it only ever worked inside an API-proxied sandbox and showed "Assistant unavailable" everywhere else. `test.html` now asserts it stays gone.
+The floating AI chat drawer has been **cut and deleted from the code**. It called the Anthropic Messages API directly from the browser with no key handling, so it only ever worked inside an API-proxied sandbox and showed "Assistant unavailable" everywhere else. `app/test.html` now asserts it stays gone.
 
 ## The public demo
 

@@ -1,4 +1,4 @@
-# Architecture — `excel-practice (1).html`
+# Architecture — `app/index.html`
 
 Single-file HTML/CSS/vanilla-JS application (no build step, no dependencies). ~1,990 lines. Everything — engine, UI, content — lives in one file.
 
@@ -65,7 +65,7 @@ Excel's own bindings, implemented on top of the grid. Full table in [09-keyboard
 
 ## Test hooks
 
-Top-level `const`/`let` create global **lexical bindings**, which are *not* properties of `window`. `test.html` reaches the app through an iframe, so it could never see `Engine`, `EX`, `doneEx` or `isErr` and bailed out on every run with a misleading "cross-frame block" message — the suite had never executed.
+Top-level `const`/`let` create global **lexical bindings**, which are *not* properties of `window`. `app/test.html` reaches the app through an iframe, so it could never see `Engine`, `EX`, `doneEx` or `isErr` and bailed out on every run with a misleading "cross-frame block" message — the suite had never executed.
 
 A `TEST HOOKS` block near the end of the script exports them explicitly. Values that get **reassigned** (`cells`, `currentEx`, `currentExId`, `currentCourse`, `targetRefs`) are exported as accessors rather than copies, so the harness never reads a stale reference. Anything added later that the harness needs must be exported here too.
 
@@ -80,7 +80,7 @@ A `TEST HOOKS` block near the end of the script exports them explicitly. Values 
 
 | Harness | Covers | Status |
 |---|---|---|
-| [`test.html`](../test.html) | The main app — engine arithmetic, all 60 functions, error codes, `shiftFormula`, every exercise solution against its own checker, DOM structure, state transitions | **155/155** |
+| [`app/test.html`](../app/test.html) | The main app — engine arithmetic, all 60 functions, error codes, `shiftFormula`, every exercise solution against its own checker, DOM structure, state transitions | **155/155** |
 | [`demo/demo-test.html`](../demo/demo-test.html) | The demo — solutions, published expected values, seeded data problems, exercise gating, each diagnostic rule, instrumentation privacy | **64/64** |
 
 Both load the real page in a hidden iframe rather than a copy, so they test what ships. Both need the folder served over HTTP (`npx serve`) — browsers block cross-frame access on `file://`.

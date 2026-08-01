@@ -26,7 +26,7 @@ Because the mark is pure black-and-white, the UI is **monochrome by default and 
 
 Difficulty badges read as increasing ink density (light grey → mid grey → solid black) rather than three unrelated hues.
 
-The formula engine, `shiftFormula`, and `diagnose()` are **copied verbatim** from `excel-practice (1).html` (only the grid dimensions differ: 8×26 here vs 16×60 there). Neither the main app nor its test harness was modified. If the engine changes upstream, re-copy it rather than editing this one.
+The formula engine, `shiftFormula`, and `diagnose()` are **copied verbatim** from `app/index.html` (only the grid dimensions differ: 8×26 here vs 16×60 there). Neither the main app nor its test harness was modified. If the engine changes upstream, re-copy it rather than editing this one.
 
 ## Running it
 

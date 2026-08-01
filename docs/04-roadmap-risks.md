@@ -1,4 +1,4 @@
-# Roadmap, competition & risks (from `FinCell-pitch.html`)
+# Roadmap, competition & risks (from `pitch/index.html`)
 
 ## Competitive landscape
 
@@ -17,7 +17,7 @@
 ## Roadmap
 
 ### Phase 1 · Month 0–2 · Validate
-- Build a demo with a free in-browser spreadsheet engine (this is what `excel-practice (1).html` already is).
+- Build a demo with a free in-browser spreadsheet engine (this is what `app/index.html` already is).
 - 5 free interactive exercises, posted in Indian finance-prep communities (LinkedIn, Telegram).
 - Measure: completion rate, requests for more, willingness to pay.
 - Est. cost: ≈ ₹3,000–8,000, mostly tooling.
