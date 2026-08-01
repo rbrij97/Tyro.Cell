@@ -246,6 +246,13 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 .fnref code{font:12px var(--mono);background:var(--line-2);border-radius:3px;padding:1px 5px}
 .fncat{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
 .fncat:first-child{margin-top:0}
+.keyref .krow{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--line-3);font-size:12.5px}
+.keyref .krow:last-child{border-bottom:none}
+.keyref .keys{flex:none;display:flex;gap:3px;flex-wrap:wrap}
+.keyref kbd{font:500 10.5px var(--mono);background:#fff;border:1px solid var(--line-4);border-bottom-width:2px;border-radius:4px;padding:2px 5px;color:var(--ink);white-space:nowrap}
+.keyref .kdesc{color:var(--text-2);line-height:1.45}
+.keyref .knote{font-size:11.5px;line-height:1.5;color:var(--muted);background:var(--line-3);border-radius:var(--r-sm);padding:9px 11px;margin-top:12px}
+.keyref .knote kbd{background:var(--line-2);border-color:var(--line-4)}
 
 @media (max-width:900px){
   #main{flex-direction:column}
@@ -377,7 +384,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
     <button class="tbtn" id="btnClear">Clear cell</button>
     <button class="tbtn" id="btnClearAll">Clear sheet</button>
     <span class="tsep"></span>
-    <span class="hint"><code>=</code> starts a formula · Enter confirms · Esc cancels · F2 edits · arrows select refs</span>
+    <span class="hint"><code>=</code> starts a formula · <code>F2</code> edits · <code>F4</code> toggles <code>$</code> · <code>Ctrl+D</code> fills down · <code>Ctrl+Z</code> undoes · see <b>Keys</b> →</span>
   </div>
   <div id="formulabar">
     <input id="namebox" value="A1" spellcheck="false" aria-label="Cell name box">
@@ -391,16 +398,18 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
       <div id="paneltabs">
         <button class="on" data-tab="outline">Outline</button>
         <button data-tab="funcs">Functions</button>
+        <button data-tab="keys">Keys</button>
       </div>
       <div class="pbody on outline" id="tab-outline"></div>
       <div class="pbody fnref" id="tab-funcs"></div>
+      <div class="pbody keyref" id="tab-keys"></div>
     </div>
   </div>
   <div id="statusbar">
     <span id="st-mode">Ready</span>
     <span id="st-agg"></span>
     <span class="spacer"></span>
-    <span class="keys">Enter confirms · Esc cancels · F2 edits · arrows move</span>
+    <span class="keys">F2 edit · F4 $ · Alt+= autosum · Ctrl+D/R fill · Ctrl+Enter fill selection · Ctrl+Z undo</span>
   </div>
 </div>
 
@@ -899,6 +908,7 @@ function copySelection(){
 }
 function pasteClip(){
   if(!clip)return;
+  pushUndo();
   for(let r=0;r<clip.rows;r++)for(let c=0;c<clip.cols;c++){
     const tr=sel.r+r,tc=sel.c+c; if(tr>ROWS||tc>=COLS)continue;
     const src=clip.cells[r][c]; const ref=refOf(tr,tc);
@@ -946,6 +956,7 @@ fillHandle.addEventListener("mousedown",e=>{
   document.addEventListener("mouseover",move);document.addEventListener("mouseup",up);
 });
 function applyFill(src,tgt){
+  pushUndo();
   const H=src.r2-src.r1+1, W=src.c2-src.c1+1;
   for(let r=tgt.r1;r<=tgt.r2;r++)for(let c=tgt.c1;c<=tgt.c2;c++){
     let sr,scol;
@@ -1039,9 +1050,18 @@ function startEdit(ref, initial){
       }
       e.stopPropagation();return;
     }
+    if(e.key==="F4"){ e.preventDefault(); e.stopPropagation(); cycleRefAt(inp); return; }
     if(point&&e.key!=="Shift")endPoint();
-    if(e.key==="Enter"){e.preventDefault();commitEdit(true);select(sel.r+1,sel.c);}
-    else if(e.key==="Tab"){e.preventDefault();commitEdit(true);select(sel.r,sel.c+1);}
+    if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
+      /* Ctrl+Enter: commit this entry to the whole selection */
+      e.preventDefault(); e.stopPropagation();
+      const raw=inp.value; const anchor=ref;
+      editing=null; inp.remove();
+      pushUndo(); fillSelectionWith(anchor,raw); renderAll(); flash("Filled selection");
+      return;
+    }
+    if(e.key==="Enter"){e.preventDefault();commitEdit(true);select(sel.r+(e.shiftKey?-1:1),sel.c);}
+    else if(e.key==="Tab"){e.preventDefault();commitEdit(true);select(sel.r,sel.c+(e.shiftKey?-1:1));}
     else if(e.key==="Escape"){e.preventDefault();commitEdit(false);}
     e.stopPropagation();
   });
@@ -1071,7 +1091,14 @@ function commitEdit(save){
   endPoint();
   const ref=editing; editing=null;
   const td=TD[ref]; const inp=td.querySelector("input,select");
-  if(inp){ if(save) setRaw(ref,inp.value); inp.remove(); }
+  if(inp){
+    if(save){
+      const prev=(getCell(ref)||{}).raw||"";
+      if(String(inp.value)!==String(prev)) pushUndo();
+      setRaw(ref,inp.value);
+    }
+    inp.remove();
+  }
   document.getElementById("st-mode").textContent="Ready";
   renderAll();
 }
@@ -1101,36 +1128,176 @@ grid.addEventListener("dblclick",e=>{
   const td=e.target.closest("td"); if(!td)return;
   const p=parseRef(td.dataset.ref); select(p.r,p.c); startEdit(td.dataset.ref);
 });
+/* =========================================================================
+   KEYBOARD LAYER — everything below is reproducible in-browser. The keys the
+   browser reserves for itself (Ctrl+T/N/W, Ctrl+Tab, Ctrl+1-9, F11, F12) are
+   deliberately NOT bound: no web app can intercept them, so binding them
+   would only create shortcuts that silently fail.
+   ========================================================================= */
+
+/* Undo/redo. `cells` holds a few dozen entries, so a JSON snapshot per
+   mutation is cheaper to reason about than a command log — and it survives
+   whole-sheet operations like Clear sheet, which a command log would not. */
+const UNDO=[], REDO=[], UNDO_LIMIT=80;
+const snap=()=>JSON.stringify(cells);
+function pushUndo(){ UNDO.push(snap()); if(UNDO.length>UNDO_LIMIT)UNDO.shift(); REDO.length=0; }
+function clearHistory(){ UNDO.length=0; REDO.length=0; }
+function applySnap(s){ cells=JSON.parse(s); renderAll(); }
+function flash(msg){ const el=document.getElementById("st-mode"); if(!el)return; el.textContent=msg;
+  clearTimeout(flash._t); flash._t=setTimeout(()=>{ el.textContent="Ready"; },1500); }
+function undo(){ if(!UNDO.length){flash("Nothing to undo");return;} REDO.push(snap()); applySnap(UNDO.pop()); flash("Undo"); }
+function redo(){ if(!REDO.length){flash("Nothing to redo");return;} UNDO.push(snap()); applySnap(REDO.pop()); flash("Redo"); }
+
+const hasVal=(r,c)=>{ const cc=getCell(refOf(r,c)); return !!(cc&&cc.raw!==""&&cc.raw!=null); };
+function copyFmt(src,ref){ if(src&&(src.b||src.i||src.u)){ const cc=cells[ref]=cells[ref]||{raw:""}; cc.b=src.b;cc.i=src.i;cc.u=src.u; } }
+
+/* Ctrl+arrow — jump to the edge of the data region, Excel's rules: if the
+   next cell is filled, run to the last filled cell; otherwise skip the gap
+   and land on the next filled one. */
+function edgeJump(r,c,dr,dc){
+  const inb=(rr,cc)=>rr>=1&&rr<=ROWS&&cc>=0&&cc<COLS;
+  let nr=r+dr, nc=c+dc;
+  if(!inb(nr,nc)) return {r,c};
+  if(hasVal(r,c)&&hasVal(nr,nc)){
+    while(inb(nr+dr,nc+dc)&&hasVal(nr+dr,nc+dc)){ nr+=dr; nc+=dc; }
+  } else {
+    while(inb(nr,nc)&&!hasVal(nr,nc)){ nr+=dr; nc+=dc; }
+    if(!inb(nr,nc)){ nr-=dr; nc-=dc; }
+  }
+  return {r:nr,c:nc};
+}
+function lastUsedCell(){
+  let mr=1,mc=0;
+  for(const ref in cells){ const p=parseRef(ref); if(p&&hasVal(p.r,p.c)){ if(p.r>mr)mr=p.r; if(p.c>mc)mc=p.c; } }
+  return {r:mr,c:mc};
+}
+
+/* Ctrl+D / Ctrl+R. On a single-cell selection they pull from the neighbour,
+   exactly as Excel does; on a range they project the first row/column. */
+function fillDown(){
+  const {r1,r2,c1,c2}=selRange();
+  if(r1===r2 && r1<=1) return;
+  pushUndo();
+  if(r1===r2){
+    for(let c=c1;c<=c2;c++){ const src=getCell(refOf(r1-1,c))||{};
+      setRaw(refOf(r1,c),shiftFormula(src.raw||"",1,0)); copyFmt(src,refOf(r1,c)); }
+  } else {
+    for(let r=r1+1;r<=r2;r++)for(let c=c1;c<=c2;c++){ const src=getCell(refOf(r1,c))||{};
+      setRaw(refOf(r,c),shiftFormula(src.raw||"",r-r1,0)); copyFmt(src,refOf(r,c)); }
+  }
+  renderAll(); flash("Filled down");
+}
+function fillRight(){
+  const {r1,r2,c1,c2}=selRange();
+  if(c1===c2 && c1<=0) return;
+  pushUndo();
+  if(c1===c2){
+    for(let r=r1;r<=r2;r++){ const src=getCell(refOf(r,c1-1))||{};
+      setRaw(refOf(r,c1),shiftFormula(src.raw||"",0,1)); copyFmt(src,refOf(r,c1)); }
+  } else {
+    for(let r=r1;r<=r2;r++)for(let c=c1+1;c<=c2;c++){ const src=getCell(refOf(r,c1))||{};
+      setRaw(refOf(r,c),shiftFormula(src.raw||"",0,c-c1)); copyFmt(src,refOf(r,c)); }
+  }
+  renderAll(); flash("Filled right");
+}
+
+/* Alt+= — AutoSum over the run of numbers above, else to the left. */
+function numAt(r,c){ try{ const v=cellValue(refOf(r,c),new Set()); return typeof v==="number"?v:null; }catch(e){ return null; } }
+function autoSumRange(r,c){
+  let top=r; while(top-1>=1 && numAt(top-1,c)!==null) top--;
+  if(top<r) return refOf(top,c)+":"+refOf(r-1,c);
+  let left=c; while(left-1>=0 && numAt(r,left-1)!==null) left--;
+  if(left<c) return refOf(r,left)+":"+refOf(r,c-1);
+  return null;
+}
+
+/* F4 — cycle the reference at the caret: A1 -> $A$1 -> A$1 -> $A1 -> A1. */
+function cycleRefAt(inp){
+  const v=inp.value; if(!v||v[0]!=="=") return false;
+  const pos=inp.selectionStart==null?v.length:inp.selectionStart;
+  const re=/(\$?)([A-Za-z]{1,2})(\$?)(\d{1,3})/g;
+  let m,hit=null;
+  while((m=re.exec(v))){
+    const s=m.index, e=s+m[0].length;
+    if(/[A-Za-z0-9_.$]/.test(v[s-1]||"")) continue;   /* not a ref: inside a name */
+    if(pos>=s&&pos<=e){ hit={s,e,m}; break; }
+    if(e<=pos) hit={s,e,m};                            /* else the last one before the caret */
+  }
+  if(!hit) return false;
+  const col=hit.m[2], row=hit.m[4];
+  const state=(hit.m[1]==="$"?1:0)+(hit.m[3]==="$"?2:0);
+  const next={0:3,3:2,2:1,1:0}[state];
+  const out=((next&1)?"$":"")+col+((next&2)?"$":"")+row;
+  inp.value=v.slice(0,hit.s)+out+v.slice(hit.e);
+  const caret=hit.s+out.length;
+  inp.setSelectionRange(caret,caret);
+  if(inp!==fInput) fInput.value=inp.value;
+  return true;
+}
+
+/* Ctrl+Enter — commit the entry to every cell in the selection. */
+function fillSelectionWith(anchorRef,raw){
+  const a=parseRef(anchorRef); const {r1,r2,c1,c2}=selRange();
+  for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++) setRaw(refOf(r,c),shiftFormula(raw,r-a.r,c-a.c));
+}
+function todaySerial(){ const d=new Date(); return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)+25569; }
+
 document.addEventListener("keydown",e=>{
   if(!document.getElementById("view-app").classList.contains("on"))return;
   if(editing||document.activeElement===fInput||document.activeElement===nameBox)return;
-  const k=e.key;
+  const k=e.key, mod=e.ctrlKey||e.metaKey;
+
   if(k==="ArrowUp"||k==="ArrowDown"||k==="ArrowLeft"||k==="ArrowRight"){
     e.preventDefault();
+    const dr=k==="ArrowDown"?1:k==="ArrowUp"?-1:0;
+    const dc=k==="ArrowRight"?1:k==="ArrowLeft"?-1:0;
     const base=e.shiftKey?(selEnd||sel):sel;
-    const nr=base.r+(k==="ArrowDown"?1:k==="ArrowUp"?-1:0);
-    const nc=base.c+(k==="ArrowRight"?1:k==="ArrowLeft"?-1:0);
-    select(nr,nc,e.shiftKey); return;
+    if(mod){ const t=edgeJump(base.r,base.c,dr,dc); select(t.r,t.c,e.shiftKey); }
+    else select(base.r+dr,base.c+dc,e.shiftKey);
+    return;
   }
-  if(k==="Enter"){e.preventDefault();select(sel.r+1,sel.c);return;}
+  if(k==="Home"&&mod){e.preventDefault();select(1,0,e.shiftKey);return;}
+  if(k==="End"&&mod){e.preventDefault();const t=lastUsedCell();select(t.r,t.c,e.shiftKey);return;}
+  if(k==="Enter"&&!mod){e.preventDefault();select(sel.r+(e.shiftKey?-1:1),sel.c);return;}
   if(k==="Tab"){e.preventDefault();select(sel.r,sel.c+(e.shiftKey?-1:1));return;}
   if(k==="F2"){e.preventDefault();startEdit(refOf(sel.r,sel.c));return;}
   if(k==="Delete"||k==="Backspace"){e.preventDefault();
+    pushUndo();
     const {r1,r2,c1,c2}=selRange();
     for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)setRaw(refOf(r,c),"");
     renderAll();return;}
-  if((e.ctrlKey||e.metaKey)&&/^c$/i.test(k)){e.preventDefault();copySelection();return;}
-  if((e.ctrlKey||e.metaKey)&&/^v$/i.test(k)){e.preventDefault();pasteClip();return;}
-  if((e.ctrlKey||e.metaKey)&&/^[biu]$/i.test(k)){e.preventDefault();toggleStyle(k.toLowerCase());return;}
-  if(!e.ctrlKey&&!e.metaKey&&!e.altKey&&k.length===1){ startEdit(refOf(sel.r,sel.c),k); e.preventDefault(); }
+
+  if(mod&&/^z$/i.test(k)){e.preventDefault(); e.shiftKey?redo():undo(); return;}
+  if(mod&&/^y$/i.test(k)){e.preventDefault(); redo(); return;}
+  if(mod&&/^d$/i.test(k)){e.preventDefault(); fillDown(); return;}
+  if(mod&&/^r$/i.test(k)){e.preventDefault(); fillRight(); return;}
+  if(mod&&/^c$/i.test(k)){e.preventDefault();copySelection();return;}
+  if(mod&&/^v$/i.test(k)){e.preventDefault();pasteClip();return;}
+  if(mod&&/^[biu]$/i.test(k)){e.preventDefault();toggleStyle(k.toLowerCase());return;}
+  if(mod&&/^a$/i.test(k)){e.preventDefault(); const t=lastUsedCell(); sel={r:1,c:0}; selEnd={r:t.r,c:t.c}; paintSelection(); return;}
+  if(mod&&k===";"){e.preventDefault(); pushUndo(); setRaw(refOf(sel.r,sel.c),String(todaySerial())); renderAll(); flash("Date inserted"); return;}
+  if(mod&&k===" "){e.preventDefault(); const {c1,c2}=selRange(); sel={r:1,c:c1}; selEnd={r:ROWS,c:c2}; paintSelection(); return;}
+  if(e.shiftKey&&k===" "&&!mod){e.preventDefault(); const {r1,r2}=selRange(); sel={r:r1,c:0}; selEnd={r:r2,c:COLS-1}; paintSelection(); return;}
+  if(e.altKey&&(k==="="||k==="+")){e.preventDefault();
+    const ref=refOf(sel.r,sel.c); const rng=autoSumRange(sel.r,sel.c);
+    startEdit(ref, rng?"=SUM("+rng+")":"=SUM(");
+    return;}
+
+  if(!mod&&!e.altKey&&k.length===1){ startEdit(refOf(sel.r,sel.c),k); e.preventDefault(); }
 });
 fInput.addEventListener("keydown",e=>{
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
     if(handleEditorArrow(e,fInput,sel))return;
     return;
   }
+  if(e.key==="F4"){ e.preventDefault(); cycleRefAt(fInput); return; }
   if(point&&point.inputEl===fInput&&e.key!=="Shift")endPoint();
-  if(e.key==="Enter"){e.preventDefault();endPoint();setRaw(refOf(sel.r,sel.c),fInput.value);renderAll();select(sel.r+1,sel.c);grid.focus();}
+  if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
+    e.preventDefault(); endPoint();
+    pushUndo(); fillSelectionWith(refOf(sel.r,sel.c),fInput.value); renderAll(); flash("Filled selection");
+    return;
+  }
+  if(e.key==="Enter"){e.preventDefault();endPoint();pushUndo();setRaw(refOf(sel.r,sel.c),fInput.value);renderAll();select(sel.r+1,sel.c);grid.focus();}
   if(e.key==="Escape"){e.preventDefault();endPoint();paintSelection();e.target.blur();}
 });
 fInput.addEventListener("blur",()=>{ if(point&&point.inputEl===fInput)endPoint(); });
@@ -1138,6 +1305,7 @@ nameBox.addEventListener("keydown",e=>{
   if(e.key==="Enter"){e.preventDefault();const p=parseRef(nameBox.value);if(p)select(p.r,p.c);e.target.blur();}
 });
 function toggleStyle(s){
+  pushUndo();
   const {r1,r2,c1,c2}=selRange();
   const anchor=getCell(refOf(sel.r,sel.c))||{}; const on=!anchor[s];
   for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++){const ref=refOf(r,c);(cells[ref]=cells[ref]||{raw:cells[ref]?cells[ref].raw:""})[s]=on;}
@@ -1146,8 +1314,8 @@ function toggleStyle(s){
 document.getElementById("btnBold").onclick=()=>toggleStyle("b");
 document.getElementById("btnItalic").onclick=()=>toggleStyle("i");
 document.getElementById("btnUnder").onclick=()=>toggleStyle("u");
-document.getElementById("btnClear").onclick=()=>{const {r1,r2,c1,c2}=selRange();for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)delete cells[refOf(r,c)];renderAll();};
-document.getElementById("btnClearAll").onclick=()=>{cells={};if(!currentEx)targetRefs=[];renderAll();};
+document.getElementById("btnClear").onclick=()=>{pushUndo();const {r1,r2,c1,c2}=selRange();for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)delete cells[refOf(r,c)];renderAll();};
+document.getElementById("btnClearAll").onclick=()=>{pushUndo();cells={};if(!currentEx)targetRefs=[];renderAll();};
 
 /* panel tabs */
 document.querySelectorAll("#paneltabs button").forEach(b=>{
@@ -1551,7 +1719,7 @@ function openCourse(id){
 /* ================= WORKSPACE ================= */
 function openSandbox(){
   currentEx=null; currentExId=null; currentCourse=null;
-  cells={}; targetRefs=[];
+  cells={}; targetRefs=[]; clearHistory();
   document.getElementById("exbar").style.display="none";
   document.getElementById("concept").classList.remove("on");
   document.getElementById("ws-crumb").textContent="Sandbox";
@@ -1562,7 +1730,7 @@ function openSandbox(){
 function openEx(exId){
   const ex=EX[exId]; currentEx=ex; currentExId=exId;
   hintViewed = false; solutionClickCount = 0;
-  cells={};
+  cells={}; clearHistory();
   for(const ref in ex.data) setRaw(ref,ex.data[ref]);
   for(const ref in ex.data){const p=parseRef(ref);if(p&&(p.r===1))(cells[ref]=cells[ref]||{}).b=true;}
   targetRefs = ex.pick ? Object.keys(ex.pick)
@@ -1847,6 +2015,55 @@ const FNDOCS=[
     if(c!==cat){ html+=`<div class="fncat">${c}</div>`; cat=c; }
     html+=`<details><summary>${esc(syn.split("(")[0])}</summary><div class="fd"><span class="syn">${esc(syn)}</span>${esc(desc)}<br>Example: <code>${esc(ex)}</code></div></details>`;
   }
+  el.innerHTML=html;
+})();
+
+/* ================= KEYBOARD REFERENCE PANEL ================= */
+const KEYDOCS=[
+ ["Moving",[
+  [["↑","↓","←","→"],"Move one cell"],
+  [["Ctrl","↑↓←→"],"Jump to the edge of the data region"],
+  [["Ctrl","Home"],"Go to A1"],
+  [["Ctrl","End"],"Go to the last used cell"],
+  [["Tab"],"Move right · Shift+Tab moves left"],
+  [["Enter"],"Move down · Shift+Enter moves up"]]],
+ ["Selecting",[
+  [["Shift","↑↓←→"],"Extend the selection"],
+  [["Ctrl","Shift","↑↓←→"],"Extend to the edge of the data"],
+  [["Ctrl","A"],"Select the whole used range"],
+  [["Ctrl","Space"],"Select the column"],
+  [["Shift","Space"],"Select the row"]]],
+ ["Writing formulas",[
+  [["="],"Start a formula"],
+  [["F2"],"Edit the cell in place"],
+  [["↑↓←→"],"While typing a formula: pick a cell reference"],
+  [["Shift","↑↓←→"],"While typing: extend the picked range"],
+  [["F4"],"Cycle the reference: A1 → $A$1 → A$1 → $A1"],
+  [["Alt","="],"AutoSum the numbers above or to the left"],
+  [["Enter"],"Confirm · Esc cancels"],
+  [["Ctrl","Enter"],"Confirm into every selected cell at once"]]],
+ ["Filling & editing",[
+  [["Ctrl","D"],"Fill down from the top of the selection"],
+  [["Ctrl","R"],"Fill right from the left of the selection"],
+  [["Ctrl","C"],"Copy · Ctrl+V pastes with references shifted"],
+  [["Ctrl","Z"],"Undo · Ctrl+Y or Ctrl+Shift+Z redoes"],
+  [["Ctrl","B"],"Bold · Ctrl+I italic · Ctrl+U underline"],
+  [["Ctrl",";"],"Insert today's date"],
+  [["Delete"],"Clear the selected cells"]]]
+];
+(function renderKeys(){
+  const el=document.getElementById("tab-keys"); if(!el)return;
+  let html="";
+  for(const [cat,rows] of KEYDOCS){
+    html+='<div class="fncat">'+cat+'</div>';
+    for(const [keys,desc] of rows){
+      html+='<div class="krow"><span class="keys">'+keys.map(k=>"<kbd>"+esc(k)+"</kbd>").join("")+
+            '</span><span class="kdesc">'+esc(desc)+'</span></div>';
+    }
+  }
+  html+='<div class="knote"><b>Not available in any browser.</b> <kbd>Ctrl+T</kbd> <kbd>Ctrl+N</kbd> <kbd>Ctrl+W</kbd> '+
+        '<kbd>Ctrl+Tab</kbd> <kbd>Ctrl+1-9</kbd> <kbd>F11</kbd> <kbd>F12</kbd> are reserved by the browser itself and '+
+        'cannot be intercepted by any web page. Everything listed above is the real Excel binding.</div>';
   el.innerHTML=html;
 })();
 
