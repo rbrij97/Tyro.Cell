@@ -1850,6 +1850,28 @@ const FNDOCS=[
   el.innerHTML=html;
 })();
 
+/* ================= TEST HOOKS =================
+   Top-level `const`/`let` create global *lexical* bindings, which are NOT
+   properties of `window` — so `test.html` could never see Engine/EX/doneEx
+   and bailed out with a misleading "cross-frame block" message. Exporting
+   them explicitly is what makes the regression harness able to run at all.
+   Values that get reassigned (cells, currentEx…) need accessors, not copies. */
+window.Engine   = Engine;
+window.isErr    = isErr;      /* const arrow functions are lexical too */
+window.FErr     = FErr;
+window.getCell  = getCell;
+window.refOf    = refOf;
+window.EX       = EX;
+window.COURSES  = COURSES;
+window.doneEx   = doneEx;
+window.COLS     = COLS;
+window.ROWS     = ROWS;
+Object.defineProperty(window,"_cells",      {get:()=>cells, configurable:true});
+Object.defineProperty(window,"targetRefs",  {get:()=>targetRefs, configurable:true});
+Object.defineProperty(window,"currentEx",   {get:()=>currentEx,    set:v=>{currentEx=v;},    configurable:true});
+Object.defineProperty(window,"currentExId", {get:()=>currentExId,  set:v=>{currentExId=v;},  configurable:true});
+Object.defineProperty(window,"currentCourse",{get:()=>currentCourse,set:v=>{currentCourse=v;},configurable:true});
+
 /* ================= INIT ================= */
 buildGrid();
 renderOutline();

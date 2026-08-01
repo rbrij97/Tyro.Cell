@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tyro.cell demo — Test suite</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%230A0A0A'/%3E%3Cg fill='%23fff'%3E%3Crect x='8.4' y='8.1' width='4.5' height='1.75'/%3E%3Crect x='10.9' y='8.1' width='2' height='7.75'/%3E%3Crect x='13.7' y='8.1' width='1.9' height='1.75'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFFFFF; --ink:#0A0A0A; --text-2:#52525B; --muted:#A1A1AA;
+  --line-1:#E7E7E9; --line-2:#EFEFF1; --line-3:#F5F5F6; --line-4:#D6D6D9;
+  --brand:#0A0A0A; --brand-soft:#2E2E33;
+  --green:#0F7A48; --green-dark:#0F7A48; --green-tint:#F2FAF6;
+  --red:#A4463C; --red-tint:#FBEFEC;
+  --sans:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono','Consolas','Menlo',monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:36px 24px 60px}
+.head{display:flex;align-items:baseline;gap:22px;flex-wrap:wrap;margin-bottom:24px}
+.head h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:0}
+.head .sub{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.head .spacer{flex:1}
+.head button{border:1px solid var(--line-4);background:#fff;color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 18px;border-radius:999px;cursor:pointer}
+.head button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.head button.primary:hover{background:var(--brand-soft);border-color:var(--brand-soft)}
+.summary{background:#fff;border:1px solid var(--line-1);border-radius:12px;padding:18px 22px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:baseline}
+.summary .stat{display:flex;flex-direction:column;gap:2px}
+.summary .stat .k{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.summary .stat .v{font-size:24px;font-weight:600;letter-spacing:-.5px;font-family:var(--mono)}
+.summary .stat.pass .v{color:var(--green-dark)}
+.summary .stat.fail .v{color:var(--red)}
+.summary .spacer{flex:1}
+.summary .verdict{font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:6px}
+.summary .verdict.ok{background:var(--green-tint);color:var(--green-dark)}
+.summary .verdict.bad{background:var(--red-tint);color:var(--red)}
+.summary .verdict.idle{background:var(--line-2);color:var(--muted)}
+.section{background:#fff;border:1px solid var(--line-1);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.section .shead{padding:11px 18px;background:#FCFBFA;border-bottom:1px solid var(--line-1);display:flex;align-items:center;gap:12px;font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.section .shead .stitle{color:var(--ink);flex:1;letter-spacing:.06em}
+.section .shead .count.ok{color:var(--green-dark)}
+.section .shead .count.bad{color:var(--red)}
+.trow{display:grid;grid-template-columns:22px 1fr auto;gap:14px;padding:8px 18px;border-bottom:1px solid var(--line-3);align-items:center;font-size:13px}
+.trow:last-child{border-bottom:none}
+.trow .mark{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700}
+.trow.pass .mark{background:var(--green)}
+.trow.fail .mark{background:var(--red)}
+.trow.pass .name{color:var(--text-2)}
+.trow .ms{font:500 11px var(--mono);color:var(--muted);text-align:right;white-space:nowrap}
+.trow .detail{grid-column:2 / -1;margin-top:4px;padding:8px 10px;background:var(--red-tint);border:1px solid #E8CFC9;border-radius:6px;font:12px var(--mono);color:var(--red);white-space:pre-wrap;word-break:break-word}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.note code{font:12px var(--mono);background:var(--line-2);padding:1px 5px;border-radius:3px}
+</style>
+</head>
+<body>
+
+<iframe id="app" src="index.html" style="width:1280px;height:900px;position:absolute;left:-9999px;top:-9999px"></iframe>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <div class="sub">Tyro.cell demo · Regression harness</div>
+      <h1>Test suite</h1>
+    </div>
+    <div class="spacer"></div>
+    <button id="btn-run" class="primary">▶  Run tests</button>
+  </div>
+
+  <div class="summary">
+    <div class="stat total"><span class="k">Total</span><span class="v" id="s-total">–</span></div>
+    <div class="stat pass"><span class="k">Passed</span><span class="v" id="s-pass">–</span></div>
+    <div class="stat fail"><span class="k">Failed</span><span class="v" id="s-fail">–</span></div>
+    <div class="stat time"><span class="k">Elapsed</span><span class="v" id="s-time">–</span></div>
+    <div class="spacer"></div>
+    <span class="verdict idle" id="s-verdict">Idle</span>
+  </div>
+
+  <div id="results"></div>
+
+  <p class="note">Runs against the real <code>index.html</code> in a hidden iframe — never a copy. Browsers block cross-frame
+  access over <code>file://</code>, so serve the folder first: <code>npx serve</code> (or <code>python -m http.server</code>)
+  and open this page over <code>http://</code>.</p>
+</div>
+
+<script>
+"use strict";
+const iframe=document.getElementById("app");
+const btn=document.getElementById("btn-run");
+const resultsEl=document.getElementById("results");
+const S={total:document.getElementById("s-total"),pass:document.getElementById("s-pass"),
+         fail:document.getElementById("s-fail"),time:document.getElementById("s-time"),
+         verdict:document.getElementById("s-verdict")};
+
+const suites=[];
+function suite(section,fn){ const s={section,tests:[]}; suites.push(s); fn((name,tfn)=>s.tests.push({name,tfn})); }
+const D=()=>iframe.contentWindow.Demo;
+
+function is(actual,expected){
+  const pass = (typeof actual==="number"&&typeof expected==="number")
+    ? Math.abs(actual-expected)<1e-9 : String(actual)===String(expected);
+  return {pass, actual:fmt(actual), expected:fmt(expected)};
+}
+function ok(cond,actual,expected){ return {pass:!!cond, actual:fmt(actual), expected:fmt(expected)}; }
+function fmt(v){ if(v===null||v===undefined)return String(v); if(typeof v==="string")return JSON.stringify(v); return String(v); }
+
+/* Put a solution (or any formula) into an exercise and grade it. */
+function gradeWith(exIndex, formula){
+  const d=D();
+  d.reset();
+  d.openEx(exIndex);
+  const ex=d.DEMO[exIndex];
+  /* `formula` may legitimately be "" (the empty-target case) — only fall back on null/undefined */
+  fill(exIndex, formula==null?ex.solution:formula);
+  return d.grade(ex);
+}
+function fill(exIndex, formula){
+  const d=D(); const ex=d.DEMO[exIndex];
+  if(ex.targetRange){
+    const rc=d.rangeCells.apply(null, ex.targetRange.split(":")).flat();
+    const base=d.parseRef(rc[0]);
+    rc.forEach(ref=>{
+      const p=d.parseRef(ref);
+      d.setRaw(ref, d.shiftFormula(formula, p.r-base.r, p.c-base.c));
+    });
+  } else {
+    d.setRaw(ex.target, formula);
+  }
+}
+/* Grade a wrong answer and return the rendered message text. */
+function msgFor(exIndex, formula){
+  const r=gradeWith(exIndex, formula);
+  return { pass:!r.ok, msg:(r.msg||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim(), ok:r.ok };
+}
+function msgContains(exIndex, formula, needle){
+  const m=msgFor(exIndex, formula);
+  if(m.ok) return {pass:false, actual:"formula PASSED (expected it to fail)", expected:"contains: "+needle};
+  return {pass:m.msg.indexOf(needle)>=0, actual:m.msg.slice(0,240), expected:"contains: "+needle};
+}
+
+/* ============================ SUITES ============================ */
+
+suite("Solutions — every shipped answer must pass its own checker", t=>{
+  t("Ex1 solution passes", ()=>{ const r=gradeWith(0); return ok(r.ok, r.msg, "pass"); });
+  t("Ex2 solution passes", ()=>{ const r=gradeWith(1); return ok(r.ok, r.msg, "pass"); });
+  t("Ex3 solution passes", ()=>{ const r=gradeWith(2); return ok(r.ok, r.msg, "pass"); });
+});
+
+suite("Expected values — the numbers we publish", t=>{
+  t("Ex1 West total = 3850", ()=>{
+    const d=D(); d.reset(); d.openEx(0);
+    d.setRaw("C11", d.DEMO[0].solution);
+    return is(d.cellValue("C11",new Set()), 3850);
+  });
+  t("Ex2 total unreconciled = 389500", ()=>{
+    const d=D(); d.reset(); d.openEx(1); fill(1, d.DEMO[1].solution);
+    return is(d.evalStr("SUM(D2:D23)",new Set()), 389500);
+  });
+  t("Ex2 bank total = 2153000", ()=>{ const d=D(); d.reset(); d.openEx(1); return is(d.evalStr("SUM(C2:C23)",new Set()),2153000); });
+  t("Ex2 ledger total = 1803500", ()=>{ const d=D(); d.reset(); d.openEx(1); return is(d.evalStr("SUM(F2:F21)",new Set()),1803500); });
+  t("Ex2 naive SUM difference (349500) != true unreconciled (389500)", ()=>{
+    const d=D(); d.reset(); d.openEx(1);
+    return is(d.evalStr("SUM(C2:C23)-SUM(F2:F21)",new Set()), 349500);
+  });
+  t("Ex2 the six non-zero variance rows are exactly D6,D11,D13,D18,D20,D22", ()=>{
+    const d=D(); d.reset(); d.openEx(1); fill(1, d.DEMO[1].solution);
+    const nz=[];
+    for(let r=2;r<=23;r++){ const v=d.cellValue("D"+r,new Set()); if(v!==0) nz.push("D"+r+"="+v); }
+    return is(nz.join(","), "D6=-500,D11=89000,D13=40000,D18=52000,D20=121000,D22=88000");
+  });
+  t("Ex3 flags = OK,OK,Review,Review,Review,OK", ()=>{
+    const d=D(); d.reset(); d.openEx(2); fill(2, d.DEMO[2].solution);
+    const out=[]; for(let r=2;r<=7;r++) out.push(d.cellValue("C"+r,new Set()));
+    return is(out.join(","), "OK,OK,Review,Review,Review,OK");
+  });
+});
+
+suite("Seeded data problems — each must genuinely be present", t=>{
+  const open=()=>{ const d=D(); d.reset(); d.openEx(1); return d; };
+  t("trailing space in A4 (INV-1003)", ()=>{
+    const v=open().getCell("A4").raw;
+    return ok(typeof v==="string" && v!==v.trim() && v.trim()==="INV-1003", v, '"INV-1003 " with trailing space');
+  });
+  t("trailing space in A8 (INV-1007)", ()=>{
+    const v=open().getCell("A8").raw;
+    return ok(typeof v==="string" && v!==v.trim(), v, "padded");
+  });
+  t("leading space in A15 (INV-1014)", ()=>{
+    const v=open().getCell("A15").raw;
+    return ok(typeof v==="string" && v!==v.replace(/^\s+/,""), v, "leading space");
+  });
+  t("exactly 3 padded IDs in the bank column", ()=>{
+    const d=open(); let n=0;
+    for(let r=2;r<=23;r++){ const v=(d.getCell("A"+r)||{}).raw; if(typeof v==="string"&&v!==v.trim()) n++; }
+    return is(n,3);
+  });
+  t("B9 is a date stored as TEXT, not a serial", ()=>{
+    const d=open(); const v=d.cellValue("B9",new Set());
+    return ok(typeof v==="string" && v==="08-03-2026", v, '"08-03-2026" (text)');
+  });
+  t("the text date is invisible: it renders identically to its neighbours", ()=>{
+    const doc=iframe.contentDocument;
+    const cellText=r=>doc.querySelector('td[data-ref="B'+r+'"]').textContent;
+    D().reset(); D().openEx(1);
+    const before=cellText(8), textOne=cellText(9), after=cellText(10);
+    const pat=/^\d{2}-\d{2}-\d{4}$/;
+    return ok(pat.test(before)&&pat.test(textOne)&&pat.test(after),
+      before+" | "+textOne+" | "+after, "all three render as dd-mm-yyyy");
+  });
+  t("every other date IS a real serial (numeric)", ()=>{
+    const d=open(); let bad=[];
+    for(let r=2;r<=23;r++){ if(r===9) continue;
+      if(typeof d.cellValue("B"+r,new Set())!=="number") bad.push("B"+r); }
+    return is(bad.join(","), "");
+  });
+  t("duplicate invoice ID in the ledger (INV-1012 twice)", ()=>{
+    const d=open(); const seen={}, dupes=[];
+    for(let r=2;r<=21;r++){ const v=(d.getCell("E"+r)||{}).raw; if(seen[v]) dupes.push(v); seen[v]=1; }
+    return is(dupes.join(","), "INV-1012");
+  });
+  t("the duplicate's two amounts sum to the single bank receipt (50000+40000=90000)", ()=>{
+    const d=open();
+    return is(d.evalStr("SUMIF(E2:E21,\"INV-1012\",F2:F21)",new Set()), d.cellValue("C13",new Set()));
+  });
+  t("blank cell inside the ledger amount range (F11)", ()=>{
+    const d=open(); const c=d.getCell("F11");
+    return ok(!c || c.raw==null || c.raw==="", c&&c.raw, "blank");
+  });
+  t("blank is INSIDE the range, not at its edge", ()=>{
+    const d=open();
+    return ok(!!(d.getCell("F10")&&d.getCell("F12")), "F10/F12 populated", "surrounded by data");
+  });
+  t("row counts differ: 22 bank rows vs 20 ledger rows", ()=>{
+    const d=open();
+    let bank=0, books=0;
+    for(let r=2;r<=23;r++) if((d.getCell("A"+r)||{}).raw) bank++;
+    for(let r=2;r<=21;r++) if((d.getCell("E"+r)||{}).raw) books++;
+    return is(bank+"/"+books, "22/20");
+  });
+  t("3 bank receipts have no ledger entry at all (1017, 1019, 1021)", ()=>{
+    const d=open(); const ids=[];
+    for(let r=2;r<=23;r++){
+      const id=String((d.getCell("A"+r)||{}).raw||"").trim();
+      let found=false;
+      for(let k=2;k<=21;k++) if(String((d.getCell("E"+k)||{}).raw||"")===id) found=true;
+      if(!found) ids.push(id);
+    }
+    return is(ids.join(","), "INV-1017,INV-1019,INV-1021");
+  });
+  t("the two ledgers are NOT in the same order (positional matching must fail)", ()=>{
+    const d=open(); let sameOrder=true;
+    for(let i=0;i<20;i++){
+      const a=String((d.getCell("A"+(i+2))||{}).raw||"").trim();
+      const e=String((d.getCell("E"+(i+2))||{}).raw||"");
+      if(a!==e){ sameOrder=false; break; }
+    }
+    return ok(!sameOrder, sameOrder?"same order":"different order", "different order");
+  });
+  t("Ex3 budget table is in a different order from actuals", ()=>{
+    const d=D(); d.reset(); d.openEx(2); let same=true;
+    for(let r=2;r<=7;r++) if(String(d.getCell("A"+r).raw)!==String(d.getCell("E"+r).raw)){ same=false; break; }
+    return ok(!same, same?"same":"different", "different");
+  });
+});
+
+suite("Gating — exercises unlock in order", t=>{
+  t("fresh state: only exercise 1 is unlocked", ()=>{
+    const d=D(); d.reset();
+    return is([d.isLocked(0),d.isLocked(1),d.isLocked(2)].join(","), "false,true,true");
+  });
+  t("exercise 2 is locked before exercise 1 passes", ()=>{ const d=D(); d.reset(); return ok(d.isLocked(1), d.isLocked(1), true); });
+  t("passing exercise 1 unlocks exercise 2 — and only exercise 2", ()=>{
+    const d=D(); d.reset(); d.openEx(0);
+    d.setRaw("C11", d.DEMO[0].solution);
+    d.checkDemo();
+    return is([d.isLocked(1), d.isLocked(2)].join(","), "false,true");
+  });
+  t("passing exercise 2 unlocks exercise 3", ()=>{
+    const d=D(); d.reset(); d.openEx(0); d.setRaw("C11",d.DEMO[0].solution); d.checkDemo();
+    d.openEx(1); fill(1, d.DEMO[1].solution); d.checkDemo();
+    return ok(!d.isLocked(2), d.isLocked(2), false);
+  });
+  t("a FAILED attempt does not unlock the next exercise", ()=>{
+    const d=D(); d.reset(); d.openEx(0);
+    d.setRaw("C11", "=SUMIFS(C2:C9,B2:B9,\"East\")");
+    d.checkDemo();
+    return ok(d.isLocked(1), d.isLocked(1), true);
+  });
+});
+
+suite("Diagnostics — every wrong answer names a cell and a cause", t=>{
+  t("untrimmed lookup key → names TRIM and the padded cell", ()=>
+    msgContains(1, '=C2-XLOOKUP(A2,$E$2:$E$21,$F$2:$F$21,0)', "TRIM"));
+  t("untrimmed lookup key → quotes the actual padded value", ()=>
+    msgContains(1, '=C2-XLOOKUP(A2,$E$2:$E$21,$F$2:$F$21,0)', "INV-1003"));
+  t("untrimmed lookup key → identifies cell A4", ()=>
+    msgContains(1, '=C2-XLOOKUP(A2,$E$2:$E$21,$F$2:$F$21,0)', "A4"));
+  t("wrong column (date instead of amount) → names both columns", ()=>
+    msgContains(1, '=B2-XLOOKUP(TRIM(A2),$E$2:$E$21,$F$2:$F$21,0)', "Date received"));
+  t("unlocked lookup range → explains the range slides", ()=>
+    msgContains(1, '=C2-XLOOKUP(TRIM(A2),E2:E21,F2:F21,0)', "slides"));
+  t("over-locked reference → explains it cannot move", ()=>
+    msgContains(1, '=$C$2-XLOOKUP(TRIM($A$2),$E$2:$E$21,$F$2:$F$21,0)', "cannot move"));
+  t("range short by one row → says it stops short", ()=>
+    msgContains(1, '=C2-XLOOKUP(TRIM(A2),$E$2:$E$20,$F$2:$F$20,0)', "stops one row short"));
+  t("range short by one row → names the excluded invoice", ()=>
+    msgContains(1, '=C2-XLOOKUP(TRIM(A2),$E$2:$E$20,$F$2:$F$20,0)', "INV-1008"));
+  t("VLOOKUP with no fallback → explains the #N/A is a real reconciling item", ()=>
+    msgContains(1, '=C2-VLOOKUP(TRIM(A2),$E$2:$F$21,2,FALSE)', "not-found"));
+  t("SUMIF instead of a lookup → credits it rather than calling it wrong", ()=>
+    msgContains(1, '=C2-SUMIF($E$2:$E$21,TRIM(A2),$F$2:$F$21)', "better"));
+  /* The value is CORRECT here — a hardcoded answer must still be rejected. */
+  t("hardcoded literal is rejected even though the total is right", ()=>
+    msgContains(0, '=SUMIFS(C2:C9,B2:B9,"West")*0+3850', "typed into it literally"));
+  t("missing ABS on a negative variance → names ABS", ()=>
+    msgContains(2, '=IF((B2-XLOOKUP(A2,$E$2:$E$7,$F$2:$F$7))>$H$2,"Review","OK")', "ABS"));
+  t("positional assumption in Ex3 → says the order differs", ()=>
+    msgContains(2, '=IF(ABS(B2-F2)>$H$2,"Review","OK")', "same order"));
+  /* $B$9 so the ref does not shift off the grid; `<` so the text comparison
+     actually changes the result (with `>` the text silently passes the test,
+     which is the lesson but makes for a useless probe). */
+  t("text date → flagged as stored text, not a serial", ()=>
+    msgContains(1, '=IF($B$9<DATE(2026,3,7),C2,0)-XLOOKUP(TRIM(A2),$E$2:$E$21,$F$2:$F$21,0)', "stored as"));
+  t("text date → names ISNUMBER as the way to check", ()=>
+    msgContains(1, '=IF($B$9<DATE(2026,3,7),C2,0)-XLOOKUP(TRIM(A2),$E$2:$E$21,$F$2:$F$21,0)', "ISNUMBER"));
+  t("text date silently PASSES a >= comparison — the landmine is real", ()=>{
+    const d=D(); d.reset(); d.openEx(1);
+    return is(d.evalStr("IF($B$9>=DATE(2026,3,7),1,0)", new Set()), 1);
+  });
+  t("empty target → says which cell and what to do", ()=>
+    msgContains(1, '', "empty"));
+  t("typed value instead of formula → rejected", ()=>{
+    const d=D(); d.reset(); d.openEx(0); d.setRaw("C11","3850");
+    const r=d.grade(d.DEMO[0]);
+    return ok(!r.ok && /formula/i.test(r.msg), (r.msg||"").replace(/<[^>]+>/g,"").slice(0,120), "rejects plain value");
+  });
+  t("missing required function → names it", ()=>
+    msgContains(0, '=SUM(C2:C9)', "SUMIFS"));
+  t("NO wrong answer is ever a bare 'incorrect' — all carry a cause", ()=>{
+    const cases=[
+      [1,'=C2-XLOOKUP(A2,$E$2:$E$21,$F$2:$F$21,0)'],
+      [1,'=B2-XLOOKUP(TRIM(A2),$E$2:$E$21,$F$2:$F$21,0)'],
+      [1,'=C2-XLOOKUP(TRIM(A2),E2:E21,F2:F21,0)'],
+      [1,'=C2-XLOOKUP(TRIM(A2),$E$2:$E$20,$F$2:$F$20,0)'],
+      [2,'=IF(ABS(B2-F2)>$H$2,"Review","OK")'],
+      [2,'=IF((B2-XLOOKUP(A2,$E$2:$E$7,$F$2:$F$7))>$H$2,"Review","OK")'],
+      [0,'=SUMIFS(C2:C9,B2:B9,"East")']
+    ];
+    const thin=[];
+    cases.forEach(([i,f])=>{
+      const m=msgFor(i,f);
+      if(m.ok) thin.push("PASSED: "+f);
+      else if(m.msg.length<60) thin.push("too terse: "+f+" -> "+m.msg);
+    });
+    return is(thin.join(" | "), "");
+  });
+});
+
+suite("Instrumentation — funnel tracking, no personal data", t=>{
+  t("starting an exercise emits exercise_started", ()=>{
+    const d=D(); d.reset();
+    const n=d.Analytics.events.filter(e=>e.event==="exercise_started").length;
+    return ok(n>=1, n, ">=1");
+  });
+  t("attempts are counted per exercise", ()=>{
+    const d=D(); d.reset(); d.openEx(0);
+    d.setRaw("C11","=SUMIFS(C2:C9,B2:B9,\"East\")"); d.checkDemo();
+    d.setRaw("C11","=SUMIFS(C2:C9,B2:B9,\"North\")"); d.checkDemo();
+    return is(d.stats.westsales.attempts, 2);
+  });
+  t("passing records elapsed time (tracked, never displayed)", ()=>{
+    const d=D(); d.reset(); d.openEx(0);
+    d.setRaw("C11", d.DEMO[0].solution); d.checkDemo();
+    return ok(typeof d.stats.westsales.elapsedMs==="number" && d.stats.westsales.elapsedMs>=0,
+      d.stats.westsales.elapsedMs, "a number");
+  });
+  t("no countdown/elapsed timer is rendered anywhere in the UI", ()=>{
+    const txt=iframe.contentDocument.body.innerText;
+    const bad=/\b\d{1,2}:\d{2}\b|time (left|remaining)|countdown/i.test(txt);
+    return ok(!bad, bad?"timer-like text found":"none", "no timer");
+  });
+  t("funnel() reports started/passed/attempts for all three", ()=>{
+    const f=D().Analytics.funnel();
+    return is(f.length, 3);
+  });
+  t("attempt events never carry the user's formula text", ()=>{
+    const d=D(); d.reset(); d.openEx(0);
+    d.setRaw("C11","=SUMIFS(C2:C9,B2:B9,\"SECRET\")"); d.checkDemo();
+    const leaked=d.Analytics.events.some(e=>JSON.stringify(e).indexOf("SECRET")>=0);
+    return ok(!leaked, leaked?"formula leaked into analytics":"clean", "clean");
+  });
+  t("no third-party analytics script is loaded", ()=>{
+    const src=[...iframe.contentDocument.querySelectorAll("script[src]")].map(s=>s.src);
+    return is(src.join(","), "");
+  });
+  t("sink hook is available for a real endpoint later", ()=>{
+    const d=D(); let got=null;
+    d.Analytics.sink=e=>{ got=e; };
+    d.Analytics.emit("test_event",{x:1});
+    d.Analytics.sink=null;
+    return ok(got && got.event==="test_event", got&&got.event, "test_event");
+  });
+});
+
+suite("Engine invariants the exercises depend on", t=>{
+  t("TRIM cannot be applied to a range (blocks array-TRIM answers)", ()=>{
+    const d=D();
+    try{ d.evalStr('XLOOKUP("INV-1003",TRIM(E2:E21),F2:F21,0)', new Set()); return ok(false,"no throw","#VALUE!"); }
+    catch(e){ return is(d.isErr(e)?e.__err:String(e), "#VALUE!"); }
+  });
+  t("text sorts above numbers (why the text date slips through >=)", ()=>{
+    const d=D(); d.reset(); d.openEx(1);
+    return is(d.evalStr("B9>=B10", new Set()), true);
+  });
+  t("XLOOKUP returns only the FIRST duplicate match", ()=>{
+    const d=D(); d.reset(); d.openEx(1);
+    return is(d.evalStr('XLOOKUP("INV-1012",E2:E21,F2:F21,0)', new Set()), 50000);
+  });
+  t("blank ledger amount behaves as 0", ()=>{
+    const d=D(); d.reset(); d.openEx(1);
+    return is(d.evalStr('XLOOKUP("INV-1010",E2:E21,F2:F21,0)', new Set()), "");
+  });
+  t("none of the solutions use a function the engine lacks", ()=>{
+    const d=D(); const missing=[];
+    d.DEMO.forEach(ex=>d.fnsIn(ex.solution).forEach(f=>{ if(!d.Engine.FUNCS[f]) missing.push(ex.id+":"+f); }));
+    return is(missing.join(","), "");
+  });
+  t("grid is big enough for the largest exercise (needs col F, row 23)", ()=>{
+    const d=D();
+    return ok(d.Engine.COLS>=6 && d.Engine.ROWS>=23, d.Engine.COLS+"x"+d.Engine.ROWS, ">=6x23");
+  });
+});
+
+/* ============================ RUNNER ============================ */
+function pill(text,cls){ S.verdict.textContent=text; S.verdict.className="verdict "+cls; }
+function escHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function render(sections){
+  resultsEl.innerHTML="";
+  sections.forEach(({section,tests})=>{
+    const wrap=document.createElement("div"); wrap.className="section";
+    const passed=tests.filter(x=>x.pass).length;
+    const head=document.createElement("div"); head.className="shead";
+    head.innerHTML='<span class="stitle">'+section+'</span><span class="count '+(passed===tests.length?"ok":"bad")+'">'+passed+" / "+tests.length+"</span>";
+    wrap.appendChild(head);
+    tests.forEach(test=>{
+      const row=document.createElement("div"); row.className="trow "+(test.pass?"pass":"fail");
+      row.innerHTML='<span class="mark">'+(test.pass?"✓":"✗")+'</span>'+
+        '<span class="name">'+escHtml(test.name)+'</span>'+
+        '<span class="ms">'+test.ms.toFixed(1)+'ms</span>'+
+        (test.pass?"":'<div class="detail">expected: '+escHtml(String(test.expected))+'\nactual:   '+escHtml(String(test.actual))+'</div>');
+      wrap.appendChild(row);
+    });
+    resultsEl.appendChild(wrap);
+  });
+}
+function runAll(){
+  btn.disabled=true; pill("Running…","idle");
+  const t0=performance.now(); const sections=[]; let total=0,passed=0;
+  suites.forEach(({section,tests})=>{
+    const out=[];
+    tests.forEach(({name,tfn})=>{
+      const s=performance.now(); let r;
+      try{ r=tfn(); if(r===true) r={pass:true}; }
+      catch(e){ r={pass:false,actual:"threw: "+(e&&e.message||String(e)),expected:"no throw"}; }
+      r.ms=performance.now()-s; r.name=name; out.push(r);
+    });
+    out.forEach(r=>{ total++; if(r.pass) passed++; });
+    sections.push({section,tests:out});
+  });
+  S.total.textContent=total; S.pass.textContent=passed; S.fail.textContent=total-passed;
+  S.time.textContent=(performance.now()-t0).toFixed(0)+" ms";
+  pill(passed===total?"All passed":(total-passed)+" failed", passed===total?"ok":"bad");
+  render(sections); btn.disabled=false; btn.textContent="▶  Re-run tests";
+}
+let ready=false;
+iframe.addEventListener("load",()=>{ ready=true; btn.disabled=false; pill("Ready","idle"); });
+btn.disabled=true;
+btn.addEventListener("click",()=>{
+  if(!ready){ pill("App not loaded","bad"); return; }
+  let reachable=false;
+  try{ reachable = !!(iframe.contentWindow && iframe.contentWindow.Demo); }catch(e){ reachable=false; }
+  if(!reachable){
+    pill("Cannot reach the app","bad");
+    resultsEl.innerHTML='<div class="section"><div class="shead"><span class="stitle" style="color:var(--red)">Blocked</span></div>'+
+      '<div class="trow fail"><span class="mark">✗</span><span class="name">The browser blocked cross-frame access. Serve this folder over HTTP '+
+      '(<code>npx serve</code>) and reopen at <code>http://localhost:PORT/demo-test.html</code>.</span><span class="ms"></span></div></div>';
+    return;
+  }
+  runAll();
+});
+</script>
+</body>
+</html>

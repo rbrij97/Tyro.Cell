@@ -17,7 +17,12 @@
       "Bash(unzip -o \"C:\\\\Users\\\\Brij\\\\Downloads\\\\Auto-save and chat access.zip\")",
       "Bash(node build-decisions-log-v2.js)",
       "Bash(git config user.name \"Brij Ruparel\")",
-      "Bash(git config user.email \"ruparelbrij97@gmail.com\")"
+      "Bash(git config user.email \"ruparelbrij97@gmail.com\")",
+      "Read(//c/Users/Brij/AppData/Local/Temp/claude/C--Users-Brij-OneDrive-Desktop-Project-Tyro-Cell/f2e13551-65c6-4571-a97b-931f488e28b3/scratchpad/**)",
+      "Bash(node probe.js)",
+      "Bash(cat eng.js probe.js)",
+      "Bash(node run.js)",
+      "Bash(node -e ' *)"
     ]
   }
 }

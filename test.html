@@ -506,7 +506,8 @@ suite("UI · State transitions", t => {
     const w = win();
     w.doneEx.clear();
     w.openEx("sum");
-    w.setRaw("B7", w.EX.sum.solution);
+    /* read the target off the exercise — hardcoding it went stale when the data moved B7 -> B9 */
+    w.setRaw(w.EX.sum.target, w.EX.sum.solution);
     w.checkEx(w.EX.sum);
     return { pass: w.doneEx.has("sum"), actual: w.doneEx.has("sum"), expected: true };
   });

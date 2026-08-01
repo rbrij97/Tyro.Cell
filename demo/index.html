@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tyro.cell — Can you reconcile this ledger?</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%230A0A0A'/%3E%3Cg fill='%23fff'%3E%3Crect x='8.4' y='8.1' width='4.5' height='1.75'/%3E%3Crect x='10.9' y='8.1' width='2' height='7.75'/%3E%3Crect x='13.7' y='8.1' width='1.9' height='1.75'/%3E%3C/g%3E%3C/svg%3E">
+<!-- Progressive enhancement only: every font has a local fallback in the stack below,
+     so the page renders correctly as a static file with no network. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..600;1,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* The mark is pure black on white, so the BRAND is monochrome and colour is
+     reserved strictly for meaning: correct, wrong, and "your answer goes here". */
+  --paper:#FFFFFF; --surface:#FAFAFA;
+  --ink:#0A0A0A; --text-1:#3F3F46; --text-2:#52525B; --text-3:#71717A;
+  --muted:#A1A1AA; --hint:#C4C4C8;
+  --line-1:#E7E7E9; --line-2:#EFEFF1; --line-3:#F5F5F6; --line-4:#D6D6D9;
+  --brand:#0A0A0A; --brand-soft:#2E2E33; --brand-tint:#F2F2F3; --select:#DCDCE0;
+  --ok:#0F7A48; --ok-tint:#F2FAF6; --ok-line:#CFE7DB;
+  --red:#A4463C; --red-tint:#FBEFEC; --red-line:#E8CFC9;
+  --gold:#8A6B12; --gold-tint:#FDF8E8; --gold-line:#DFC98A;
+  --dark:#0A0A0A;
+  --sans:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:'Instrument Serif',Georgia,serif;
+  --mono:'JetBrains Mono','Consolas','Menlo',monospace;
+  --r-sm:5px; --r-md:8px; --r-lg:12px; --r-pill:999px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font-family:inherit;color:inherit}
+::selection{background:var(--select)}
+
+.btn{border:1px solid var(--line-4);background:#fff;color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 14px;border-radius:var(--r-sm);cursor:pointer;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--line-2)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--brand-soft);border-color:var(--brand-soft)}
+.btn.big{padding:12px 22px;font-size:15px}
+.btn:disabled{opacity:.35;cursor:default}
+.eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- shell ---------- */
+#shell{display:flex;flex-direction:column;height:100%}
+
+#protobar{flex:none;background:var(--gold-tint);border-bottom:1px solid var(--gold-line);color:var(--gold);
+  font:500 12px var(--mono);letter-spacing:.04em;padding:7px 20px;text-align:center}
+#protobar b{font-weight:700}
+
+#topbar{flex:none;display:flex;align-items:center;gap:12px 18px;padding:11px 20px;background:var(--dark);color:#fff;flex-wrap:wrap;font-size:13px}
+#topbar .brand{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600;letter-spacing:-.2px}
+/* The mark keeps its own black field, exactly as supplied. */
+.mark{display:block;flex:none;background:#0A0A0A}
+#topbar .mark{width:22px;height:22px}
+.wordmark{font-weight:600}
+.wordmark .dim{color:var(--muted);font-weight:500}
+#topbar .spacer{flex:1}
+#stepper{display:flex;align-items:center;gap:8px}
+#stepper .step{display:flex;align-items:center;gap:7px;font:500 11.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#8A8A90;
+  border:1px solid #313135;border-radius:var(--r-sm);padding:4px 12px;background:none;cursor:default}
+#stepper .step.clickable{cursor:pointer}
+#stepper .step .dot{width:15px;height:15px;border-radius:2px;border:1.5px solid #55555B;display:grid;place-items:center;font-size:9px;font-weight:700;color:#0A0A0A}
+#stepper .step.cur{color:#fff;border-color:#fff}
+#stepper .step.cur .dot{border-color:#fff;color:#fff}
+#stepper .step.done{color:#fff;border-color:#5A5A61}
+#stepper .step.done .dot{background:#fff;border-color:#fff;color:#0A0A0A}
+#stepper .step.locked{opacity:.4}
+
+#exbar{flex:none;display:flex;align-items:center;gap:10px 14px;padding:11px 20px;border-bottom:1px solid var(--line-1);background:#fff;flex-wrap:wrap}
+#exbar .badge{font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:5px}
+/* Difficulty as increasing ink density rather than three unrelated hues. */
+.badge.easy{background:var(--line-2);color:var(--text-2);box-shadow:inset 0 0 0 1px var(--line-1)}
+.badge.medium{background:#DCDCE0;color:#2E2E33}
+.badge.hard{background:var(--brand);color:#fff}
+#exbar .extitle{font-size:15.5px;font-weight:600;letter-spacing:-.3px}
+#exbar .exfn{font:italic 400 15px var(--serif);color:var(--muted)}
+#exbar .spacer{flex:1;min-width:12px}
+#exbar .actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#exbar .btn.check{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;padding:9px 18px}
+#exbar .btn.check:hover{background:var(--brand-soft);border-color:var(--brand-soft)}
+
+#formulabar{flex:none;display:flex;align-items:center;gap:9px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line-1)}
+#namebox{min-width:52px;padding:5px 8px;border:1px solid var(--line-4);border-radius:var(--r-sm);font:12px var(--mono);text-align:center;color:var(--text-2);background:#fff}
+#fx{font:italic 14px var(--serif);color:#A0A4AA}
+#formulainput{flex:1;padding:7px 11px;border:1px solid var(--line-4);border-radius:var(--r-sm);font:13px var(--mono);background:#fff;color:var(--ink)}
+#formulainput:focus,#namebox:focus{outline:2px solid var(--brand);outline-offset:-1px}
+
+#main{flex:1;display:flex;min-height:0}
+
+#brief{flex:0 1 330px;min-width:290px;max-width:360px;background:#fff;border-right:1px solid var(--line-1);overflow-y:auto;padding:22px 20px}
+#brief h2{font-size:19px;font-weight:600;letter-spacing:-.4px;margin:0 0 12px}
+#brief .cbody{font-size:14px;line-height:1.65;color:var(--text-1);margin:0 0 14px}
+#brief .cbody p{margin:0 0 10px}
+#brief .cbody b.term{color:var(--ink);font-weight:600;box-shadow:inset 0 -6px 0 var(--line-2)}
+#brief code{font:12.5px var(--mono);background:var(--line-2);border-radius:3px;padding:1px 5px}
+#brief .formula{font:500 13px var(--mono);color:var(--ink);background:var(--surface);border:1px solid var(--line-1);border-left:3px solid var(--brand);border-radius:var(--r-sm);padding:11px 13px;margin:8px 0 16px;display:block;word-break:break-word}
+#brief .task{font-size:14.5px;line-height:1.6;color:var(--ink);margin:10px 0 12px}
+.task-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:500 12px var(--mono);color:var(--gold);margin-bottom:16px}
+.task-meta .lb{color:var(--muted)}
+.task-meta .tcell{background:var(--gold-tint);border:1px solid var(--gold-line);border-radius:4px;padding:2px 8px}
+.hintbox{margin-top:16px;padding-left:14px;border-left:2px solid var(--gold-line);display:none}
+.hintbox.on{display:block}
+.hintbox .eyebrow{color:var(--gold);margin-bottom:6px}
+.hintbox p{font-size:13.5px;line-height:1.6;color:var(--text-2);margin:0}
+.result{margin-top:18px;padding:12px 14px;border-radius:8px;display:none;font-size:13.5px;line-height:1.6}
+.result.ok{display:block;background:var(--ok-tint);border:1px solid var(--ok-line);color:var(--ok)}
+.result.bad{display:block;background:var(--red-tint);border:1px solid var(--red-line);color:var(--red)}
+.result code{font:12px var(--mono);background:rgba(255,255,255,.65);border-radius:3px;padding:1px 5px}
+.result ul{margin:8px 0 0;padding-left:18px}
+.result li{margin-bottom:6px}
+.result li:last-child{margin-bottom:0}
+
+#gridwrap{flex:1;overflow:auto;background:#F7F6F4;position:relative;padding:14px}
+table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1px solid var(--line-4);border-radius:var(--r-md);overflow:hidden}
+#grid th,#grid td{border:1px solid var(--line-3);font-size:13px;height:26px;position:relative}
+#grid th{background:#F8F7F5;color:var(--muted);font:400 11.5px var(--mono);position:sticky;z-index:2;user-select:none;padding:0 6px}
+#grid thead th{top:0}
+#grid tbody th{left:0;width:38px;min-width:38px;text-align:center}
+#grid thead th.corner{left:0;z-index:4;width:38px;min-width:38px}
+#grid th.hl{color:var(--ink);background:var(--select);font-weight:600}
+#grid td{width:132px;min-width:132px;padding:0 8px;white-space:nowrap;overflow:hidden;cursor:cell;background:#fff;font:12.5px var(--mono)}
+#grid td.num{text-align:right}
+#grid td.bool{text-align:center}
+#grid td.err{color:var(--red);font-weight:600;text-align:center}
+#grid td.b{font-weight:700}
+#grid td.insel{background:var(--brand-tint)}
+#grid td.sel{outline:2px solid var(--brand);outline-offset:-2px;background:#fff}
+#grid td.target{background:var(--gold-tint);box-shadow:inset 0 0 0 2px var(--gold-line)}
+#grid td.pt{outline:2px dashed #2B6CB0;outline-offset:-2px;background:#E8F0FA}
+#grid td.fillprev{outline:1px dashed var(--brand);outline-offset:-1px;background:var(--brand-tint)}
+#fillhandle{position:absolute;width:8px;height:8px;background:var(--brand);border:1px solid #fff;cursor:crosshair;z-index:6;display:none}
+#grid td input{position:absolute;inset:0;width:100%;height:100%;border:2px solid var(--brand);padding:0 6px;font:12.5px var(--mono);z-index:5;border-radius:2px}
+#grid td input:focus{outline:none}
+
+#statusbar{flex:none;display:flex;align-items:center;gap:20px;padding:8px 16px;background:#fff;border-top:1px solid var(--line-1);font:400 11.5px var(--mono);color:var(--text-3);flex-wrap:wrap}
+#statusbar .spacer{flex:1}
+#statusbar .keys{color:#A0A4AA}
+
+/* ---------- completion ---------- */
+#done{position:fixed;inset:0;background:var(--paper);z-index:60;display:none;overflow-y:auto}
+#done.on{display:block}
+#done .wrap{max-width:640px;margin:0 auto;padding:76px 24px 60px;text-align:center}
+#done h1{font-size:clamp(30px,5vw,46px);line-height:1.06;letter-spacing:-1.3px;font-weight:600;margin:0 0 18px}
+#done .lede{font-size:17px;color:var(--text-3);margin:0 0 30px}
+#done .recap{background:#fff;border:1px solid var(--line-1);border-radius:var(--r-lg);padding:20px 24px;margin-bottom:26px;text-align:left}
+#done .recap .row{display:flex;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line-3);font-size:14px}
+#done .recap .row:last-child{border-bottom:none}
+#done .recap .tick{color:var(--ok);font-weight:700}
+#done .recap .what{flex:1;color:var(--text-1)}
+#done .insight{background:var(--surface);border:1px solid var(--line-1);border-left:3px solid var(--brand);border-radius:var(--r-sm);padding:16px 18px;margin-bottom:30px;text-align:left;font-size:14px;line-height:1.65;color:var(--text-1)}
+#done .insight b{font-weight:600}
+#done .insight code{font:12.5px var(--mono);background:rgba(255,255,255,.7);border-radius:3px;padding:1px 5px}
+#done .cta{font-size:19px;font-weight:600;margin-bottom:16px;letter-spacing:-.3px}
+#done .ctarow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+#done .thanks{display:none;font-size:15px;color:var(--ok);background:var(--ok-tint);border:1px solid var(--ok-line);border-radius:var(--r-sm);padding:14px 18px}
+#done .thanks.on{display:block}
+
+/* ---------- mobile guard ---------- */
+#mobile{position:fixed;inset:0;background:var(--paper);z-index:80;display:none;overflow-y:auto}
+#mobile.on{display:block}
+#mobile .wrap{max-width:560px;margin:0 auto;padding:56px 24px}
+#mobile .mark{width:40px;height:40px;margin-bottom:22px}
+#mobile h1{font-size:29px;line-height:1.1;letter-spacing:-.9px;font-weight:600;margin:0 0 14px}
+#mobile p{font-size:15.5px;color:var(--text-3);margin:0 0 16px}
+#mobile .card{background:#fff;border:1px solid var(--line-1);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px}
+#mobile .card .k{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+#mobile .card .t{font-size:15px;font-weight:600;margin-bottom:4px}
+#mobile .card .d{font-size:13.5px;color:var(--text-3)}
+#mobile .note{font-size:13px;color:var(--muted);margin-top:20px}
+
+@media (max-width:1080px){
+  #brief{flex-basis:290px;min-width:250px}
+  #grid td{width:112px;min-width:112px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="shell">
+  <div id="protobar"><b>PROTOTYPE</b> — an early build, not a finished product. Nothing is saved and there is no account.</div>
+
+  <div id="topbar">
+    <span class="brand">
+      <svg class="mark" viewBox="6.9 6.88 10.2 10.2" aria-hidden="true"><g fill="#fff"><rect x="8.4" y="8.1" width="4.5" height="1.75"/><rect x="10.9" y="8.1" width="2" height="7.75"/><rect x="13.7" y="8.1" width="1.9" height="1.75"/></g></svg>
+      <span class="wordmark">Tyro<span class="dim">.</span>cell</span>
+    </span>
+    <span class="spacer"></span>
+    <div id="stepper"></div>
+  </div>
+
+  <div id="exbar">
+    <span class="badge" id="ex-badge">easy</span>
+    <span class="extitle" id="ex-title"></span>
+    <span class="exfn" id="ex-fn"></span>
+    <span class="spacer"></span>
+    <div class="actions">
+      <button class="btn" id="btnHint">Hint</button>
+      <button class="btn" id="btnReset">Reset</button>
+      <button class="btn check" id="btnCheck">Check answer</button>
+      <button class="btn primary" id="btnNext" style="display:none">Next →</button>
+    </div>
+  </div>
+
+  <div id="formulabar">
+    <input id="namebox" value="A1" spellcheck="false" aria-label="Cell name box">
+    <span id="fx">fx</span>
+    <input id="formulainput" spellcheck="false" autocomplete="off" aria-label="Formula bar" placeholder="Value or formula — e.g. =SUM(A1:A5)">
+  </div>
+
+  <div id="main">
+    <div id="brief"></div>
+    <div id="gridwrap"><table id="grid" aria-label="Spreadsheet grid"></table><div id="fillhandle" title="Fill handle — drag to copy with relative references"></div></div>
+  </div>
+
+  <div id="statusbar">
+    <span id="st-mode">Ready</span>
+    <span id="st-agg"></span>
+    <span class="spacer"></span>
+    <span class="keys">Enter confirms · Esc cancels · F2 edits · arrows move · drag the green square to fill</span>
+  </div>
+</div>
+
+<div id="done">
+  <div class="wrap">
+    <h1>That's the job.</h1>
+    <p class="lede">Three tasks, real messy data, no video. This is what practice looks like when the sheet fights back.</p>
+    <div class="recap" id="doneRecap"></div>
+    <div class="insight" id="doneInsight"></div>
+    <div class="cta">Would you use the full version?</div>
+    <div class="ctarow">
+      <button class="btn primary big" data-cta="yes">Yes — I'd use this</button>
+      <button class="btn big" data-cta="no">Not for me</button>
+    </div>
+    <div class="thanks" id="doneThanks"></div>
+  </div>
+</div>
+
+<div id="mobile">
+  <div class="wrap">
+    <svg class="mark" viewBox="6.9 6.88 10.2 10.2" aria-label="Tyro.cell" role="img"><g fill="#fff"><rect x="8.4" y="8.1" width="4.5" height="1.75"/><rect x="10.9" y="8.1" width="2" height="7.75"/><rect x="13.7" y="8.1" width="1.9" height="1.75"/></g></svg>
+    <h1>This one needs a desktop.</h1>
+    <p>It's a real spreadsheet — 22 ledger rows, formula entry, and a fill handle you drag. On a phone screen that's not a compromise, it's just broken. So we're not going to pretend.</p>
+    <p><b>Open this link on a laptop</b> and it takes about ten minutes. Here's what's waiting:</p>
+    <div class="card"><div class="k">Exercise 1 · Easy</div><div class="t">Regional sales total</div><div class="d">One <code>SUMIFS</code>. About a minute.</div></div>
+    <div class="card"><div class="k">Exercise 2 · Medium</div><div class="t">Bank vs ledger reconciliation</div><div class="d">22 receipts against 20 booked invoices that don't tie. Padded IDs, a duplicate booking, an unbooked receipt, and a date that isn't a date.</div></div>
+    <div class="card"><div class="k">Exercise 3 · Hard</div><div class="t">Budget variance with a materiality flag</div><div class="d">Actual vs budget by segment, listed in different orders. One formula, filled down.</div></div>
+    <p class="note">Prototype. Nothing is saved, and there's no account.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   ENGINE  —  copied verbatim from `excel-practice (1).html` (the production
+   formula engine) apart from the grid dimensions. Pure logic, no DOM, so the
+   same code can later run in Node for server-side answer re-verification.
+   Do not rewrite this section; keep it in sync with the main app instead.
+   ========================================================================= */
+const COLS = 8, ROWS = 26;
+const colName = i => { let s=""; i++; while(i>0){ s=String.fromCharCode(65+(i-1)%26)+s; i=Math.floor((i-1)/26);} return s; };
+const COLNAMES = Array.from({length:COLS},(_,i)=>colName(i));
+let cells = {};
+let sel = {r:1,c:0};
+let selEnd = null;
+let editing = null;
+let targetRefs = [];
+
+const refOf=(r,c)=>COLNAMES[c]+r;
+function parseRef(s){ const m=String(s).trim().toUpperCase().match(/^\$?([A-Z]{1,2})\$?(\d{1,3})$/); if(!m)return null;
+  const c=COLNAMES.indexOf(m[1]); const r=+m[2]; if(c<0||r<1||r>ROWS)return null; return {r,c}; }
+const getCell=ref=>cells[ref]||null;
+function setRaw(ref,val){ if(val===""||val==null){ if(cells[ref]){delete cells[ref].raw; if(!cells[ref].b&&!cells[ref].i&&!cells[ref].u)delete cells[ref]; else cells[ref].raw="";} }
+  else { (cells[ref]=cells[ref]||{}).raw=String(val); } }
+
+const FErr = code => ({ __err: code });
+const isErr = v => v && typeof v==="object" && v.__err;
+
+function tokenize(src){
+  const toks=[]; let i=0;
+  while(i<src.length){
+    const ch=src[i];
+    if(ch===" "||ch==="\t"){i++;continue;}
+    if(ch==='"'){ let j=i+1,s="";
+      while(j<src.length){ if(src[j]==='"'){ if(src[j+1]==='"'){s+='"';j+=2;} else break; } else {s+=src[j];j++;} }
+      if(j>=src.length) throw FErr("#VALUE!");
+      toks.push({t:"str",v:s}); i=j+1; continue; }
+    if(/[0-9]/.test(ch)||(ch==="."&&/[0-9]/.test(src[i+1]||""))){
+      let j=i; while(j<src.length&&/[0-9.]/.test(src[j]))j++;
+      if((src[j]==="e"||src[j]==="E")&&/[0-9+\-]/.test(src[j+1]||"")){ j++; if(/[+\-]/.test(src[j]))j++; while(/[0-9]/.test(src[j]||""))j++; }
+      toks.push({t:"num",v:parseFloat(src.slice(i,j))}); i=j; continue; }
+    if(/[A-Za-z_$]/.test(ch)){
+      let j=i; while(j<src.length&&/[A-Za-z0-9_.$]/.test(src[j]))j++;
+      const w=src.slice(i,j); i=j;
+      if(src[i]==="("){ toks.push({t:"func",v:w.toUpperCase()}); continue; }
+      if(/^(TRUE|FALSE)$/i.test(w)){ toks.push({t:"bool",v:/^t/i.test(w)}); continue; }
+      if(/^\$?[A-Za-z]{1,2}\$?\d{1,3}$/.test(w)){ toks.push({t:"ref",v:w.replace(/\$/g,"").toUpperCase()}); continue; }
+      throw FErr("#NAME?"); }
+    if(ch==="<"&&src[i+1]==="="){toks.push({t:"op",v:"<="});i+=2;continue;}
+    if(ch===">"&&src[i+1]==="="){toks.push({t:"op",v:">="});i+=2;continue;}
+    if(ch==="<"&&src[i+1]===">"){toks.push({t:"op",v:"<>"});i+=2;continue;}
+    if(src.startsWith("#REF!",i)){toks.push({t:"errtok",v:"#REF!"});i+=5;continue;}
+    if("+-*/^&%(),:=<>".includes(ch)){toks.push({t:"op",v:ch});i++;continue;}
+    throw FErr("#NAME?");
+  }
+  return toks;
+}
+
+function parse(toks){
+  let p=0;
+  const peek=()=>toks[p], eat=()=>toks[p++];
+  const isOp=v=>peek()&&peek().t==="op"&&peek().v===v;
+  function primary(){
+    const t=peek(); if(!t) throw FErr("#VALUE!");
+    if(t.t==="errtok"){eat();throw FErr(t.v);}
+    if(t.t==="num"||t.t==="str"||t.t==="bool"){eat();return{k:t.t,v:t.v};}
+    if(t.t==="ref"){ eat();
+      if(isOp(":")){ eat(); const t2=eat(); if(!t2||t2.t!=="ref") throw FErr("#REF!"); return{k:"range",a:t.v,b:t2.v}; }
+      return{k:"ref",v:t.v}; }
+    if(t.t==="func"){ eat();
+      if(!isOp("(")) throw FErr("#VALUE!"); eat();
+      const args=[];
+      if(!isOp(")")){ args.push(expr()); while(isOp(",")){eat();args.push(expr());} }
+      if(!isOp(")")) throw FErr("#VALUE!"); eat();
+      return{k:"call",fn:t.v,args}; }
+    if(isOp("(")){ eat(); const e=expr(); if(!isOp(")")) throw FErr("#VALUE!"); eat(); return e; }
+    throw FErr("#VALUE!");
+  }
+  function postfix(){ let e=primary(); while(isOp("%")){eat(); e={k:"pct",e};} return e; }
+  function unary(){ if(isOp("-")){eat();return{k:"neg",e:unary()};} if(isOp("+")){eat();return unary();} return postfix(); }
+  function power(){ let l=unary(); while(isOp("^")){eat(); l={k:"bin",op:"^",l,r:unary()};} return l; }
+  function mul(){ let l=power(); while(isOp("*")||isOp("/")){const o=eat().v; l={k:"bin",op:o,l,r:power()};} return l; }
+  function add(){ let l=mul(); while(isOp("+")||isOp("-")){const o=eat().v; l={k:"bin",op:o,l,r:mul()};} return l; }
+  function concat(){ let l=add(); while(isOp("&")){eat(); l={k:"bin",op:"&",l,r:add()};} return l; }
+  function expr(){ let l=concat();
+    while(peek()&&peek().t==="op"&&["=","<",">","<=",">=","<>"].includes(peek().v)){
+      const o=eat().v; l={k:"bin",op:o,l,r:concat()}; }
+    return l; }
+  const e=expr();
+  if(p<toks.length) throw FErr("#VALUE!");
+  return e;
+}
+
+function cellValue(ref, visiting){
+  const c=getCell(ref);
+  const raw=c&&c.raw!=null?String(c.raw):"";
+  if(raw==="") return "";
+  if(raw[0]==="="){
+    if(visiting.has(ref)) throw FErr("#REF!");
+    visiting.add(ref);
+    try{ return evalStr(raw.slice(1),visiting); }
+    finally{ visiting.delete(ref); }
+  }
+  if(/^-?(\d+\.?\d*|\.\d+)([eE][+\-]?\d+)?$/.test(raw.trim())) return parseFloat(raw);
+  if(/^(true|false)$/i.test(raw.trim())) return /^t/i.test(raw.trim());
+  return raw;
+}
+function evalStr(src,visiting){ return evalNode(parse(tokenize(src)),visiting); }
+
+function rangeCells(a,b){
+  const A=parseRef(a),B=parseRef(b); if(!A||!B) throw FErr("#REF!");
+  const r1=Math.min(A.r,B.r),r2=Math.max(A.r,B.r),c1=Math.min(A.c,B.c),c2=Math.max(A.c,B.c);
+  const out=[];
+  for(let r=r1;r<=r2;r++){const row=[];for(let c=c1;c<=c2;c++)row.push(refOf(r,c));out.push(row);}
+  return out;
+}
+function evalNode(n,visiting){
+  switch(n.k){
+    case "num": case "str": case "bool": return n.v;
+    case "ref": { if(!parseRef(n.v)) throw FErr("#REF!"); return cellValue(n.v,visiting); }
+    case "range": return { __range: rangeCells(n.a,n.b).map(row=>row.map(rf=>cellValue(rf,visiting))) };
+    case "pct": return toNum(scalar(evalNode(n.e,visiting)))/100;
+    case "neg": return -toNum(scalar(evalNode(n.e,visiting)));
+    case "bin": {
+      const L=scalar(evalNode(n.l,visiting)), R=scalar(evalNode(n.r,visiting));
+      switch(n.op){
+        case "+": return toNum(L)+toNum(R);
+        case "-": return toNum(L)-toNum(R);
+        case "*": return toNum(L)*toNum(R);
+        case "/": { const d=toNum(R); if(d===0) throw FErr("#DIV/0!"); return toNum(L)/d; }
+        case "^": return Math.pow(toNum(L),toNum(R));
+        case "&": return toText(L)+toText(R);
+        default: return compare(L,R,n.op);
+      } }
+    case "call": return callFn(n.fn,n.args,visiting);
+  }
+}
+const isRange=v=>v&&typeof v==="object"&&v.__range;
+function scalar(v){ if(isRange(v)){ const f=v.__range; if(f.length===1&&f[0].length===1) return f[0][0]; throw FErr("#VALUE!"); } return v; }
+function toNum(v){
+  if(typeof v==="number"){ if(!isFinite(v)) throw FErr("#NUM!"); return v; }
+  if(typeof v==="boolean") return v?1:0;
+  if(v==="") return 0;
+  if(typeof v==="string"&&/^-?(\d+\.?\d*|\.\d+)([eE][+\-]?\d+)?$/.test(v.trim())) return parseFloat(v);
+  throw FErr("#VALUE!");
+}
+function toText(v){ if(typeof v==="boolean")return v?"TRUE":"FALSE"; if(typeof v==="number")return fmtNum(v); return String(v); }
+function toBool(v){ if(typeof v==="boolean")return v; if(typeof v==="number")return v!==0; if(v==="")return false;
+  if(/^true$/i.test(v))return true; if(/^false$/i.test(v))return false; throw FErr("#VALUE!"); }
+function compare(a,b,op){
+  let res;
+  if(typeof a==="string"||typeof b==="string"){
+    if(typeof a==="string"&&typeof b==="string"){ const x=a.toLowerCase(),y=b.toLowerCase(); res=x<y?-1:x>y?1:0; }
+    else res = typeof a==="string"?1:-1;
+  } else res = toNum(a)<toNum(b)?-1:toNum(a)>toNum(b)?1:0;
+  switch(op){case"=":return res===0;case"<>":return res!==0;case"<":return res<0;case">":return res>0;case"<=":return res<=0;case">=":return res>=0;}
+}
+function flat(args){ const out=[]; for(const a of args){ if(isRange(a)) a.__range.forEach(r=>r.forEach(v=>out.push(v))); else out.push(a);} return out; }
+const numsOnly = vals => vals.filter(v=>typeof v==="number");
+function criteriaTest(crit){
+  if(typeof crit==="number"||typeof crit==="boolean") return v=>{try{return compare(v,crit,"=");}catch(e){return false;}};
+  const s=String(crit); const m=s.match(/^(<=|>=|<>|=|<|>)(.*)$/);
+  let op="=",rhs=s; if(m){op=m[1];rhs=m[2];}
+  const rn=/^-?(\d+\.?\d*|\.\d+)$/.test(rhs.trim())?parseFloat(rhs):rhs;
+  return v=>{ try{ return compare(v,rn,op); }catch(e){ return false; } };
+}
+function reqRange(a){ if(!isRange(a)) throw FErr("#VALUE!"); return a.__range; }
+
+const FUNCS={
+  SUM:a=>numsOnly(flat(a).map(v=>typeof v==="string"&&v!==""&&/^-?[\d.]+$/.test(v.trim())?parseFloat(v):v)).reduce((s,v)=>s+v,0),
+  AVERAGE:a=>{const n=numsOnly(flat(a));if(!n.length)throw FErr("#DIV/0!");return n.reduce((s,v)=>s+v,0)/n.length;},
+  MIN:a=>{const n=numsOnly(flat(a));return n.length?Math.min(...n):0;},
+  MAX:a=>{const n=numsOnly(flat(a));return n.length?Math.max(...n):0;},
+  COUNT:a=>flat(a).filter(v=>typeof v==="number").length,
+  COUNTA:a=>flat(a).filter(v=>v!==""&&v!=null).length,
+  COUNTBLANK:a=>flat(a).filter(v=>v===""||v==null).length,
+  MEDIAN:a=>{const n=numsOnly(flat(a)).sort((x,y)=>x-y);if(!n.length)throw FErr("#NUM!");const m=n.length>>1;return n.length%2?n[m]:(n[m-1]+n[m])/2;},
+  PRODUCT:a=>numsOnly(flat(a)).reduce((s,v)=>s*v,1),
+  COUNTIF:a=>{const rng=flat([a[0]]);const t=criteriaTest(scalar(a[1]));return rng.filter(v=>v!==""&&t(v)).length;},
+  SUMIF:a=>{const rng=reqRange(a[0]).flat();const t=criteriaTest(scalar(a[1]));
+    const sums=a[2]?reqRange(a[2]).flat():rng;
+    let s=0;rng.forEach((v,i)=>{if(v!==""&&t(v)&&typeof sums[i]==="number")s+=sums[i];});return s;},
+  AVERAGEIF:a=>{const rng=reqRange(a[0]).flat();const t=criteriaTest(scalar(a[1]));
+    const src=a[2]?reqRange(a[2]).flat():rng;let s=0,c=0;
+    rng.forEach((v,i)=>{if(v!==""&&t(v)&&typeof src[i]==="number"){s+=src[i];c++;}});
+    if(!c)throw FErr("#DIV/0!");return s/c;},
+  IF:(a,vis,nodes)=>{const c=toBool(scalar(evalNode(nodes[0],vis)));
+    if(c)return nodes[1]!=null?scalar(evalNode(nodes[1],vis)):true;
+    return nodes[2]!=null?scalar(evalNode(nodes[2],vis)):false;},
+  IFERROR:(a,vis,nodes)=>{try{return scalar(evalNode(nodes[0],vis));}catch(e){return scalar(evalNode(nodes[1],vis));}},
+  AND:a=>flat(a).filter(v=>v!=="").every(v=>toBool(v)),
+  OR:a=>flat(a).filter(v=>v!=="").some(v=>toBool(v)),
+  NOT:a=>!toBool(scalar(a[0])),
+  ROUND:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return Math.round((n*f+(n>=0?1e-9:-1e-9)))/f;},
+  ROUNDUP:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return (n>=0?Math.ceil(n*f-1e-9):Math.floor(n*f+1e-9))/f;},
+  ROUNDDOWN:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return (n>=0?Math.floor(n*f+1e-9):Math.ceil(n*f-1e-9))/f;},
+  ABS:a=>Math.abs(toNum(scalar(a[0]))),
+  SQRT:a=>{const n=toNum(scalar(a[0]));if(n<0)throw FErr("#NUM!");return Math.sqrt(n);},
+  POWER:a=>Math.pow(toNum(scalar(a[0])),toNum(scalar(a[1]))),
+  MOD:a=>{const d=toNum(scalar(a[1]));if(d===0)throw FErr("#DIV/0!");const n=toNum(scalar(a[0]));return n-d*Math.floor(n/d);},
+  INT:a=>Math.floor(toNum(scalar(a[0]))),
+  PI:()=>Math.PI,
+  RAND:()=>Math.random(),
+  RANDBETWEEN:a=>{const lo=Math.ceil(toNum(scalar(a[0]))),hi=Math.floor(toNum(scalar(a[1])));return lo+Math.floor(Math.random()*(hi-lo+1));},
+  LEN:a=>toText(scalar(a[0])).length,
+  UPPER:a=>toText(scalar(a[0])).toUpperCase(),
+  LOWER:a=>toText(scalar(a[0])).toLowerCase(),
+  PROPER:a=>toText(scalar(a[0])).replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase()),
+  TRIM:a=>toText(scalar(a[0])).replace(/\s+/g," ").trim(),
+  LEFT:a=>toText(scalar(a[0])).slice(0,Math.max(0,Math.trunc(toNum(scalar(a[1]??1))))),
+  RIGHT:a=>{const s=toText(scalar(a[0]));const n=Math.max(0,Math.trunc(toNum(scalar(a[1]??1))));return n?s.slice(-n):"";},
+  MID:a=>{const s=toText(scalar(a[0]));const st=Math.trunc(toNum(scalar(a[1])));const n=Math.trunc(toNum(scalar(a[2])));if(st<1||n<0)throw FErr("#VALUE!");return s.slice(st-1,st-1+n);},
+  CONCATENATE:a=>flat(a).map(toText).join(""),
+  CONCAT:a=>flat(a).map(toText).join(""),
+  TEXTJOIN:a=>{const d=toText(scalar(a[0]));const ig=toBool(scalar(a[1]));
+    return flat(a.slice(2)).filter(v=>!ig||v!=="").map(toText).join(d);},
+  FIND:a=>{const i=toText(scalar(a[1])).indexOf(toText(scalar(a[0])),Math.trunc(toNum(scalar(a[2]??1)))-1);if(i<0)throw FErr("#VALUE!");return i+1;},
+  SUBSTITUTE:a=>toText(scalar(a[0])).split(toText(scalar(a[1]))).join(toText(scalar(a[2]))),
+  TODAY:()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)+25569;},
+  NOW:()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)+25569
+           +(d.getHours()*3600+d.getMinutes()*60+d.getSeconds())/86400;},
+  DATE:a=>{const y=Math.trunc(toNum(scalar(a[0]))),m=Math.trunc(toNum(scalar(a[1]))),d=Math.trunc(toNum(scalar(a[2])));
+    return Math.floor(Date.UTC(y,m-1,d)/86400000)+25569;},
+  YEAR:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCFullYear(),
+  MONTH:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCMonth()+1,
+  DAY:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCDate(),
+  DAYS:a=>Math.trunc(toNum(scalar(a[0])))-Math.trunc(toNum(scalar(a[1]))),
+  TEXT:a=>{const v=toNum(scalar(a[0]));const f=toText(scalar(a[1])).toLowerCase();
+    const dt=new Date((v-25569)*86400000);const p2=n=>String(n).padStart(2,"0");
+    return f.replace(/yyyy/g,dt.getUTCFullYear()).replace(/mm/g,p2(dt.getUTCMonth()+1)).replace(/dd/g,p2(dt.getUTCDate()));},
+  SUMIFS:a=>{const sums=reqRange(a[0]).flat();let mask=sums.map(()=>true);
+    for(let i=1;i+1<a.length||i+1===a.length;i+=2){ if(a[i]==null)break;
+      const rng=reqRange(a[i]).flat(); if(rng.length!==sums.length)throw FErr("#VALUE!");
+      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
+    let s=0;sums.forEach((v,j)=>{if(mask[j]&&typeof v==="number")s+=v;});return s;},
+  COUNTIFS:a=>{const first=reqRange(a[0]).flat();let mask=first.map(()=>true);
+    for(let i=0;i+1<a.length;i+=2){
+      const rng=reqRange(a[i]).flat(); if(rng.length!==first.length)throw FErr("#VALUE!");
+      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
+    return mask.filter(Boolean).length;},
+  AVERAGEIFS:a=>{const src=reqRange(a[0]).flat();let mask=src.map(()=>true);
+    for(let i=1;i+1<a.length;i+=2){
+      const rng=reqRange(a[i]).flat(); if(rng.length!==src.length)throw FErr("#VALUE!");
+      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
+    let s=0,c=0;src.forEach((v,j)=>{if(mask[j]&&typeof v==="number"){s+=v;c++;}});
+    if(!c)throw FErr("#DIV/0!");return s/c;},
+  XLOOKUP:(a,vis,nodes)=>{
+    const key=scalar(evalNode(nodes[0],vis));
+    const lr=reqRange(evalNode(nodes[1],vis)).flat();
+    const rr=reqRange(evalNode(nodes[2],vis)).flat();
+    if(lr.length!==rr.length)throw FErr("#VALUE!");
+    for(let i=0;i<lr.length;i++){try{if(compare(lr[i],key,"="))return rr[i];}catch(e){}}
+    if(nodes[3]!=null)return scalar(evalNode(nodes[3],vis));
+    throw FErr("#N/A");},
+  VLOOKUP:a=>{
+    const key=scalar(a[0]); const tbl=reqRange(a[1]); const col=Math.trunc(toNum(scalar(a[2])));
+    const exact = a.length>=4 ? !toBool(scalar(a[3])) : false;
+    if(col<1||col>tbl[0].length) throw FErr("#REF!");
+    if(exact){
+      for(const row of tbl){ try{ if(compare(row[0],key,"=")) return row[col-1]; }catch(e){} }
+      throw FErr("#N/A");
+    } else {
+      let best=null;
+      for(const row of tbl){ try{ if(compare(row[0],key,"<=")) best=row; else break; }catch(e){} }
+      if(!best) throw FErr("#N/A"); return best[col-1];
+    } },
+  HLOOKUP:a=>{
+    const key=scalar(a[0]); const tbl=reqRange(a[1]); const rIdx=Math.trunc(toNum(scalar(a[2])));
+    const exact = a.length>=4 ? !toBool(scalar(a[3])) : false;
+    if(rIdx<1||rIdx>tbl.length) throw FErr("#REF!");
+    const hdr=tbl[0];
+    if(exact){ for(let c=0;c<hdr.length;c++){try{if(compare(hdr[c],key,"="))return tbl[rIdx-1][c];}catch(e){}} throw FErr("#N/A"); }
+    let bc=-1; for(let c=0;c<hdr.length;c++){try{if(compare(hdr[c],key,"<="))bc=c;else break;}catch(e){}}
+    if(bc<0)throw FErr("#N/A"); return tbl[rIdx-1][bc]; },
+  INDEX:a=>{const tbl=reqRange(a[0]);const r=Math.trunc(toNum(scalar(a[1])));const c=a[2]!=null?Math.trunc(toNum(scalar(a[2]))):1;
+    if(r<1||r>tbl.length||c<1||c>tbl[0].length)throw FErr("#REF!");return tbl[r-1][c-1];},
+  MATCH:a=>{const key=scalar(a[0]);const arr=reqRange(a[1]).flat();
+    const type=a[2]!=null?Math.trunc(toNum(scalar(a[2]))):1;
+    if(type===0){for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,"="))return i+1;}catch(e){}}throw FErr("#N/A");}
+    if(type===1){let b=-1;for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,"<="))b=i;else break;}catch(e){}}if(b<0)throw FErr("#N/A");return b+1;}
+    let b=-1;for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,">="))b=i;else break;}catch(e){}}if(b<0)throw FErr("#N/A");return b+1;},
+  ISNUMBER:a=>typeof scalar(a[0])==="number",
+  ISTEXT:a=>typeof scalar(a[0])==="string"&&scalar(a[0])!=="",
+  ISBLANK:a=>scalar(a[0])==="",
+};
+const LAZY = new Set(["IF","IFERROR","XLOOKUP"]);
+function callFn(name,argNodes,visiting){
+  const fn=FUNCS[name]; if(!fn) throw FErr("#NAME?");
+  if(LAZY.has(name)) return fn(null,visiting,argNodes);
+  const args=argNodes.map(n=>evalNode(n,visiting));
+  return fn(args);
+}
+function fmtNum(n){
+  if(Number.isInteger(n)&&Math.abs(n)<1e15) return String(n);
+  let s=n.toPrecision(10); if(s.includes(".")) s=s.replace(/0+$/,"").replace(/\.$/,"");
+  return s;
+}
+function displayOf(ref){
+  try{
+    const v=cellValue(ref,new Set());
+    if(v==="") return {text:"",cls:""};
+    if(typeof v==="number") return {text:fmtNum(v),cls:"num"};
+    if(typeof v==="boolean") return {text:v?"TRUE":"FALSE",cls:"bool"};
+    return {text:String(v),cls:""};
+  }catch(e){ return {text:isErr(e)?e.__err:"#VALUE!",cls:"err"}; }
+}
+
+/* ---- relative-reference formula shifting (verbatim from the main app) ---- */
+function shiftFormula(raw,dr,dc){
+  if(!raw||raw[0]!=="=")return raw;
+  const s=raw; let out="="; let i=1; let inStr=false;
+  while(i<s.length){
+    const ch=s[i];
+    if(inStr){ out+=ch; if(ch==='"'){ if(s[i+1]==='"'){out+='"';i+=2;continue;} inStr=false;} i++; continue; }
+    if(ch==='"'){inStr=true;out+=ch;i++;continue;}
+    const m=/^(\$?)([A-Za-z]{1,2})(\$?)(\d{1,3})/.exec(s.slice(i));
+    const prevOK=!/[A-Za-z0-9_.$]/.test(s[i-1]||"");
+    if(m&&prevOK){
+      const after=s[i+m[0].length]||"";
+      if(!/[A-Za-z0-9_(]/.test(after)){
+        const cAbs=m[1]==="$", rAbs=m[3]==="$";
+        let c=COLNAMES.indexOf(m[2].toUpperCase()), r=+m[4];
+        if(c>=0){
+          if(!cAbs)c+=dc; if(!rAbs)r+=dr;
+          if(c<0||c>=COLS||r<1||r>ROWS) out+="#REF!";
+          else out+=(cAbs?"$":"")+COLNAMES[c]+(rAbs?"$":"")+r;
+          i+=m[0].length; continue;
+        }
+      }
+    }
+    out+=ch;i++;
+  }
+  return out;
+}
+
+const Engine = {
+  get COLS(){return COLS;}, get ROWS(){return ROWS;}, COLNAMES,
+  refOf, parseRef, getCell, setRaw, cellValue, evalStr,
+  tokenize, parse, evalNode, rangeCells, displayOf, fmtNum,
+  isErr, FErr, shiftFormula,
+  get FUNCS(){return FUNCS;},
+  get _cells(){return cells;},
+};
+
+/* =========================================================================
+   GRID UI  —  consumes the engine. Owns DOM, selection, keyboard, mouse,
+   formula bar, fill handle, clipboard, in-cell editing.
+   ========================================================================= */
+const grid=document.getElementById("grid");
+const nameBox=document.getElementById("namebox");
+const fInput=document.getElementById("formulainput");
+const TD={};
+function buildGrid(){
+  const thead=document.createElement("thead");
+  const hr=document.createElement("tr");
+  const corner=document.createElement("th"); corner.className="corner"; hr.appendChild(corner);
+  COLNAMES.forEach(cn=>{const th=document.createElement("th");th.textContent=cn;th.dataset.col=cn;hr.appendChild(th);});
+  thead.appendChild(hr); grid.appendChild(thead);
+  const tb=document.createElement("tbody");
+  for(let r=1;r<=ROWS;r++){
+    const tr=document.createElement("tr");
+    const th=document.createElement("th"); th.textContent=r; th.dataset.row=r; tr.appendChild(th);
+    for(let c=0;c<COLS;c++){
+      const td=document.createElement("td"); const ref=refOf(r,c);
+      td.dataset.ref=ref; TD[ref]=td; tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  }
+  grid.appendChild(tb);
+}
+
+/* Date columns render their serials as dd-mm-yyyy so a genuine date and a
+   text-typed one look identical — the only tell is the alignment, exactly as
+   in real Excel. This is presentation only; the stored value is untouched. */
+function serialToDMY(n){
+  const d=new Date((n-25569)*86400000); const p=x=>String(x).padStart(2,"0");
+  return p(d.getUTCDate())+"-"+p(d.getUTCMonth()+1)+"-"+d.getUTCFullYear();
+}
+function isDateCell(ref){
+  const ex=currentEx(); if(!ex||!ex.dateCols) return false;
+  const p=parseRef(ref); if(!p||p.r<2) return false;
+  return ex.dateCols.indexOf(COLNAMES[p.c])>=0;
+}
+function renderAll(){
+  for(const ref in TD){
+    const td=TD[ref], c=getCell(ref);
+    let d=displayOf(ref);
+    if(isDateCell(ref) && d.cls==="num" && d.text!==""){
+      const n=Number(d.text);
+      if(isFinite(n) && n>20000 && n<80000) d={text:serialToDMY(n),cls:"num"};
+    }
+    td.textContent=d.text;
+    td.className=d.cls+(c&&c.b?" b":"");
+    if(targetRefs.indexOf(ref)>=0) td.classList.add("target");
+  }
+  paintSelection();
+}
+function selRange(){
+  const a=sel, b=selEnd||sel;
+  return {r1:Math.min(a.r,b.r),r2:Math.max(a.r,b.r),c1:Math.min(a.c,b.c),c2:Math.max(a.c,b.c)};
+}
+function paintSelection(){
+  document.querySelectorAll("#grid td.sel,#grid td.insel").forEach(td=>td.classList.remove("sel","insel"));
+  document.querySelectorAll("#grid th.hl").forEach(th=>th.classList.remove("hl"));
+  const {r1,r2,c1,c2}=selRange();
+  for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++) TD[refOf(r,c)].classList.add("insel");
+  const aref=refOf(sel.r,sel.c);
+  TD[aref].classList.add("sel");
+  for(let c=c1;c<=c2;c++) document.querySelector('th[data-col="'+COLNAMES[c]+'"]').classList.add("hl");
+  for(let r=r1;r<=r2;r++) document.querySelector('th[data-row="'+r+'"]').classList.add("hl");
+  nameBox.value=aref;
+  const cc=getCell(aref); fInput.value=cc&&cc.raw!=null?cc.raw:"";
+  updateAgg(); positionFillHandle();
+}
+function updateAgg(){
+  const {r1,r2,c1,c2}=selRange(); const el=document.getElementById("st-agg");
+  if(r1===r2&&c1===c2){el.textContent="";return;}
+  let sum=0,cnt=0,n=0;
+  for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++){
+    try{const v=cellValue(refOf(r,c),new Set());
+      if(v!==""&&v!=null)cnt++;
+      if(typeof v==="number"){sum+=v;n++;}
+    }catch(e){}
+  }
+  el.textContent=n?"Sum: "+fmtNum(sum)+"   ·   Average: "+fmtNum(sum/n)+"   ·   Count: "+cnt:"Count: "+cnt;
+}
+function select(r,c,extend){
+  r=Math.max(1,Math.min(ROWS,r)); c=Math.max(0,Math.min(COLS-1,c));
+  if(extend){selEnd={r,c};} else {sel={r,c};selEnd=null;}
+  paintSelection();
+  const td=TD[refOf(extend?selEnd.r:sel.r,extend?selEnd.c:sel.c)];
+  td.scrollIntoView({block:"nearest",inline:"nearest"});
+}
+
+/* ---- point mode ---- */
+let point=null;
+function lastMeaningful(s){let i=s.length-1;while(i>=0&&s[i]===" ")i--;return i>=0?s[i]:"";}
+function refInsertable(s){return s[0]==="="&&"=+-*/^&(,:<>".includes(lastMeaningful(s));}
+function pointText(){const a=point.base,b=point.cur;
+  const r1=Math.min(a.r,b.r),r2=Math.max(a.r,b.r),c1=Math.min(a.c,b.c),c2=Math.max(a.c,b.c);
+  return (r1===r2&&c1===c2)?refOf(r1,c1):refOf(r1,c1)+":"+refOf(r2,c2);}
+function paintPoint(){document.querySelectorAll("#grid td.pt").forEach(t=>t.classList.remove("pt"));
+  if(!point)return;const a=point.base,b=point.cur;
+  for(let r=Math.min(a.r,b.r);r<=Math.max(a.r,b.r);r++)
+    for(let c=Math.min(a.c,b.c);c<=Math.max(a.c,b.c);c++)TD[refOf(r,c)].classList.add("pt");}
+function applyPoint(){const el=point.inputEl;
+  el.value=el.value.slice(0,point.start)+pointText();
+  el.setSelectionRange(el.value.length,el.value.length);
+  if(el!==fInput)fInput.value=el.value;
+  const last=TD[pointText().split(":").pop()]; if(last)last.scrollIntoView({block:"nearest",inline:"nearest"});
+  paintPoint();}
+function movePoint(dr,dc,extend){
+  point.cur={r:Math.max(1,Math.min(ROWS,point.cur.r+dr)),c:Math.max(0,Math.min(COLS-1,point.cur.c+dc))};
+  if(!extend)point.base={...point.cur};
+  applyPoint();}
+function endPoint(){if(point){point=null;paintPoint();}}
+function handleEditorArrow(e,inputEl,home){
+  const dr=e.key==="ArrowDown"?1:e.key==="ArrowUp"?-1:0;
+  const dc=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;
+  if(point&&point.inputEl===inputEl){e.preventDefault();movePoint(dr,dc,e.shiftKey);return true;}
+  const v=inputEl.value;
+  const atEnd=inputEl.selectionStart===v.length&&inputEl.selectionEnd===v.length;
+  if(atEnd&&refInsertable(v)){
+    e.preventDefault();
+    point={inputEl,start:v.length,base:{...home},cur:{...home}};
+    movePoint(dr,dc,false);
+    return true;
+  }
+  return false;
+}
+function pointFromMouse(inputEl,td){
+  const p=parseRef(td.dataset.ref);
+  if(!point||point.inputEl!==inputEl)point={inputEl,start:inputEl.value.length,base:p,cur:p};
+  else {point.base={...p};point.cur={...p};}
+  applyPoint();
+  const move=ev=>{const t=ev.target.closest&&ev.target.closest("td");
+    if(t){point.cur=parseRef(t.dataset.ref);applyPoint();}};
+  const up=()=>{document.removeEventListener("mouseover",move);document.removeEventListener("mouseup",up);};
+  document.addEventListener("mouseover",move);document.addEventListener("mouseup",up);
+}
+
+/* ---- clipboard ---- */
+let clip=null;
+function copySelection(){
+  const {r1,r2,c1,c2}=selRange();
+  const g=[];
+  for(let r=r1;r<=r2;r++){const row=[];
+    for(let c=c1;c<=c2;c++){const cc=getCell(refOf(r,c))||{};row.push({raw:cc.raw||"",b:!!cc.b});}
+    g.push(row);}
+  clip={rows:r2-r1+1,cols:c2-c1+1,srcR:r1,srcC:c1,cells:g};
+  document.getElementById("st-mode").textContent="Copied "+clip.rows+"×"+clip.cols;
+}
+function pasteClip(){
+  if(!clip)return;
+  for(let r=0;r<clip.rows;r++)for(let c=0;c<clip.cols;c++){
+    const tr=sel.r+r,tc=sel.c+c; if(tr>ROWS||tc>=COLS)continue;
+    const src=clip.cells[r][c]; const ref=refOf(tr,tc);
+    setRaw(ref,shiftFormula(src.raw,(sel.r+r)-(clip.srcR+r),(sel.c+c)-(clip.srcC+c)));
+  }
+  selEnd={r:Math.min(ROWS,sel.r+clip.rows-1),c:Math.min(COLS-1,sel.c+clip.cols-1)};
+  renderAll();
+}
+/* ---- fill handle ---- */
+const fillHandle=document.getElementById("fillhandle");
+let filling=null;
+function positionFillHandle(){
+  if(editing){fillHandle.style.display="none";return;}
+  const {r2,c2}=selRange(); const td=TD[refOf(r2,c2)];
+  fillHandle.style.display="block";
+  fillHandle.style.left=(td.offsetLeft+td.offsetWidth-5)+"px";
+  fillHandle.style.top=(td.offsetTop+td.offsetHeight-5)+"px";
+}
+function clearFillPrev(){document.querySelectorAll("#grid td.fillprev").forEach(t=>t.classList.remove("fillprev"));}
+function fillTargetFor(p,src){
+  if(p.r>src.r2&&p.c>=src.c1&&p.c<=src.c2) return {dir:"down",r1:src.r2+1,r2:p.r,c1:src.c1,c2:src.c2};
+  if(p.r<src.r1&&p.c>=src.c1&&p.c<=src.c2) return {dir:"up",r1:p.r,r2:src.r1-1,c1:src.c1,c2:src.c2};
+  if(p.c>src.c2&&p.r>=src.r1&&p.r<=src.r2) return {dir:"right",c1:src.c2+1,c2:p.c,r1:src.r1,r2:src.r2};
+  if(p.c<src.c1&&p.r>=src.r1&&p.r<=src.r2) return {dir:"left",c1:p.c,c2:src.c1-1,r1:src.r1,r2:src.r2};
+  return null;
+}
+fillHandle.addEventListener("mousedown",e=>{
+  e.preventDefault();e.stopPropagation();
+  filling={src:selRange(),tgt:null};
+  const move=ev=>{
+    const t=ev.target.closest&&ev.target.closest("td"); if(!t)return;
+    const p=parseRef(t.dataset.ref);
+    filling.tgt=fillTargetFor(p,filling.src);
+    clearFillPrev();
+    if(filling.tgt){const g=filling.tgt;
+      for(let r=g.r1;r<=g.r2;r++)for(let c=g.c1;c<=g.c2;c++)TD[refOf(r,c)].classList.add("fillprev");}
+  };
+  const up=()=>{
+    document.removeEventListener("mouseover",move);document.removeEventListener("mouseup",up);
+    clearFillPrev();
+    if(filling&&filling.tgt)applyFill(filling.src,filling.tgt);
+    filling=null;
+  };
+  document.addEventListener("mouseover",move);document.addEventListener("mouseup",up);
+});
+function applyFill(src,tgt){
+  const H=src.r2-src.r1+1, W=src.c2-src.c1+1;
+  for(let r=tgt.r1;r<=tgt.r2;r++)for(let c=tgt.c1;c<=tgt.c2;c++){
+    let sr,scol;
+    if(tgt.dir==="down"){ sr=src.r1+((r-src.r1)%H); scol=c; }
+    else if(tgt.dir==="up"){ sr=src.r2-((src.r2-r)%H); scol=c; }
+    else if(tgt.dir==="right"){ scol=src.c1+((c-src.c1)%W); sr=r; }
+    else { scol=src.c2-((src.c2-c)%W); sr=r; }
+    const s=getCell(refOf(sr,scol))||{};
+    setRaw(refOf(r,c),shiftFormula(s.raw||"",r-sr,c-scol));
+  }
+  sel={r:src.r1,c:src.c1};
+  selEnd={r:Math.max(src.r2,tgt.r2),c:Math.max(src.c2,tgt.c2)};
+  if(tgt.dir==="up")sel={r:tgt.r1,c:src.c1},selEnd={r:src.r2,c:src.c2};
+  if(tgt.dir==="left")sel={r:src.r1,c:tgt.c1},selEnd={r:src.r2,c:src.c2};
+  renderAll();
+}
+
+/* ---- in-cell editing ---- */
+function startEdit(ref, initial){
+  if(editing) commitEdit(true);
+  editing=ref;
+  const td=TD[ref];
+  const inp=document.createElement("input");
+  const c=getCell(ref);
+  inp.value = initial!=null ? initial : (c&&c.raw!=null?c.raw:"");
+  td.textContent="";
+  td.appendChild(inp); inp.focus();
+  if(initial!=null) inp.setSelectionRange(inp.value.length,inp.value.length); else inp.select();
+  const home=parseRef(ref);
+  const typedStart = initial!=null;
+  inp.addEventListener("input",()=>{fInput.value=inp.value; endPoint();});
+  inp.addEventListener("keydown",e=>{
+    const arrows=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
+    if(arrows.includes(e.key)){
+      if(handleEditorArrow(e,inp,home)){e.stopPropagation();return;}
+      if(typedStart&&inp.value[0]!=="="){
+        e.preventDefault();e.stopPropagation();
+        const dr=e.key==="ArrowDown"?1:e.key==="ArrowUp"?-1:0;
+        const dc=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;
+        commitEdit(true);select(sel.r+dr,sel.c+dc);return;
+      }
+      e.stopPropagation();return;
+    }
+    if(point&&e.key!=="Shift")endPoint();
+    if(e.key==="Enter"){e.preventDefault();commitEdit(true);select(sel.r+1,sel.c);}
+    else if(e.key==="Tab"){e.preventDefault();commitEdit(true);select(sel.r,sel.c+1);}
+    else if(e.key==="Escape"){e.preventDefault();commitEdit(false);}
+    e.stopPropagation();
+  });
+  inp.addEventListener("blur",()=>{ if(editing===ref) commitEdit(true); });
+  fillHandle.style.display="none";
+  document.getElementById("st-mode").textContent="Edit";
+}
+function commitEdit(save){
+  if(!editing) return;
+  endPoint();
+  const ref=editing; editing=null;
+  const td=TD[ref]; const inp=td.querySelector("input");
+  if(inp){ if(save) setRaw(ref,inp.value); inp.remove(); }
+  document.getElementById("st-mode").textContent="Ready";
+  renderAll();
+}
+
+/* ---- events ---- */
+grid.addEventListener("mousedown",e=>{
+  const td=e.target.closest("td"); if(!td)return;
+  const activeInp = editing ? TD[editing].querySelector("input")
+                  : (document.activeElement===fInput ? fInput : null);
+  if(activeInp&&activeInp.tagName==="INPUT"){
+    const v=activeInp.value;
+    if(v[0]==="="&&(refInsertable(v)||(point&&point.inputEl===activeInp))){
+      e.preventDefault();
+      pointFromMouse(activeInp,td);
+      return;
+    }
+    if(editing)return;
+  }
+  const p=parseRef(td.dataset.ref);
+  if(e.shiftKey) select(p.r,p.c,true); else select(p.r,p.c);
+  const move=ev=>{const t=ev.target.closest&&ev.target.closest("td");if(t){const q=parseRef(t.dataset.ref);select(q.r,q.c,true);}};
+  const up=()=>{document.removeEventListener("mouseover",move);document.removeEventListener("mouseup",up);};
+  document.addEventListener("mouseover",move); document.addEventListener("mouseup",up);
+});
+grid.addEventListener("dblclick",e=>{
+  const td=e.target.closest("td"); if(!td)return;
+  const p=parseRef(td.dataset.ref); select(p.r,p.c); startEdit(td.dataset.ref);
+});
+document.addEventListener("keydown",e=>{
+  if(document.getElementById("done").classList.contains("on"))return;
+  if(editing||document.activeElement===fInput||document.activeElement===nameBox)return;
+  const k=e.key;
+  if(k==="ArrowUp"||k==="ArrowDown"||k==="ArrowLeft"||k==="ArrowRight"){
+    e.preventDefault();
+    const base=e.shiftKey?(selEnd||sel):sel;
+    const nr=base.r+(k==="ArrowDown"?1:k==="ArrowUp"?-1:0);
+    const nc=base.c+(k==="ArrowRight"?1:k==="ArrowLeft"?-1:0);
+    select(nr,nc,e.shiftKey); return;
+  }
+  if(k==="Enter"){e.preventDefault();select(sel.r+1,sel.c);return;}
+  if(k==="Tab"){e.preventDefault();select(sel.r,sel.c+(e.shiftKey?-1:1));return;}
+  if(k==="F2"){e.preventDefault();startEdit(refOf(sel.r,sel.c));return;}
+  if(k==="Delete"||k==="Backspace"){e.preventDefault();
+    const {r1,r2,c1,c2}=selRange();
+    for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)setRaw(refOf(r,c),"");
+    renderAll();return;}
+  if((e.ctrlKey||e.metaKey)&&/^c$/i.test(k)){e.preventDefault();copySelection();return;}
+  if((e.ctrlKey||e.metaKey)&&/^v$/i.test(k)){e.preventDefault();pasteClip();return;}
+  if(!e.ctrlKey&&!e.metaKey&&!e.altKey&&k.length===1){ startEdit(refOf(sel.r,sel.c),k); e.preventDefault(); }
+});
+fInput.addEventListener("keydown",e=>{
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
+    if(handleEditorArrow(e,fInput,sel))return;
+    return;
+  }
+  if(point&&point.inputEl===fInput&&e.key!=="Shift")endPoint();
+  if(e.key==="Enter"){e.preventDefault();endPoint();setRaw(refOf(sel.r,sel.c),fInput.value);renderAll();select(sel.r+1,sel.c);}
+  if(e.key==="Escape"){e.preventDefault();endPoint();paintSelection();e.target.blur();}
+});
+fInput.addEventListener("blur",()=>{ if(point&&point.inputEl===fInput)endPoint(); });
+nameBox.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();const p=parseRef(nameBox.value);if(p)select(p.r,p.c);e.target.blur();}
+});
+
+/* =========================================================================
+   DIAGNOSTICS  —  the existing `diagnose()` from the main app, plus the
+   demo-specific rules layered in front of it. Every failure names a cell and
+   a cause; a bare "wrong answer" is never emitted.
+   ========================================================================= */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function lev(a,b){const m=[...Array(a.length+1)].map((_,i)=>[i,...Array(b.length)]);
+  for(let j=0;j<=b.length;j++)m[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)
+    m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return m[a.length][b.length];}
+function collectRanges(node,out){out=out||[];if(!node||typeof node!=="object")return out;
+  if(node.k==="range")out.push(node.a+":"+node.b);
+  if(node.l)collectRanges(node.l,out);if(node.r)collectRanges(node.r,out);
+  if(node.e)collectRanges(node.e,out);
+  if(node.args)node.args.forEach(x=>collectRanges(x,out));
+  return out;}
+function walkAst(node,fn){ if(!node||typeof node!=="object")return;
+  fn(node);
+  if(node.l)walkAst(node.l,fn); if(node.r)walkAst(node.r,fn);
+  if(node.e)walkAst(node.e,fn);
+  if(node.args)node.args.forEach(x=>walkAst(x,fn)); }
+function astOf(raw){ try{ return parse(tokenize(String(raw).replace(/^=/,""))); }catch(e){ return null; } }
+function refsIn(raw){ const out=[]; const a=astOf(raw); if(a) walkAst(a,n=>{ if(n.k==="ref")out.push(n.v); if(n.k==="range"){out.push(n.a);out.push(n.b);} }); return out; }
+function literalsIn(raw){ const out=[]; const a=astOf(raw); if(a) walkAst(a,n=>{ if(n.k==="num")out.push(n.v); }); return out; }
+function fnsIn(raw){ const out=[]; const a=astOf(raw); if(a) walkAst(a,n=>{ if(n.k==="call")out.push(n.fn); }); return out; }
+function colOf(ref){ return String(ref).replace(/[^A-Za-z]/g,"").toUpperCase(); }
+function nearRange(a,b){
+  const pa=a.split(":").map(parseRef),pb=b.split(":").map(parseRef);
+  if(pa.some(x=>!x)||pb.some(x=>!x))return false;
+  const d=Math.abs(pa[0].r-pb[0].r)+Math.abs(pa[1].r-pb[1].r)+Math.abs(pa[0].c-pb[0].c)+Math.abs(pa[1].c-pb[1].c);
+  return d>0&&d<=2;}
+
+/* original diagnose(), unchanged */
+function diagnose(ex,raw,err,exp,solution){
+  const tips=[]; const up=raw.toUpperCase();
+  if(err){
+    const code=isErr(err)?err.__err:"#VALUE!";
+    if(code==="#NAME?"){
+      (up.match(/([A-Z]+)\(/g)||[]).forEach(f=>{const name=f.slice(0,-1);
+        if(!FUNCS[name]){const sug=Object.keys(FUNCS).find(k=>lev(k,name)<=2);
+          tips.push("Unknown function <code>"+esc(name)+"</code>"+(sug?" — did you mean <code>"+sug+"</code>?":"."));}});
+      if(!tips.length)tips.push("A name in the formula isn't recognized — check spelling and that text is quoted.");
+    }
+    if(code==="#VALUE!"&&/,\s*(<=|>=|<>|<|>)[^"=]/.test(raw))
+      tips.push('Criteria with an operator must be a quoted string: <code>"&gt;=50"</code>.');
+    if(code==="#DIV/0!")tips.push("A divisor evaluates to 0 or blank — check the denominator cell.");
+    if(code==="#REF!")tips.push("A reference is invalid or circular — the formula may reference its own cell.");
+  } else {
+    try{
+      const uR=collectRanges(parse(tokenize(raw.slice(1)))).sort();
+      const sR=collectRanges(parse(tokenize(solution.slice(1)))).sort();
+      if(sR.length&&!uR.length)tips.push("Expected a range argument (<code>start:end</code>), not individual cells.");
+    }catch(e){}
+  }
+  return tips;
+}
+
+/* --- demo-specific rules --- */
+function keyRefFor(ex,ref){
+  if(!ex.keyCol) return null;
+  const p=parseRef(ref); if(!p) return null;
+  return ex.keyCol+p.r;
+}
+function headerName(ex,col){
+  const h=(getCell(col+"1")||{}).raw;
+  return h?String(h):("column "+col);
+}
+function diagnoseDemo(ex,ctx){
+  const tips=[];
+  const raw=String(ctx.raw||"");
+  const hasTrim=/\bTRIM\s*\(/i.test(raw);
+  const fns=fnsIn(raw);
+  const usedRefs=refsIn(raw);
+  const solRefs=refsIn(ctx.solAtRef||ex.solution);
+
+  /* R1 — untrimmed whitespace on the lookup key */
+  if(ex.keyCol && !hasTrim){
+    const kr=keyRefFor(ex,ctx.ref);
+    const kv=kr?(getCell(kr)||{}).raw:null;
+    if(typeof kv==="string" && kv!==kv.trim()){
+      const side = kv!==kv.replace(/^\s+/,"") ? "leading" : "trailing";
+      tips.push("<b>"+kr+"</b> holds <code>"+esc(JSON.stringify(kv))+"</code> — note the "+side+" space. "+
+        "Text comparison is exact, so it never matches the clean ID in the ledger and the lookup silently returns the not-found value. "+
+        "Wrap the lookup value in <code>TRIM(...)</code>.");
+    }
+  }
+  /* R1b — #N/A that is really a whitespace problem */
+  if(ctx.err && isErr(ctx.err) && ctx.err.__err==="#N/A" && ex.keyCol){
+    const kr=keyRefFor(ex,ctx.ref);
+    const kv=kr?(getCell(kr)||{}).raw:null;
+    if(typeof kv==="string" && kv!==kv.trim() && !hasTrim){
+      tips.push("The <code>#N/A</code> in <b>"+ctx.ref+"</b> is a whitespace problem, not a missing invoice: "+
+        "<b>"+kr+"</b> is <code>"+esc(JSON.stringify(kv))+"</code>. <code>TRIM("+kr+")</code> fixes it.");
+    } else {
+      tips.push("<b>"+ctx.ref+"</b> returns <code>#N/A</code> — this ID genuinely has no match in the ledger. "+
+        "That is a real reconciling item, so the formula has to survive it: give <code>XLOOKUP</code> a "+
+        "not-found argument (its 4th) instead of letting the error through.");
+    }
+  }
+  /* R2 — right idea, wrong column */
+  {
+    const used=new Set(usedRefs.map(colOf));
+    const need=new Set(solRefs.map(colOf));
+    const extra=[...used].filter(c=>!need.has(c));
+    const missing=[...need].filter(c=>!used.has(c));
+    if(extra.length&&missing.length){
+      tips.push("Column <b>"+extra[0]+"</b> ("+esc(headerName(ex,extra[0]))+") isn't the one this needs — "+
+        "the figures you want are in column <b>"+missing[0]+"</b> ("+esc(headerName(ex,missing[0]))+").");
+    }
+  }
+  /* R3 — hardcoded literal instead of a reference */
+  if(typeof ctx.expected==="number" && ctx.expected!==0){
+    const lits=literalsIn(raw);
+    if(lits.indexOf(ctx.expected)>=0){
+      tips.push("The number <code>"+fmtNum(ctx.expected)+"</code> is typed straight into <b>"+ctx.ref+"</b>. "+
+        "It has to be computed from the cells, or it stops being right the moment the data changes.");
+    }
+  }
+  /* R4 — a date that is text, not a serial */
+  if(ex.dateCols){
+    usedRefs.forEach(r=>{
+      if(ex.dateCols.indexOf(colOf(r))>=0){
+        let v; try{ v=cellValue(r,new Set()); }catch(e){ v=null; }
+        if(typeof v==="string" && v!==""){
+          tips.push("<b>"+r+"</b> looks like a date but is stored as <i>text</i> (<code>"+esc(v)+"</code>), not a date serial. "+
+            "It left-aligns in the grid while the real dates right-align. Comparisons against <code>DATE(...)</code> will not do what you expect — "+
+            "text sorts above every number, so it slips through <code>&gt;=</code> filters instead of being excluded. "+
+            "Check it with <code>ISNUMBER("+r+")</code>.");
+        }
+      }
+    });
+    if(fns.indexOf("DATE")>=0 && ex.textDateRef){
+      const tv=(getCell(ex.textDateRef)||{}).raw;
+      tips.push("Before trusting a date comparison here: <b>"+ex.textDateRef+"</b> is the text string <code>"+esc(String(tv))+"</code>, "+
+        "not a date serial, so it will not behave like the rows around it.");
+    }
+  }
+  /* R5 — range off by a row */
+  {
+    const uR=collectRanges(astOf(raw)||{});
+    const sR=collectRanges(astOf(ctx.solAtRef||ex.solution)||{});
+    for(const u of uR){
+      for(const s of sR){
+        if(u===s) continue;
+        const ua=u.split(":"), sa=s.split(":");
+        if(colOf(ua[0])===colOf(sa[0]) && ua[0]===sa[0] && ua[1]!==sa[1] && nearRange(u,s)){
+          const pu=parseRef(ua[1]), ps=parseRef(sa[1]);
+          if(pu&&ps&&pu.r<ps.r){
+            const lost=[];
+            for(let r=pu.r+1;r<=ps.r;r++){
+              const idRef=colOf(sa[0])+r; const idv=(getCell(idRef)||{}).raw;
+              if(idv) lost.push(esc(String(idv))+" ("+idRef+")");
+            }
+            tips.push("Your range <code>"+esc(u)+"</code> stops one row short of the data — it should reach <code>"+esc(sa[1])+"</code>. "+
+              (lost.length?"That leaves out "+lost.join(", ")+".":"The last entry is excluded."));
+          }
+        }
+      }
+    }
+  }
+  /* R6 — $ locks on a fill-down */
+  if(ex.targetRange){
+    const firstRef=rangeCells(...ex.targetRange.split(":")).flat()[0];
+    const firstRaw=String((getCell(firstRef)||{}).raw||"");
+    if(firstRaw[0]==="="){
+      const lockMap=str=>{ const m={}; const re=/(\$?)([A-Za-z]{1,2})(\$?)(\d{1,3})/g; let x;
+        while((x=re.exec(str))){ const col=x[2].toUpperCase(); if(COLNAMES.indexOf(col)<0) continue;
+          if(!(col in m)) m[col]={colAbs:x[1]==="$",rowAbs:x[3]==="$"}; }
+        return m; };
+      const um=lockMap(firstRaw), sm=lockMap(ex.solution);
+      for(const col in sm){
+        if(!(col in um)) continue;
+        if(!sm[col].rowAbs && um[col].rowAbs){
+          tips.push("In <b>"+firstRef+"</b> the reference to column <b>"+col+"</b> is locked with <code>$</code> on its row. "+
+            "A locked row cannot move, so every filled cell keeps reading row "+parseRef(firstRef).r+" instead of its own.");
+        }
+        if(sm[col].rowAbs && !um[col].rowAbs){
+          const want=collectRanges(astOf(ex.solution)||{}).find(rg=>colOf(rg.split(":")[0])===col);
+          tips.push("The lookup range on column <b>"+col+"</b> in <b>"+firstRef+"</b> has no <code>$</code> locks, "+
+            "so it slides down one row for every row you fill — by the bottom of the column it has walked off the ledger entirely."+
+            (want?" Lock it as <code>"+esc(want.split(":").map(r=>"$"+colOf(r)+"$"+parseRef(r).r).join(":"))+"</code>.":""));
+        }
+      }
+    }
+  }
+  /* R7 — SUMIF/SUMIFS used where the exercise drills a lookup */
+  if(ex.requiresAny && (fns.indexOf("SUMIF")>=0||fns.indexOf("SUMIFS")>=0) && !fns.some(f=>ex.requiresAny.indexOf(f+"(")>=0)){
+    tips.push("Worth saying plainly: <code>SUMIF</code> is arguably the <i>better</i> reconciliation tool here, because it adds up "+
+      "every matching row instead of stopping at the first. This exercise is drilling the lookup family, so it wants "+
+      "<code>XLOOKUP</code>, <code>VLOOKUP</code> or <code>INDEX</code>/<code>MATCH</code> — but hold on to that instinct, "+
+      "it is the point of the last screen.");
+  }
+  /* R9 — missing ABS on a negative variance */
+  if(ex.needsAbs && String(ctx.expected)==="Review" && String(ctx.actual)==="OK" && fns.indexOf("ABS")<0){
+    tips.push("<b>"+ctx.ref+"</b> is under budget, so the variance is <i>negative</i> — and a negative number is never greater than the "+
+      "threshold. Materiality cares about size, not direction: wrap the difference in <code>ABS(...)</code>.");
+  }
+  /* R10 — assuming the two tables are in the same order */
+  if(ex.orderTrapCol && usedRefs.some(r=>colOf(r)===ex.orderTrapCol) && !fns.some(f=>["XLOOKUP","VLOOKUP","INDEX","MATCH"].indexOf(f)>=0)){
+    tips.push("<b>"+ctx.ref+"</b> reads column <b>"+ex.orderTrapCol+"</b> straight across, which assumes both tables list the segments "+
+      "in the same order. They don't — compare A2:A7 with E2:E7. The name has to be looked up, not assumed.");
+  }
+  return tips;
+}
+
+/* =========================================================================
+   INSTRUMENTATION  —  in-memory only, no personal data, no third-party
+   script, no network call. Point `window.DEMO_ANALYTICS_SINK` at a function
+   to forward events to a real endpoint later.
+   ========================================================================= */
+const Analytics = {
+  events: [],
+  sink: null,
+  emit(event, payload){
+    const e = Object.assign({ event, at: Date.now() }, payload||{});
+    this.events.push(e);
+    const s = this.sink || window.DEMO_ANALYTICS_SINK;
+    if(typeof s === "function"){ try{ s(e); }catch(_){ } }
+    return e;
+  },
+  /* Funnel summary — the question this demo exists to answer:
+     of the people who start exercise 1, how many reach exercise 3? */
+  funnel(){
+    return DEMO.map((ex,i)=>({
+      exercise: i+1,
+      id: ex.id,
+      started: !!stats[ex.id].startedAt,
+      passed: stats[ex.id].passed,
+      attempts: stats[ex.id].attempts,
+      elapsedMs: stats[ex.id].elapsedMs
+    }));
+  }
+};
+const stats = {};
+function markStart(ex){
+  const s=stats[ex.id];
+  if(s.startedAt) return;
+  s.startedAt=Date.now();
+  Analytics.emit("exercise_started",{ exercise:DEMO.indexOf(ex)+1, id:ex.id });
+}
+function markAttempt(ex,ok){
+  const s=stats[ex.id];
+  s.attempts++;
+  /* deliberately does not record the user's formula text */
+  Analytics.emit("attempt",{ exercise:DEMO.indexOf(ex)+1, id:ex.id, attempt:s.attempts, passed:ok });
+}
+function markPass(ex){
+  const s=stats[ex.id];
+  if(s.passed) return;
+  s.passed=true;
+  s.elapsedMs=Date.now()-(s.startedAt||Date.now());
+  Analytics.emit("exercise_passed",{ exercise:DEMO.indexOf(ex)+1, id:ex.id, attempts:s.attempts, elapsedMs:s.elapsedMs });
+}
+
+/* =========================================================================
+   EXERCISES
+   ========================================================================= */
+const DEMO = [
+{
+  id:"westsales", lvl:"easy", title:"Regional sales total", fn:"SUMIFS",
+  concept:"<p><b class='term'>SUMIFS</b> adds up the rows that satisfy every condition you give it. The range being added comes <b>first</b>, then pairs of (range to test, what to test for).</p>"+
+    "<span class='formula'>=SUMIFS(sum_range, criteria_range, criteria)</span>"+
+    "<p>Text criteria go in double quotes.</p>",
+  task:"Eight branches, one clean table. Put the total <b>West</b> region sales in <b>C11</b>.",
+  data:{
+    A1:"City", B1:"Region", C1:"Sales (₹ 000s)",
+    A2:"Mumbai",  B2:"West",  C2:1240,
+    A3:"Delhi",   B3:"North", C3:980,
+    A4:"Pune",    B4:"West",  C4:760,
+    A5:"Chennai", B5:"South", C5:1120,
+    A6:"Nagpur",  B6:"West",  C6:540,
+    A7:"Kolkata", B7:"East",  C7:890,
+    A8:"Surat",   B8:"West",  C8:1310,
+    A9:"Jaipur",  B9:"North", C9:620,
+    A11:"West total"
+  },
+  target:"C11",
+  requires:["SUMIFS("],
+  refsRequired:["C2"],
+  solution:'=SUMIFS(C2:C9,B2:B9,"West")',
+  hint:'Sum range first: =SUMIFS(C2:C9, B2:B9, "West"). The region text needs quotes.'
+},
+{
+  id:"reconcile", lvl:"medium", title:"Bank receipts vs sales ledger", fn:"XLOOKUP · TRIM",
+  concept:"<p>Two systems, one month, and they don't agree. A <b class='term'>lookup</b> matches each bank receipt to the invoice it was booked against, so you can see the difference line by line.</p>"+
+    "<span class='formula'>=XLOOKUP(value, lookup_range, return_range, [if_not_found])</span>"+
+    "<p>The 4th argument is what to return when nothing matches — without it an unmatched row throws <code>#N/A</code> and takes the whole column with it.</p>"+
+    "<p>Lock the lookup ranges with <code>$</code> so they don't slide when you fill down.</p>",
+  task:"Bank receipts are in <b>A2:C23</b> (22 rows). The sales ledger is in <b>E2:F21</b> (20 rows, sorted differently). "+
+    "For every bank receipt, put <b>amount received − amount booked</b> in column <b>D</b>. Where a receipt was never booked, the whole amount is the variance. "+
+    "Write the formula in D2 and fill it down to D23.",
+  data:(function(){
+    const d={ A1:"Invoice ID", B1:"Date received", C1:"Amount (₹)", D1:"Variance (₹)", E1:"Invoice ID", F1:"Amount booked (₹)" };
+    const bank=[
+      ["INV-1001",46082,125000],["INV-1002",46083,84000],
+      ["INV-1003 ",46084,96000],["INV-1004",46085,152000],
+      ["INV-1005",46086,73000],["INV-1006",46087,110000],
+      ["INV-1007 ",46088,68000],["INV-1008","08-03-2026",45000],
+      ["INV-1009",46090,132000],["INV-1010",46091,89000],
+      ["INV-1011",46092,156000],["INV-1012",46093,90000],
+      ["INV-1013",46094,64000],[" INV-1014",46095,118000],
+      ["INV-1015",46096,77000],["INV-1016",46097,143000],
+      ["INV-1017",46098,52000],["INV-1018",46099,98000],
+      ["INV-1019",46100,121000],["INV-1020",46101,67000],
+      ["INV-1021",46102,88000],["INV-1022",46103,105000]
+    ];
+    /* ledger is sorted by amount, NOT in the bank's date order */
+    const books=[
+      ["INV-1011",156000],["INV-1004",152000],["INV-1016",143000],["INV-1009",132000],
+      ["INV-1001",125000],["INV-1014",118000],["INV-1006",110000],["INV-1022",105000],
+      ["INV-1018",98000],["INV-1010",""],["INV-1003",96000],["INV-1002",84000],
+      ["INV-1015",77000],["INV-1005",73500],["INV-1007",68000],["INV-1020",67000],
+      ["INV-1013",64000],["INV-1012",50000],["INV-1012",40000],["INV-1008",45000]
+    ];
+    bank.forEach((r,i)=>{const n=i+2; d["A"+n]=r[0]; d["B"+n]=r[1]; d["C"+n]=r[2];});
+    books.forEach((r,i)=>{const n=i+2; d["E"+n]=r[0]; if(r[1]!=="") d["F"+n]=r[1];});
+    return d;
+  })(),
+  targetRange:"D2:D23",
+  requiresAny:["XLOOKUP(","VLOOKUP(","INDEX(","MATCH("],
+  refsRequired:["C2"],
+  solution:'=C2-XLOOKUP(TRIM(A2),$E$2:$E$21,$F$2:$F$21,0)',
+  hint:"Match on the invoice ID, subtract what was booked from what came in, and give the lookup a not-found value of 0 so unmatched receipts survive. Three of the bank IDs are not as clean as they look.",
+  keyCol:"A",
+  dateCols:["B"],
+  textDateRef:"B9",
+  padKeys:["A4","A8","A15"],
+  dupRef:"E20",
+  blankRef:"F11"
+},
+{
+  id:"variance", lvl:"hard", title:"Budget variance & materiality", fn:"XLOOKUP · ABS · IF",
+  concept:"<p>Actual against budget, segment by segment — except the two tables are not in the same order, so you cannot read across. The segment name has to be <b class='term'>looked up</b>.</p>"+
+    "<span class='formula'>=IF(test, value_if_true, value_if_false)</span>"+
+    "<p>Materiality is about <b>size</b>, not direction: a ₹550L overspend and a ₹550L underspend are equally worth a conversation. <code>ABS()</code> strips the sign.</p>",
+  task:"Actuals are in <b>A2:B7</b>, budget in <b>E2:F7</b> — <i>different order</i>. The materiality threshold is in <b>H2</b>. "+
+    "In column <b>C</b>, flag each segment <code>\"Review\"</code> when the variance exceeds the threshold, otherwise <code>\"OK\"</code>. "+
+    "One formula in C2, filled down to C7.",
+  data:{
+    A1:"Segment", B1:"Actual (₹ L)", C1:"Flag", E1:"Segment", F1:"Budget (₹ L)", H1:"Materiality (₹ L)",
+    A2:"Retail",        B2:5200,
+    A3:"Wholesale",     B3:3100,
+    A4:"Online",        B4:2400,
+    A5:"Exports",       B5:1850,
+    A6:"Institutional", B6:4380,
+    A7:"Franchise",     B7:990,
+    E2:"Online",        F2:2000,
+    E3:"Exports",       F3:2400,
+    E4:"Retail",        F4:5000,
+    E5:"Franchise",     F5:1100,
+    E6:"Institutional", F6:4000,
+    E7:"Wholesale",     F7:3080,
+    H2:300
+  },
+  targetRange:"C2:C7",
+  requiresAny:["XLOOKUP(","VLOOKUP(","INDEX(","MATCH("],
+  refsRequired:["B2"],
+  solution:'=IF(ABS(B2-XLOOKUP(A2,$E$2:$E$7,$F$2:$F$7))>$H$2,"Review","OK")',
+  hint:'Look the budget up by segment name, take ABS of the difference, compare against $H$2 (locked so it does not drift), and return "Review" or "OK".',
+  needsAbs:true,
+  orderTrapCol:"F"
+}
+];
+DEMO.forEach(ex=>{ stats[ex.id]={ startedAt:null, passed:false, attempts:0, elapsedMs:null }; });
+
+/* =========================================================================
+   DEMO FLOW  —  gating, rendering, grading, completion
+   ========================================================================= */
+let idx = 0;
+let unlocked = 1;
+let hintShown = false;
+const startedAt = Date.now();
+
+function currentEx(){ return DEMO[idx]; }
+
+function renderStepper(){
+  const el=document.getElementById("stepper");
+  el.innerHTML=DEMO.map((ex,i)=>{
+    const done=stats[ex.id].passed;
+    const cls=["step"];
+    if(i===idx) cls.push("cur");
+    if(done) cls.push("done");
+    if(i>=unlocked && !done) cls.push("locked");
+    if(i<unlocked||done) cls.push("clickable");
+    return '<button class="'+cls.join(" ")+'" data-step="'+i+'">'+
+      '<span class="dot">'+(done?"✓":(i>=unlocked?"·":i+1))+'</span>'+
+      '<span>'+(i+1)+' of '+DEMO.length+'</span></button>';
+  }).join("");
+  el.querySelectorAll("[data-step]").forEach(b=>{
+    b.onclick=()=>{ const i=+b.dataset.step; if(i<unlocked||stats[DEMO[i].id].passed) openEx(i); };
+  });
+}
+function renderBrief(){
+  const ex=currentEx();
+  const refs = ex.targetRange ? [ex.targetRange] : [ex.target];
+  document.getElementById("brief").innerHTML=
+    '<div class="eyebrow">Exercise '+(idx+1)+' of '+DEMO.length+'</div>'+
+    '<h2>'+esc(ex.title)+'</h2>'+
+    '<div class="cbody">'+ex.concept+'</div>'+
+    '<div class="eyebrow">Task</div>'+
+    '<p class="task">'+ex.task+'</p>'+
+    '<div class="task-meta"><span class="lb">Answer:</span>'+refs.map(r=>'<span class="tcell">'+r+'</span>').join(" ")+'</div>'+
+    '<div class="hintbox'+(hintShown?" on":"")+'" id="hintBox"><div class="eyebrow">Hint</div><p>'+esc(ex.hint)+'</p></div>'+
+    '<div class="result" id="resBox"></div>';
+}
+function openEx(i){
+  idx=i;
+  const ex=currentEx();
+  hintShown=false;
+  cells={};
+  for(const ref in ex.data) setRaw(ref,ex.data[ref]);
+  for(const ref in ex.data){ const p=parseRef(ref); if(p&&p.r===1)(cells[ref]=cells[ref]||{}).b=true; }
+  targetRefs = ex.targetRange ? rangeCells(...ex.targetRange.split(":")).flat() : [ex.target];
+  const badge=document.getElementById("ex-badge");
+  badge.textContent=ex.lvl; badge.className="badge "+ex.lvl;
+  document.getElementById("ex-title").textContent=ex.title;
+  document.getElementById("ex-fn").textContent=ex.fn;
+  document.getElementById("btnNext").style.display = stats[ex.id].passed && idx<DEMO.length-1 ? "inline-block" : "none";
+  renderStepper(); renderBrief(); renderAll();
+  const first=parseRef(targetRefs[0]); select(first.r,first.c);
+  markStart(ex);
+}
+
+/* ---- grading ---- */
+function expectedValue(ex){
+  const saved=cells[ex.target]?Object.assign({},cells[ex.target]):null;
+  setRaw(ex.target,ex.solution);
+  let v; try{ v=cellValue(ex.target,new Set()); }catch(e){ v=null; }
+  if(saved)cells[ex.target]=saved; else delete cells[ex.target];
+  return v;
+}
+function expectedAt(ex,ref){
+  const base=parseRef(ex.targetRange.split(":")[0]); const p=parseRef(ref);
+  const sol=shiftFormula(ex.solution,p.r-base.r,p.c-base.c);
+  const saved=cells[ref]?Object.assign({},cells[ref]):null;
+  setRaw(ref,sol);
+  let v; try{ v=cellValue(ref,new Set()); }catch(e){ v=null; }
+  if(saved)cells[ref]=saved; else delete cells[ref];
+  return {v,sol};
+}
+/* `$C$2` is still a reference to C2 — strip the locks before substring-testing,
+   or an absolute reference reads as a missing one. */
+function bareRefs(raw){ return String(raw).toUpperCase().replace(/\$/g,""); }
+/* Fires even when the value is RIGHT: a correct total typed in as a literal is
+   still wrong, because it stops being correct the moment the data moves. */
+function hardcodedLiteral(raw, expected){
+  if(typeof expected!=="number" || expected===0) return null;
+  const hit=literalsIn(raw).find(n=>Math.abs(n-expected)<1e-9);
+  return hit==null?null:hit;
+}
+function tipsHtml(list){
+  const seen=[], out=[];
+  list.forEach(t=>{ if(t && seen.indexOf(t)<0){ seen.push(t); out.push(t); } });
+  if(!out.length) return "";
+  return "<ul><li>"+out.join("</li><li>")+"</li></ul>";
+}
+function structuralFallback(ex,ctx){
+  /* Guarantees a specific message even when no rule fired. */
+  const bits=[];
+  const uf=fnsIn(ctx.raw), sf=fnsIn(ctx.solAtRef||ex.solution);
+  const missing=sf.filter(f=>uf.indexOf(f)<0);
+  if(missing.length) bits.push("The worked answer for <b>"+ctx.ref+"</b> uses <code>"+esc(missing[0])+"</code> and yours does not.");
+  const ur=refsIn(ctx.raw), sr=refsIn(ctx.solAtRef||ex.solution);
+  const missRef=sr.filter(r=>ur.indexOf(r)<0);
+  if(missRef.length) bits.push("It also reads <code>"+esc(missRef[0])+"</code>, which your formula never touches.");
+  if(!bits.length) bits.push("The shape of the formula is right but it lands on a different number for <b>"+ctx.ref+"</b> — "+
+    "step through it one argument at a time and check each range against the data.");
+  return bits;
+}
+function gradeCellValue(ex,ref,raw,actual,expected,solAtRef,err){
+  const ctx={ref,raw,actual,expected,solAtRef,err};
+  let tips=diagnoseDemo(ex,ctx).concat(diagnose(ex,raw,err||null,expected,solAtRef||ex.solution));
+  if(!tips.length) tips=structuralFallback(ex,ctx);
+  return tips;
+}
+function grade(ex){
+  if(editing) commitEdit(true);
+  const bad=(msg,tips)=>({ok:false, msg:msg+(tips&&tips.length?tipsHtml(tips):"")});
+
+  if(ex.targetRange){
+    const rc=rangeCells(...ex.targetRange.split(":")).flat();
+    const firstRef=rc[0];
+    const firstRaw=String((getCell(firstRef)||{}).raw||"");
+    if(!firstRaw) return bad("Cell <b>"+firstRef+"</b> is empty. Write the formula there first, then drag the green fill handle down to <b>"+rc[rc.length-1]+"</b>.");
+    if(firstRaw[0]!=="=") return bad("Cell <b>"+firstRef+"</b> holds a typed value, not a formula. Every cell in "+ex.targetRange+" must start with <code>=</code>.");
+    const upFirst=firstRaw.toUpperCase();
+    if(ex.requiresAny && !ex.requiresAny.some(t=>upFirst.indexOf(t)>=0)){
+      return bad("This exercise is drilling the lookup family — <b>"+firstRef+"</b> needs one of <code>"+
+        ex.requiresAny.map(t=>t.replace("(","")).join("</code>, <code>")+"</code>.",
+        diagnoseDemo(ex,{ref:firstRef,raw:firstRaw,expected:null,actual:null,solAtRef:ex.solution}));
+    }
+    if(ex.requires){
+      const need={}; ex.requires.forEach(t=>need[t]=(need[t]||0)+1);
+      for(const t in need){ const cnt=upFirst.split(t).length-1;
+        if(cnt<need[t]) return bad("Cell <b>"+firstRef+"</b> needs "+(need[t]>1?need[t]+"× ":"")+"<code>"+esc(t.replace("(",""))+"</code>."); }
+    }
+    for(const r of (ex.refsRequired||[])){
+      if(bareRefs(firstRaw).indexOf(r)<0)
+        return bad("Cell <b>"+firstRef+"</b> has to reference <code>"+r+"</code> — the figure must come from the sheet, not be typed in.",
+          diagnoseDemo(ex,{ref:firstRef,raw:firstRaw,expected:null,actual:null,solAtRef:ex.solution}));
+    }
+    for(const ref of rc){
+      const raw=String((getCell(ref)||{}).raw||"");
+      if(!raw) return bad("Cell <b>"+ref+"</b> is empty. Fill the whole range "+ex.targetRange+" — write the formula in "+firstRef+", then drag the fill handle down.");
+      if(raw[0]!=="=") return bad("Cell <b>"+ref+"</b> holds a typed value. Every cell in the range must be a formula.");
+      if(!/[A-Z]{1,2}\d/.test(bareRefs(raw))) return bad("Cell <b>"+ref+"</b> has no cell references — it has to be computed from the data, not typed.");
+      const {v:expected,sol}=expectedAt(ex,ref);
+      const lit=hardcodedLiteral(raw,expected);
+      if(lit!=null) return bad("Cell <b>"+ref+"</b> has the answer <code>"+fmtNum(lit)+"</code> typed into it literally. "+
+        "It has to be computed from the cells — a hard-coded figure stops being right the moment the data changes.");
+      let actual, err=null;
+      try{ actual=cellValue(ref,new Set()); }catch(e){ err=e; }
+      if(err){
+        return bad("Cell <b>"+ref+"</b> returns <b>"+(isErr(err)?err.__err:"#VALUE!")+"</b>.",
+                   gradeCellValue(ex,ref,raw,null,expected,sol,err));
+      }
+      const eq=(typeof expected==="number"&&typeof actual==="number")?Math.abs(expected-actual)<1e-9:String(expected)===String(actual);
+      if(!eq){
+        return bad("Cell <b>"+ref+"</b> returns <b>"+esc(toText(actual))+"</b>, expected <b>"+esc(toText(expected))+"</b>.",
+                   gradeCellValue(ex,ref,raw,actual,expected,sol,null));
+      }
+    }
+    return {ok:true, msg:"All "+rc.length+" rows tie out."};
+  }
+
+  const raw=String((getCell(ex.target)||{}).raw||"");
+  if(!raw) return bad("Cell <b>"+ex.target+"</b> is empty. Enter a formula starting with <code>=</code>.");
+  if(raw[0]!=="=") return bad("That is a typed value, not a formula. Formulas start with <code>=</code>.");
+  const up=raw.toUpperCase();
+  if(ex.requiresAny && !ex.requiresAny.some(t=>up.indexOf(t)>=0))
+    return bad("Use one of <code>"+ex.requiresAny.map(t=>t.replace("(","")).join("</code>, <code>")+"</code>.");
+  if(ex.requires){
+    const need={}; ex.requires.forEach(t=>need[t]=(need[t]||0)+1);
+    for(const t in need){ const cnt=up.split(t).length-1;
+      if(cnt<need[t]) return bad("This exercise needs "+(need[t]>1?need[t]+"× ":"")+"<code>"+esc(t.replace("(",""))+"</code> in the formula."); }
+  }
+  for(const r of (ex.refsRequired||[])){
+    if(bareRefs(raw).indexOf(r)<0) return bad("Reference <code>"+r+"</code> in the formula — don't hard-code the number.",
+      diagnoseDemo(ex,{ref:ex.target,raw,expected:null,actual:null,solAtRef:ex.solution}));
+  }
+  let actual, err=null;
+  try{ actual=cellValue(ex.target,new Set()); }catch(e){ err=e; }
+  const expected=expectedValue(ex);
+  const lit=hardcodedLiteral(raw,expected);
+  if(lit!=null) return bad("Cell <b>"+ex.target+"</b> has the answer <code>"+fmtNum(lit)+"</code> typed into it literally. "+
+    "It has to be computed from the cells — a hard-coded figure stops being right the moment the data changes.");
+  if(err) return bad("Formula error: <b>"+(isErr(err)?err.__err:"#VALUE!")+"</b>.",
+                     gradeCellValue(ex,ex.target,raw,null,expected,ex.solution,err));
+  const eq=(typeof expected==="number"&&typeof actual==="number")?Math.abs(expected-actual)<1e-9:String(expected)===String(actual);
+  if(!eq) return bad("Cell <b>"+ex.target+"</b> returns <b>"+esc(toText(actual))+"</b>, expected <b>"+esc(toText(expected))+"</b>.",
+                     gradeCellValue(ex,ex.target,raw,actual,expected,ex.solution,null));
+  return {ok:true, msg:"<code>"+esc(raw)+"</code> returns "+esc(toText(expected))+"."};
+}
+
+function checkDemo(){
+  const ex=currentEx();
+  const res=grade(ex);
+  markAttempt(ex,res.ok);
+  const rb=document.getElementById("resBox");
+  if(res.ok){
+    const wasPassed=stats[ex.id].passed;
+    markPass(ex);
+    /* `unlocked` is a COUNT of unlocked exercises, so clearing index i must
+       raise it to i+2 (this one plus the next), not i+1. */
+    if(idx+2>unlocked) unlocked=Math.min(idx+2, DEMO.length);
+    rb.className="result ok";
+    rb.innerHTML="<b>✓ Correct</b> — "+res.msg+(idx<DEMO.length-1?" Next exercise unlocked.":"");
+    document.getElementById("btnNext").style.display = idx<DEMO.length-1 ? "inline-block" : "none";
+    renderStepper(); renderAll();
+    if(idx===DEMO.length-1 && !wasPassed) showDone();
+  } else {
+    rb.className="result bad";
+    rb.innerHTML=res.msg;
+  }
+  return res;
+}
+
+/* ---- completion ---- */
+function showDone(){
+  Analytics.emit("demo_completed",{ totalElapsedMs: Date.now()-startedAt, funnel: Analytics.funnel() });
+  document.getElementById("doneRecap").innerHTML=DEMO.map((ex,i)=>
+    '<div class="row"><span class="tick">✓</span><span class="what"><b>'+esc(ex.title)+'</b> — '+esc(ex.fn)+'</span></div>').join("");
+  document.getElementById("doneInsight").innerHTML=
+    "<b>One thing worth taking away.</b> In the reconciliation, <code>INV-1012</code> was booked twice — ₹50,000 and ₹40,000 against a "+
+    "single ₹90,000 receipt. A lookup stops at the <i>first</i> match, so it reported a ₹40,000 variance that doesn't really exist. "+
+    "<code>SUMIFS</code> would have added both and tied to zero. The lookup family is what interviews drill, but on real duplicate-prone "+
+    "data the aggregation family is usually the right answer — knowing <i>which</i> to reach for is the actual skill.";
+  document.getElementById("done").classList.add("on");
+}
+document.querySelectorAll("[data-cta]").forEach(b=>{
+  b.onclick=()=>{
+    const answer=b.dataset.cta;
+    Analytics.emit("cta_clicked",{ answer });
+    const t=document.getElementById("doneThanks");
+    t.textContent = answer==="yes"
+      ? "Noted — thank you. That's the whole signal this prototype was built to collect."
+      : "Noted — thank you. Honest no's are just as useful as yes's.";
+    t.classList.add("on");
+    document.querySelectorAll("[data-cta]").forEach(x=>x.disabled=true);
+  };
+});
+
+/* ---- controls ---- */
+document.getElementById("btnCheck").onclick=()=>checkDemo();
+document.getElementById("btnReset").onclick=()=>{ const keep=idx; openEx(keep); };
+document.getElementById("btnHint").onclick=()=>{
+  hintShown=true;
+  const h=document.getElementById("hintBox"); if(h) h.classList.add("on");
+  Analytics.emit("hint_shown",{ exercise:idx+1, id:currentEx().id });
+};
+document.getElementById("btnNext").onclick=()=>{ if(idx<DEMO.length-1) openEx(idx+1); };
+
+/* ---- mobile guard ---- */
+function checkViewport(){
+  const small = window.matchMedia("(max-width: 820px)").matches;
+  document.getElementById("mobile").classList.toggle("on", small);
+}
+window.addEventListener("resize", checkViewport);
+
+/* ---- init ---- */
+buildGrid();
+openEx(0);
+checkViewport();
+Analytics.emit("demo_opened",{});
+
+/* =========================================================================
+   EXPORTS  —  top-level `const`/`let` are not window properties in a classic
+   script, so the test harness reaches everything through here.
+   ========================================================================= */
+window.Demo = {
+  Engine, DEMO, stats, Analytics,
+  get idx(){ return idx; },
+  get unlocked(){ return unlocked; },
+  get cells(){ return cells; },
+  openEx, grade, checkDemo, diagnoseDemo, diagnose, expectedAt, expectedValue,
+  setRaw, getCell, cellValue, evalStr, rangeCells, parseRef, shiftFormula,
+  isErr, toText, fmtNum, refsIn, literalsIn, fnsIn,
+  reset(){ idx=0; unlocked=1; DEMO.forEach(ex=>{ stats[ex.id]={startedAt:null,passed:false,attempts:0,elapsedMs:null}; }); openEx(0); },
+  isLocked(i){ return i>=unlocked && !stats[DEMO[i].id].passed; }
+};
+</script>
+</body>
+</html>
