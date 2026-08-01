@@ -1,56 +1,73 @@
-# FinCell / FormulaLab — Overview
+# Tyro.cell — Overview
+
+> **Naming.** The product is **Tyro.cell**. Earlier material used *FinCell* (pitch deck) and *FormulaLab* (app UI); both names still appear in `FinCell-pitch.html` and `excel-practice (1).html` and have not been renamed yet. Only `demo/` carries the current identity.
 
 ## What this is
 
-A browser-based platform where finance and commerce students in India learn Excel and financial-modeling skills by **doing**, not watching — a live, working spreadsheet with real formulas, real company data, and instant answer-checking. Positioned as "LeetCode for Excel," built specifically for the Indian job market.
+A browser-based platform where finance and commerce students in India learn Excel and financial-modelling skills by **doing** — a live, working spreadsheet with a real formula engine, real company data, instant answer-checking, and Excel's own keyboard bindings. Positioned as "LeetCode for Excel," built for the Indian job market.
 
-Two artifacts live in this project:
+## What's in the repo
 
-| File | Role |
-|---|---|
-| [`FinCell-pitch.html`](../FinCell-pitch.html) | Pitch deck / idea analysis — problem, market, competition, business model, risks, verdict. |
-| [`excel-practice (1).html`](../excel-practice%20%281%29.html) | Working prototype — the actual product: landing page, courses, and a live spreadsheet with a real formula engine. |
+| File | Role | State |
+|---|---|---|
+| [`excel-practice (1).html`](../excel-practice%20%281%29.html) | **The product.** Single-file app: engine, grid, 45 exercises, 2 courses. | Active build target |
+| [`test.html`](../test.html) | Regression harness for the product. 155 tests. | 155/155 passing |
+| [`demo/index.html`](../demo/index.html) | Standalone 3-exercise public demo, Tyro.cell branded. | Complete, frozen |
+| [`demo/demo-test.html`](../demo/demo-test.html) | Harness for the demo. 64 tests. | 64/64 passing |
+| [`demo/logo.svg`](../demo/logo.svg) | The Tyro.cell mark. | — |
+| [`FinCell-pitch.html`](../FinCell-pitch.html) | Pitch deck / idea analysis. Also exported to PDF + PPTX. | Stale name, stale claims |
 
 ## The problem
 
-Indian commerce/finance/MBA graduates overwhelmingly learn Excel passively — video tutorials, downloaded templates. They can recognize `VLOOKUP` when they see it but can't write it from a blank cell under pressure. This creates a gap at two points:
+Indian commerce/finance/MBA graduates overwhelmingly learn Excel passively — video tutorials, downloaded templates. They can recognise `VLOOKUP` when they see it but can't write it from a blank cell under pressure. The gap shows up at two moments:
+
 - **Interviews** — the "open Excel and build this" test filters out candidates who know the theory but lack reps.
-- **Day one on the job** — classrooms teach accounting theory; employers expect a working 3-statement model.
+- **Day one** — classrooms teach accounting theory; employers expect a working model.
 
 ## The solution
 
-Reps, not replays. A live in-browser grid where the user:
-1. Opens a real Excel-like spreadsheet (not a video).
-2. Gets a task with real data (including real company filings, e.g. Tesla FY2023 10-K figures).
-3. Writes the formula themselves.
-4. Gets graded instantly — correct/incorrect, with targeted hints — and can retry.
+Reps, not replays. A live in-browser grid where the user opens a real spreadsheet, gets a task with real data, writes the formula themselves — using the same keys they'd use in Excel — and is graded instantly with a specific reason when they're wrong.
+
+## Where the build actually is
+
+**Working today:**
+- Hand-written formula engine — **60 functions**, tokeniser → parser → evaluator, no libraries.
+- **45 exercises** across 2 courses (23 easy / 17 medium / 5 hard).
+- Grid with selection, formula bar, point-mode reference picking, fill handle, clipboard with relative-reference shifting.
+- **Excel keyboard layer** — fill, undo/redo, `F4`, edge jump, AutoSum. See [09-keyboard-and-functions.md](09-keyboard-and-functions.md).
+- Answer checker with specific-cause diagnostics.
+- Two regression harnesses, both green.
+
+**Not built yet:**
+- No backend, no accounts. Progress lives in memory; it survives only via manual JSON export/import.
+- No persistence, streaks, certifications, or rankings (all need the backend first).
+- No payments.
 
 ## Target market & positioning
 
-- **Who**: Indian commerce/finance grads targeting FP&A, analyst, IB, and equity-research roles, plus GCC (global capability centre) hiring pipelines. A narrow, motivated niche — not "Excel for everyone."
-- **Competitor**: Quantus Finance (US) already runs "LeetCode for financial modeling" with an in-browser sheet — this validates the format but means live-practice-in-browser alone isn't a moat.
-- **Wedge**: (1) India-specific — INR, Ind AS, Indian company data, Big4/GCC/IB-India recruiting context; (2) broader than IB — covers everyday analyst Excel craft (lookups, pivots, dashboards), not just LBOs; (3) student-friendly freemium pricing where US competitors price for a US market.
+- **Who**: Indian commerce/finance grads targeting FP&A, analyst, IB and equity-research roles, plus GCC hiring pipelines. A narrow, motivated niche — not "Excel for everyone."
+- **Competitor**: Quantus Finance (US) already runs "LeetCode for financial modelling" with an in-browser sheet — which validates the format and means live practice alone is not a moat.
+- **Wedge**: (1) India-specific — INR, Ind AS, Indian company data, Big4/GCC/IB-India recruiting context; (2) broader than IB — everyday analyst craft, not just LBOs; (3) student-friendly pricing.
 
-## Business model & roadmap (lean, validate-first)
+## Business model & roadmap
 
-1. **Phase 1 (Month 0–2, Validate)** — ship ~5 free interactive exercises, post in Indian finance-prep communities, measure completion/demand/willingness to pay. Est. cost ≈ ₹3,000–8,000.
-2. **Phase 2 (Month 2–6, Build)** — only if Phase 1 converts: expand exercise library, add accounts/progress tracking/paid tier.
-3. **Phase 3 (Ongoing, Grow)** — organic-first: shareable challenges, SEO on interview questions, placement-cell tie-ups; paid ads only after the product converts.
+Lean, validate-first, in three phases — see [04-roadmap-risks.md](04-roadmap-risks.md) and [07-monetization.md](07-monetization.md). Current stance: **product quality first, distribution deferred.** Posting to communities is deliberately on hold until the app feels right.
 
-## Known constraint (named deliberately in the pitch)
+## Risks
 
-Browsers reserve some keyboard shortcuts (`Ctrl+T`, `Ctrl+W`, `Ctrl+N`, `Ctrl+Tab`, `F5`, `F11`) that no web app can override. FinCell's answer: intercept and reproduce the shortcuts that actually matter for analyst work (`Ctrl+Shift+→`, `F2`, `F4`, `Alt+=`, `Ctrl+D`) — the same approach Google Sheets/Excel-for-web use — and reframe the product's core promise around **formula/logic correctness**, not raw keyboard-shortcut fidelity (~88% of analyst-relevant shortcuts reproduce in-browser).
+- **Monetisation** — freemium conversion in India is typically 1–3%; needs an outcome-tied paid tier.
+- **Build burden** — a reliable graded in-browser spreadsheet is real engineering.
+- **Free alternatives** — Excel, YouTube and Copilot are free; the product must beat "just practise in Excel yourself."
 
-## Risks & verdict (from the pitch)
-
-- **Monetisation** — freemium conversion in India is typically low (1–3%); needs a compelling outcome-tied paid tier.
-- **Build burden** — a reliable in-browser graded spreadsheet is real engineering; mitigated by using/adapting free engines rather than rebuilding from scratch.
-- **Free alternatives** — real Excel, YouTube, and Copilot are free; the product must clearly beat "just practice in Excel yourself."
-
-**Score: 6.5/10 — Verdict: Pursue, lean.** Real pain, validated concept, defensible India wedge; held back by freemium economics and build risk. Prove demand before spending.
+**Score: 6.5/10 — Pursue, lean.** Real pain, validated concept, defensible India wedge; held back by freemium economics and build risk.
 
 ## See also
-- [01-architecture.md](01-architecture.md) — how the working prototype is built
-- [02-features.md](02-features.md) — feature-by-feature walkthrough of the prototype
-- [03-exercise-catalog.md](03-exercise-catalog.md) — full list of courses/exercises currently implemented
-- [04-roadmap-risks.md](04-roadmap-risks.md) — expanded business model, competition, and risk detail
+- [01-architecture.md](01-architecture.md) — how it's built
+- [02-features.md](02-features.md) — feature walkthrough
+- [03-exercise-catalog.md](03-exercise-catalog.md) — all 45 exercises
+- [04-roadmap-risks.md](04-roadmap-risks.md) — business model, competition, risks
+- [05-design-language.md](05-design-language.md) — visual identity
+- [06-gamification.md](06-gamification.md) — engagement mechanics (proposed)
+- [07-monetization.md](07-monetization.md) — revenue channels (proposed)
+- [08-product-changes.md](08-product-changes.md) — the build backlog
+- [09-keyboard-and-functions.md](09-keyboard-and-functions.md) — every function and every key

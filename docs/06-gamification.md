@@ -1,6 +1,10 @@
 # Gamification — engaging without being childish
 
-Status: **proposed**, not yet applied to the product. Depends on the backend/auth work (per-user saved progress) discussed alongside this — these mechanics need a real account system to persist across sessions/devices.
+Status: **proposed**, still not built. Every mechanic here needs the backend/auth work first, since none of it can persist across sessions or devices without accounts.
+
+> **One correction to what's already in the code.** The workspace title bar shows `Streak · N`, but `updateStreak()` simply renders `doneEx.size` — the number of exercises completed this session. It is **not** a consecutive-day streak, it resets on reload, and it is mislabelled. Either rename it to "Completed" now, or build the real thing (mechanic 1 below) when the backend lands. A label that overstates what it measures is exactly the kind of detail that costs credibility with this audience.
+>
+> **Difficulty tiers are partly live** — `easy`/`medium`/`hard` badges render per exercise (23/17/5 across 45), styled as increasing ink density. That is the *labelling* half of mechanic 2 only; there is no user-level tier or progression.
 
 ## Design rule
 

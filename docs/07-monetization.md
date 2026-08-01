@@ -1,6 +1,8 @@
-# Monetization strategy — how FormulaLab makes money
+# Monetization strategy — how Tyro.cell makes money
 
-Status: **proposed for pitch use**, not yet committed. Written 2026-07-21. Meant to replace the single-sentence "freemium" line in the current pitch deck with something a mentor / potential investor / potential co-founder would actually find credible.
+Status: **proposed for pitch use**, not yet committed. Written 2026-07-21. Nothing here is built — there is no backend, no accounts and no payments.
+
+> **Current stance (2026-08-01): distribution is deliberately paused.** The decision is to get the product right before chasing revenue or users, so the Phase 1 activities below are on hold rather than in progress. Meant to replace the single-sentence "freemium" line in the current pitch deck with something a mentor / potential investor / potential co-founder would actually find credible.
 
 ## The core framing
 

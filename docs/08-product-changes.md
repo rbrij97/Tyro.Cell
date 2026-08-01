@@ -1,6 +1,17 @@
 # Product changes — everything we need to build
 
-Compiled 2026-07-21. This is the complete list of changes to `excel-practice (1).html` (and the future backend) that everything we've discussed this session implies. Organized by area, with priority and status per item.
+Compiled 2026-07-21. **Status updated 2026-08-01.** The complete list of changes to `excel-practice (1).html` (and the future backend). Organized by area, with priority and status per item.
+
+## What shipped on 2026-08-01
+
+- **Section C is essentially done** — C1–C8 built (undo/redo, `F4`, `Ctrl+D`/`Ctrl+R`, `Ctrl`+arrow, `Alt+=`, `Ctrl+Home`/`End`, `Ctrl+Space`/`Shift+Space`, `Ctrl+;`) plus `Ctrl+Enter` and `Ctrl+A`. The grid is operable without a mouse.
+- **H1 closed** — the pitch's shortcut claims are now true.
+- **F1 done** — AI assistant removed.
+- **E1 substantially done** — Course 1 is now heavily Indian-company data. Course 2 is still Tesla-only.
+- **The regression harness was resurrected.** `test.html` had never run once: `Engine`/`EX`/`doneEx`/`isErr` are `const` declarations, which are lexical bindings rather than `window` properties, so the harness bailed on every load behind a misleading "cross-frame block" message. Fixed with an explicit export block — now 155/155.
+- **New:** `demo/` — a standalone 3-exercise public demo with its own harness (64/64), README and the Tyro.cell mark.
+
+**Most valuable next item is now A1/A2** (extract the engine). The demo carries a verbatim copy of the engine, so every fix has to be made twice — that cost is real and growing.
 
 **Legend:**
 - **P0** — blocker or foundational; must happen before other work compounds on it
@@ -33,22 +44,26 @@ Compiled 2026-07-21. This is the complete list of changes to `excel-practice (1)
 
 ## C · Keyboard shortcuts — the "real Excel feel" backlog
 
-Currently only `F2` is implemented from the below. Pitch deck already claims `Ctrl+Shift+→`, `F2`, `F4`, `Alt+=`, `Ctrl+D` — four of those are still marketing-ahead-of-implementation and need to be closed.
+**Built 2026-08-01.** Full reference: [09-keyboard-and-functions.md](09-keyboard-and-functions.md).
 
-| # | Priority | Shortcut | Function |
+| # | Shortcut | Function | Status |
 |---|---|---|---|
-| C1 | **P0** | `Ctrl+Z` / `Ctrl+Y` (or `Ctrl+Shift+Z`) | **Undo / redo.** Biggest gap — currently *completely missing*. Nobody practices Excel without undo; the absence is the single most jarring difference from real Excel. Engine needs a command-history layer to support this. |
-| C2 | **P1** | `F4` | Toggle relative / absolute reference (`$`) while editing a formula. Constantly drilled in real analyst work. Claimed in the pitch. |
-| C3 | **P1** | `Ctrl+D` / `Ctrl+R` | Fill down / fill right by keyboard (mouse fill-handle already exists). Claimed in the pitch. |
-| C4 | **P1** | `Ctrl+Arrow` / `Ctrl+Shift+Arrow` | Jump to / select to edge of data region. Core Excel muscle memory. Partially claimed in the pitch (`Ctrl+Shift+→`). |
-| C5 | **P1** | `Alt+=` | AutoSum. Claimed in the pitch. |
-| C6 | **P2** | `Ctrl+Home` / `Ctrl+End` | Jump to A1 / last used cell. |
-| C7 | **P2** | `Ctrl+Space` / `Shift+Space` | Select entire column / row. |
-| C8 | **P2** | `Ctrl+;` | Insert today's date. |
-| C9 | **P2** | `F9` | Manual recalculate. |
-| C10 | **P2** | `Ctrl+1` | Format cells dialog. |
+| C1 | `Ctrl+Z` / `Ctrl+Y` / `Ctrl+Shift+Z` | Undo / redo — snapshot-based history | ✅ done |
+| C2 | `F4` | Cycle `A1 → $A$1 → A$1 → $A1` while editing | ✅ done |
+| C3 | `Ctrl+D` / `Ctrl+R` | Fill down / right | ✅ done |
+| C4 | `Ctrl+Arrow` / `Ctrl+Shift+Arrow` | Jump to / select to edge of data | ✅ done |
+| C5 | `Alt+=` | AutoSum | ✅ done |
+| C6 | `Ctrl+Home` / `Ctrl+End` | First / last used cell | ✅ done |
+| C7 | `Ctrl+Space` / `Shift+Space` | Select column / row | ✅ done |
+| C8 | `Ctrl+;` | Insert today's date | ✅ done |
+| C11 | `Ctrl+Enter` | Commit into the whole selection | ✅ done (not originally listed) |
+| C12 | `Ctrl+A` | Select the used range | ✅ done (not originally listed) |
+| C9 | `F9` | Manual recalculate | **P2** — the engine evaluates lazily on every render, so this is cosmetic |
+| C10 | ~~`Ctrl+1`~~ | Format cells | ❌ **impossible** — Chrome owns `Ctrl+1` for tab switching. Use `Ctrl+Shift+1…6` (Excel's own number-format keys) if formatting is built |
 
-**Hard browser wall** (cannot ever be intercepted — for the pitch's honesty section): `Ctrl+T`, `Ctrl+N`, `Ctrl+W`, `Ctrl+Tab`, `Alt+F4`, `F11`, `F5`.
+**Hard browser wall** (never interceptable): `Ctrl+T`, `Ctrl+N`, `Ctrl+W`, `Ctrl+Shift+T`, `Ctrl+Tab`, `Ctrl+1–9`, `Alt+F4`, `F11`, `F12`. Deliberately left unbound — a shortcut that silently fails is worse than an absent one.
+
+Note `Ctrl+R` and `Ctrl+D` were empirically verified to be interceptable (no reload, no bookmark dialog), contradicting the earlier assumption that `Ctrl+R`/`F5` were part of the hard wall. Only `F5` is.
 
 ## D · Gamification features — all new, all backend-dependent
 
@@ -145,10 +160,13 @@ Strategy in `07-monetization.md`. Sequenced sequentially per that plan.
 
 ## What's already done (so we don't re-do it)
 
-- Formula engine — 45+ functions, tokenizer/parser/evaluator, hand-written from scratch (100% our code, 0 external libraries).
-- 22 exercises across 2 courses.
-- Grid UI with mouse selection, formula bar, point-mode formula editing, fill handle, clipboard with relative-reference shifting, basic keyboard nav, `F2` in-place edit.
+- Formula engine — **60 functions**, tokenizer/parser/evaluator, hand-written from scratch (100% our code, 0 external libraries).
+- **45 exercises** across 2 courses (23 easy / 17 medium / 5 hard), heavily Indian-company data in Course 1.
+- Grid UI with mouse selection, formula bar, point-mode formula editing, fill handle, clipboard with relative-reference shifting.
+- **Full Excel keyboard layer** — fill, undo/redo, `F4`, edge jump, AutoSum, `Ctrl+Enter`; grid is operable without a mouse. In-product **Keys** reference tab.
 - Answer checker with specific-reason diagnostics (`checkEx` / `diagnose`).
 - Manual progress export/import (JSON download) — placeholder for real persistence.
-- Complete pitch deck (HTML + PPTX + PDF).
-- Full documentation set: overview → architecture → features → exercises → roadmap → design → gamification → monetization → this doc.
+- **`test.html` — 155 tests, all passing.** Previously never ran at all.
+- **`demo/` — standalone 3-exercise public demo**, Tyro.cell branded, own harness at 64/64, own README.
+- Complete pitch deck (HTML + PPTX + PDF) — still under the old FinCell name.
+- Full documentation set: overview → architecture → features → exercises → roadmap → design → gamification → monetization → this doc → keyboard & functions.

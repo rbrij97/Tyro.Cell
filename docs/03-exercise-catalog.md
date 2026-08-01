@@ -1,67 +1,120 @@
-# Exercise catalog — current content in `excel-practice (1).html`
+# Exercise catalog
 
-Two courses, 22 exercises total, defined in the `EX` / `COURSES` objects in the script.
+**45 exercises across 2 courses**, defined in the `EX` and `COURSES` objects in `excel-practice (1).html`. Counts verified against the running app.
+
+By difficulty: **23 easy · 17 medium · 5 hard**
+By answer type: **42 single-target · 2 fill-down range · 1 picklist**
+
+Every exercise's stated solution is asserted to pass its own checker by `test.html` (45/45).
+
+---
 
 ## Course 1 — Excel Formula Fundamentals
-*Beginner/Intermediate · ~4 hours · No prerequisite · 16 exercises*
+*Beginner / Intermediate · ~5 hours · No prerequisite · 39 exercises across 14 modules*
 
-### Module: Aggregation basics
-| id | Title | Function(s) | Level |
-|---|---|---|---|
-| `sum` | Total with SUM | SUM | basic |
-| `avg` | Mean with AVERAGE | AVERAGE | basic |
-| `minmax` | Range spread: MAX − MIN | MAX, MIN | basic |
-| `count` | COUNT vs COUNTA | COUNT, COUNTA | basic |
+Organised **one module per formula**, so a learner drills a single function across many realistic contexts rather than meeting it once. `SUM`, `AVERAGE` and `MIN/MAX` have deep practice packs; the rest have 1–2 and are the obvious place for the next content push.
 
-### Module: Conditions & text
-| id | Title | Function(s) | Level |
-|---|---|---|---|
-| `if` | Decision with IF | IF | core |
-| `countif` | Conditional count: COUNTIF | COUNTIF | core |
-| `sumif` | Conditional sum: SUMIF | SUMIF | core |
-| `round` | Precision with ROUND | ROUND | core |
-| `concat` | Join text with & | & / CONCAT | core |
+### Module: SUM (10)
+Split into two blocks — five short drills, then five multi-column case studies where the hard part is deciding *what* to sum.
 
-### Module: References, filling & dates
-| id | Title | Function(s) | Level |
-|---|---|---|---|
-| `rowfill` | Row totals & the fill handle | relative references | core |
-| `datediff` | Date arithmetic | DATE, DAYS | core |
+| id | Title | Level |
+|---|---|---|
+| `sum` | TCS — Weekly billing (₹ Cr) | easy |
+| `sum_quarterly` | Amazon — Annual revenue FY23 (US$ B) | easy |
+| `sum_weekly` | Zomato — Weekly orders (000s) | easy |
+| `sum_regions_blank` | HDFC Bank — Regional deposits with a pending line | easy |
+| `sum_per_month` | Reliance — Average monthly revenue FY24 | easy |
+| `sum_case_opex` | Case: Reliance P&L — Total operating expenses | medium |
+| `sum_case_portfolio_div` | Case: Equity portfolio — Total annual dividend income | medium |
+| `sum_case_subtotal` | Case: HDFC deposits by zone — no double-counting | medium |
+| `sum_case_netcash` | Case: Cash flow reconciliation — Net cash flow | medium |
+| `sum_case_sector` | Case: Portfolio sector allocation — Financials weight | medium |
 
-### Module: Advanced logic & lookups
-| id | Title | Function(s) | Level |
+### Module: AVERAGE (8)
+| id | Title | Level |
+|---|---|---|
+| `avg` | Infosys — 5-day closing average | easy |
+| `avg_us_pe` | US Big Tech — Peer P/E (comps table) | easy |
+| `avg_nifty_pe` | Nifty 50 — Blue-chip P/E | easy |
+| `avg_ev_ebitda` | NBFC — Peer EV/EBITDA (M&A comps) | easy |
+| `avg_target_price` | TCS — Sell-side consensus target | easy |
+| `avg_jpm_eps` | JPMorgan — 4-quarter EPS smoothing | easy |
+| `avg_reliance_growth` | Reliance — 5-yr revenue growth average | easy |
+| `avg_sector_yield` | S&P 500 — Sector ETF dividend yields | easy |
+
+### Module: MIN & MAX (8)
+| id | Title | Level |
+|---|---|---|
+| `minmax` | TCS — Weekly high-low range | easy |
+| `max_nifty_high` | Nifty 50 — 52-week high | easy |
+| `min_sbi_low` | SBI — 52-week low | easy |
+| `minmax_sensex` | SENSEX — Weekly range | easy |
+| `max_yield_spread` | US Treasuries — Widest 10Y-2Y spread | easy |
+| `max_broker` | HDFC Bank — Most bullish broker target | easy |
+| `min_worst_eps` | Zomato — Worst-quarter EPS | easy |
+| `minmax_sector` | S&P 500 — Sector YTD return dispersion | easy |
+
+### Remaining modules (1–2 exercises each)
+| Module | id | Title | Level |
 |---|---|---|---|
-| `nestedif` | Nested IF grading | IF (nested) | adv |
-| `vlookup` | Lookup with VLOOKUP | VLOOKUP | adv |
-| `indexmatch` | INDEX + MATCH | INDEX, MATCH | adv |
-| `xlookup1` | Modern lookup: XLOOKUP | XLOOKUP | adv |
-| `sumifs2` | Two conditions: SUMIFS | SUMIFS | adv |
+| COUNT & COUNTA | `count` | COUNT vs COUNTA | easy |
+| IF | `if` | Decision with IF | medium |
+| IF | `nestedif` | Nested IF grading | hard |
+| COUNTIF | `countif` | Conditional count: COUNTIF | medium |
+| SUMIF & SUMIFS | `sumif` | Conditional sum: SUMIF | medium |
+| SUMIF & SUMIFS | `sumifs2` | Two conditions: SUMIFS | hard |
+| ROUND | `round` | Precision with ROUND | medium |
+| Text join | `concat` | Join text with & | medium |
+| Fill handle & relative refs | `rowfill` | Row totals & the fill handle *(fill-down)* | medium |
+| Dates | `datediff` | Date arithmetic | medium |
+| VLOOKUP | `vlookup` | Lookup with VLOOKUP | hard |
+| INDEX + MATCH | `indexmatch` | INDEX + MATCH | hard |
+| XLOOKUP | `xlookup1` | Modern lookup: XLOOKUP | hard |
+
+---
 
 ## Course 2 — Financial Statements Fundamentals
-*Beginner/Intermediate · ~2 hours · Recommended: Course 1 · 6 exercises*
+*Beginner / Intermediate · ~2 hours · Recommended: Course 1 · 6 exercises*
+
 Uses real Tesla FY2023 10-K figures ($ millions).
 
-### Module: Income statement
-| id | Title | Function(s) | Level |
+### Module: Income statement (4)
+| id | Title | Level |
+|---|---|---|
+| `grossprofit` | Gross profit | easy |
+| `grossmargin` | Gross margin % | medium |
+| `expenseclass` | Classify the expenses *(picklist)* | medium |
+| `segmentgp` | Gross profit by segment *(fill-down)* | medium |
+
+### Module: Balance sheet & liquidity (2)
+| id | Title | Level |
+|---|---|---|
+| `ncwc` | Non-cash working capital | medium |
+| `currentratio` | Current ratio | medium |
+
+---
+
+## The public demo (separate)
+
+`demo/index.html` carries its own three exercises, not part of `COURSES`:
+
+| # | Exercise | Level | Tests |
 |---|---|---|---|
-| `grossprofit` | Gross profit | cell arithmetic | basic |
-| `grossmargin` | Gross margin % | ROUND, division | core |
-| `expenseclass` | Classify the expenses | picklist (COGS vs Opex) | core |
-| `segmentgp` | Gross profit by segment (fill down) | relative refs | core |
+| 1 | Regional sales total | easy | `SUMIFS`, one criterion |
+| 2 | Bank receipts vs sales ledger | medium | Lookup on deliberately dirty data — padded IDs, a duplicate booking, a blank, a text date, mismatched row counts |
+| 3 | Budget variance & materiality | hard | Lookup by name out of order, `ABS`, `IF`, fill-down |
 
-### Module: Balance sheet & liquidity
-| id | Title | Function(s) | Level |
-|---|---|---|---|
-| `ncwc` | Non-cash working capital | cell arithmetic | core |
-| `currentratio` | Current ratio | ROUND, division | core |
+Full detail in [`demo/README.md`](../demo/README.md).
 
-## Answer-type distribution
-- **Single target cell** (`target`): most exercises — one formula, one answer cell.
-- **Fill-down range** (`targetRange`): `rowfill`, `segmentgp` — one formula written once, then dragged/filled across a range; every resulting cell is checked independently.
-- **Picklist/classification** (`pick`): `expenseclass` — dropdown selection per cell instead of a formula.
+---
 
-## Content gaps / obvious next additions
-(For future course planning — not yet built)
-- Pivot-table-style exercises (aggregation/reporting), since the pitch explicitly claims "beyond IB" coverage (dashboards, reporting) as a differentiator.
-- More Indian-company-flavored data (the pitch's core wedge is "Made for India"); current financial-statements course uses Tesla (US) data only.
-- A dedicated FP&A/analyst-craft course (mentioned in the pitch's "Where we win" section) — not yet represented in `COURSES`.
+## Content gaps
+
+Honest assessment of what's thin:
+
+1. **The long tail is one-deep.** `SUM`/`AVERAGE`/`MIN-MAX` have 8–10 exercises each; `VLOOKUP`, `XLOOKUP`, `INDEX+MATCH`, `COUNTIF`, `ROUND` and dates have exactly one. Lookups are the most interview-relevant family and the least practised.
+2. **Only 5 hard exercises** out of 45, all in Course 1. There is no genuinely difficult financial-statement work.
+3. **Course 2 is still Tesla-only.** The India wedge is the core positioning claim and the financial-statements course contradicts it. Course 1 is now heavily Indian (TCS, Reliance, HDFC, Infosys, Zomato, SBI, ICICI, Nifty, SENSEX) — Course 2 has not caught up.
+4. **No financial functions exist**, so no DCF, LBO, NPV or IRR exercise can be written at all. See [09-keyboard-and-functions.md](09-keyboard-and-functions.md).
+5. **No FP&A / analyst-craft course** — named in the pitch as a differentiator, not yet built.
+6. **Only 2 fill-down and 1 picklist exercise.** Now that `Ctrl+D`/`Ctrl+R`/`Ctrl+Enter` exist, fill-down exercises are much cheaper for a learner to complete and are under-used.

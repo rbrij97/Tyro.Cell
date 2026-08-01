@@ -1,6 +1,28 @@
-# Design language — "The Analyst's Ledger"
+# Design language
 
-Status: **proposed**, not yet applied to the product. Written for discussion — react and redirect before this gets treated as final.
+> ## Current direction: Tyro.cell (locked 2026-08-01)
+>
+> **The name is Tyro.cell.** The logo is a blocky **T** built on a cell grid, with a detached square that doubles as the dot in *Tyro.cell* — a hard-edged black tile, no rounded corners. Source: [`demo/logo.svg`](../demo/logo.svg), also inlined in each page and used as the favicon via a data URI so nothing external loads.
+>
+> **Because the mark is pure black and white, the brand is monochrome and colour only ever carries meaning:**
+>
+> | Colour | Reserved for |
+> |---|---|
+> | Black `#0A0A0A` | Every brand and interactive surface — primary buttons, cell selection, fill handle, active editor border |
+> | Green `#0F7A48` | Correct answers only |
+> | Red `#A4463C` | Wrong answers only |
+> | Gold `#8A6B12` | "Your answer goes here" — target cells, hint rail, prototype banner |
+> | Blue | One exception: point-mode range highlighting, which follows Excel's own convention |
+>
+> Type: **Instrument Sans** (UI), **Instrument Serif** (italic accents), **JetBrains Mono** (all data, formulas, cell refs, labels). Background is neutral white, not warm paper — cream fought the stark black mark. Corner radii are tight (5–8px) to sit with a hard-edged square logo. Difficulty badges read as **increasing ink density** (light grey → grey → solid black) rather than three unrelated hues.
+>
+> **Applied so far to `demo/` only.** `excel-practice (1).html` still uses the earlier Instrument Sans + `#16A05C` green scheme and the FormulaLab name; `FinCell-pitch.html` still uses the ledger palette and the FinCell name. Neither has been migrated.
+
+---
+
+## Superseded proposal — "The Analyst's Ledger"
+
+Status: **superseded.** Kept for the reasoning, which is still sound; the palette and type choices were not adopted. Both this and a later "Workbench" mockup were rejected before the Tyro.cell mark settled the question. Read the principles below as still-valid intent, and the specific colour/type values as historical.
 
 ## Why this exists
 
@@ -51,6 +73,7 @@ Do not introduce a purple/blue SaaS gradient, a bright cartoon palette, or Excel
 - Generic SaaS visual cliché: purple-to-blue gradients, blob shapes, glassmorphism, oversized rounded corners on everything.
 - Cloning Microsoft Excel's actual color scheme (`#107C41` green, Segoe UI, ribbon-style icons) — the goal is Excel-*compatible skills*, not an Excel *lookalike brand*.
 
-## Open questions for the user
-- Terminal (dark) mode: nice-to-have later, or part of the v1 launch?
-- Any existing brand color/logo work already done outside these two files that this should reconcile with?
+## Resolved
+- **Terminal (dark) mode** — not in V1. Light only.
+- **Existing brand work** — resolved: the Tyro.cell mark is now the identity. See the block at the top of this file.
+- **Open:** whether to migrate `excel-practice (1).html` and `FinCell-pitch.html` onto the Tyro.cell name and palette, or leave them until the product settles.

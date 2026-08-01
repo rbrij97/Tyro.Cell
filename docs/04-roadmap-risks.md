@@ -38,11 +38,16 @@
 4. Measure completions, requests for more, willingness to pay.
 
 ## Known constraint: browser keyboard shortcuts
-Some shortcuts (`Ctrl+T`, `Ctrl+W`, `Ctrl+N`, `Ctrl+Tab`, `F5`, `F11`) are reserved by the browser/OS and cannot be overridden by any web app. These aren't real Excel skills, but they do break perfect fidelity.
 
-**Mitigation already designed in:** when a cell is focused, intercept and reproduce the shortcuts that matter for analyst work (`Ctrl+Shift+→`, `F2`, `F4`, `Alt+=`, `Ctrl+D`) — same approach as Google Sheets / Excel-for-web. Free engines like Univer and Handsontable already ship this keyboard layer.
+**Status: the gap is closed.** The pitch used to claim `Ctrl+Shift+→`, `F2`, `F4`, `Alt+=` and `Ctrl+D` were handled when only `F2` actually existed. All five are now built, along with `Ctrl+R`, `Ctrl+Z`/`Ctrl+Y`, `Ctrl`+arrow, `Ctrl+Home`/`End`, `Ctrl+Enter`, `Ctrl+A`, `Ctrl+Space`, `Shift+Space` and `Ctrl+;`. The grid is fully operable without a mouse. Full table: [09-keyboard-and-functions.md](09-keyboard-and-functions.md).
 
-**Reframe:** grade modeling logic and formula correctness (the higher-value, hire-worthy skill); treat raw shortcut speed as a transfer benefit, not the core claim. Estimated ~88% of analyst-relevant shortcuts reproduce in-browser.
+Genuinely unreachable, in any browser: `Ctrl+T`, `Ctrl+N`, `Ctrl+W`, `Ctrl+Shift+T`, `Ctrl+Tab`, `Ctrl+1–9`, `F11`, `F12`, `Alt+F4`. These are reserved for window management and `preventDefault()` never sees them. We deliberately leave them unbound rather than ship shortcuts that silently fail.
+
+**The one real loss is `Ctrl+1` (Format Cells)** — a common Excel reflex, permanently taken by Chrome's "switch to tab 1". If number formatting is built, `Ctrl+Shift+1…6` (Excel's own number-format shortcuts) are reachable and are the natural home.
+
+**Reframe, unchanged:** grade modelling logic and formula correctness — the hire-worthy skill — and treat raw shortcut speed as a transfer benefit.
+
+> The old "~88% of analyst-relevant shortcuts" figure was invented and should not be repeated. Either compute it honestly from the table in `09-keyboard-and-functions.md` or drop the claim.
 
 ## Risks
 1. **Monetisation** — freemium conversion in India is often only 1–3%. Without a compelling, outcome-tied paid tier, revenue starves the business.
