@@ -581,6 +581,8 @@ function criteriaTest(crit){
   return v=>{ try{ return compare(v,rn,op); }catch(e){ return false; } };
 }
 function reqRange(a){ if(!isRange(a)) throw FErr("#VALUE!"); return a.__range; }
+function _pmt(r,n,pv,fv,tp){if(r===0)return -(pv+fv)/n;const q=Math.pow(1+r,n);return -(r*(pv*q+fv))/(q-1)/(1+r*tp);}
+function _fv(r,n,pmt,pv,tp){if(r===0)return -pv-pmt*n;const q=Math.pow(1+r,n);return -pv*q-pmt*(1+r*tp)*((q-1)/r);}
 
 const FUNCS={
   SUM:a=>numsOnly(flat(a).map(v=>typeof v==="string"&&v!==""&&/^-?[\d.]+$/.test(v.trim())?parseFloat(v):v)).reduce((s,v)=>s+v,0),
@@ -698,6 +700,95 @@ const FUNCS={
   ISNUMBER:a=>typeof scalar(a[0])==="number",
   ISTEXT:a=>typeof scalar(a[0])==="string"&&scalar(a[0])!=="",
   ISBLANK:a=>scalar(a[0])==="",
+
+  // --- Financial functions (TVM family) ---
+  NPV:a=>{const r=toNum(scalar(a[0]));const cfs=numsOnly(flat(a.slice(1)));
+    let npv=0;for(let i=0;i<cfs.length;i++) npv+=cfs[i]/Math.pow(1+r,i+1);return npv;},
+  PMT:a=>{const r=toNum(scalar(a[0])),n=toNum(scalar(a[1])),pv=toNum(scalar(a[2]));
+    const fv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
+    if(r===0)return -(pv+fv)/n;
+    const pvif=Math.pow(1+r,n);return -(r*(pv*pvif+fv))/(pvif-1)/(1+r*tp);},
+  PV:a=>{const r=toNum(scalar(a[0])),n=toNum(scalar(a[1])),pmt=toNum(scalar(a[2]));
+    const fv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
+    if(r===0)return -pmt*n-fv;
+    const pvif=Math.pow(1+r,n);return (-(pmt*(1+r*tp)*((pvif-1)/r)+fv))/pvif;},
+  FV:a=>{const r=toNum(scalar(a[0])),n=toNum(scalar(a[1])),pmt=toNum(scalar(a[2]));
+    const pv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
+    if(r===0)return -pv-pmt*n;
+    const pvif=Math.pow(1+r,n);return -pv*pvif-pmt*(1+r*tp)*((pvif-1)/r);},
+  NPER:a=>{const r=toNum(scalar(a[0])),pmt=toNum(scalar(a[1])),pv=toNum(scalar(a[2]));
+    const fv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
+    if(r===0){if(pmt===0)throw FErr("#NUM!");return -(pv+fv)/pmt;}
+    const z=pmt*(1+r*tp)/r;const t=Math.log((-fv+z)/(pv+z));if(!isFinite(t))throw FErr("#NUM!");
+    return t/Math.log(1+r);},
+  IPMT:a=>{const r=toNum(scalar(a[0])),per=toNum(scalar(a[1])),n=toNum(scalar(a[2])),pv=toNum(scalar(a[3]));
+    const fv=a[4]!=null?toNum(scalar(a[4])):0;const tp=a[5]!=null?(toBool(scalar(a[5]))?1:0):0;
+    if(per<1||per>n)throw FErr("#NUM!");const pmt=_pmt(r,n,pv,fv,tp);
+    if(tp&&per===1)return 0;
+    const bal=tp?_fv(r,per-2,pmt,pv,1):_fv(r,per-1,pmt,pv,0);
+    return tp?(bal+pmt)*r:bal*r;},
+  PPMT:a=>{const r=toNum(scalar(a[0])),per=toNum(scalar(a[1])),n=toNum(scalar(a[2])),pv=toNum(scalar(a[3]));
+    const fv=a[4]!=null?toNum(scalar(a[4])):0;const tp=a[5]!=null?(toBool(scalar(a[5]))?1:0):0;
+    if(per<1||per>n)throw FErr("#NUM!");const pmt=_pmt(r,n,pv,fv,tp);
+    const bal=tp?(per===1?0:(_fv(r,per-2,pmt,pv,1)+pmt)*r):_fv(r,per-1,pmt,pv,0)*r;
+    return pmt-bal;},
+  RATE:a=>{const n=toNum(scalar(a[0])),pmt=toNum(scalar(a[1])),pv=toNum(scalar(a[2]));
+    const fv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
+    let guess=a[5]!=null?toNum(scalar(a[5])):0.1;
+    for(let i=0;i<100;i++){
+      const pvif=Math.pow(1+guess,n);const z=pmt*(1+guess*tp);
+      const f=pv*pvif+z*((pvif-1)/guess)+fv;
+      const df=pv*n*Math.pow(1+guess,n-1)+z*(n*Math.pow(1+guess,n-1)*guess-(pvif-1))/(guess*guess)
+               +pmt*tp*((pvif-1)/guess);
+      if(Math.abs(df)<1e-20)break;const next=guess-f/df;
+      if(Math.abs(next-guess)<1e-10)return next;guess=next;}
+    throw FErr("#NUM!");},
+  IRR:a=>{const vals=numsOnly(flat([a[0]]));
+    if(vals.length<2)throw FErr("#NUM!");
+    let guess=a[1]!=null?toNum(scalar(a[1])):0.1;
+    for(let i=0;i<300;i++){
+      let f=0,df=0;
+      for(let t=0;t<vals.length;t++){const p=Math.pow(1+guess,t);f+=vals[t]/p;df-=t*vals[t]/Math.pow(1+guess,t+1);}
+      if(Math.abs(df)<1e-20)break;const next=guess-f/df;
+      if(Math.abs(next-guess)<1e-10)return next;guess=next;}
+    throw FErr("#NUM!");},
+
+  // --- Date-based finance ---
+  XNPV:a=>{const r=toNum(scalar(a[0]));const vals=reqRange(a[1]).flat();const dates=reqRange(a[2]).flat();
+    if(vals.length!==dates.length)throw FErr("#NUM!");
+    const d0=toNum(dates[0]);let npv=0;
+    for(let i=0;i<vals.length;i++){const v=toNum(vals[i]);const di=toNum(dates[i]);
+      npv+=v/Math.pow(1+r,(di-d0)/365);}return npv;},
+  XIRR:a=>{const vals=reqRange(a[0]).flat().map(toNum);const dates=reqRange(a[1]).flat().map(toNum);
+    if(vals.length!==dates.length)throw FErr("#NUM!");
+    const d0=dates[0];let guess=a[2]!=null?toNum(scalar(a[2])):0.1;
+    for(let i=0;i<300;i++){
+      let f=0,df=0;
+      for(let t=0;t<vals.length;t++){const yrs=(dates[t]-d0)/365;const p=Math.pow(1+guess,yrs);
+        f+=vals[t]/p;df-=yrs*vals[t]/Math.pow(1+guess,yrs+1);}
+      if(Math.abs(df)<1e-20)break;const next=guess-f/df;
+      if(Math.abs(next-guess)<1e-10)return next;guess=next;}
+    throw FErr("#NUM!");},
+  EOMONTH:a=>{const serial=Math.trunc(toNum(scalar(a[0])));const months=Math.trunc(toNum(scalar(a[1])));
+    const dt=new Date((serial-25569)*86400000);
+    const y=dt.getUTCFullYear(),m=dt.getUTCMonth()+months;
+    const last=new Date(Date.UTC(y,m+1,0));
+    return Math.floor(last.getTime()/86400000)+25569;},
+
+  // --- Misc financial ---
+  SLN:a=>{const cost=toNum(scalar(a[0])),salvage=toNum(scalar(a[1])),life=toNum(scalar(a[2]));
+    if(life===0)throw FErr("#DIV/0!");return (cost-salvage)/life;},
+  DB:a=>{const cost=toNum(scalar(a[0])),salvage=toNum(scalar(a[1])),life=toNum(scalar(a[2]));
+    const per=toNum(scalar(a[3]));const mo=a[4]!=null?toNum(scalar(a[4])):12;
+    if(life===0)throw FErr("#DIV/0!");
+    const rate=Math.round((1-Math.pow(salvage/cost,1/life))*1000)/1000;
+    let total=0,dep=0;
+    for(let i=1;i<=per;i++){
+      if(i===1){dep=cost*rate*mo/12;}
+      else if(i===life+1){dep=(cost-total)*rate*(12-mo)/12;}
+      else{dep=(cost-total)*rate;}
+      total+=dep;}
+    return dep;},
 };
 const LAZY = new Set(["IF","IFERROR","XLOOKUP"]);
 function callFn(name,argNodes,visiting){

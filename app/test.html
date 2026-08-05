@@ -311,6 +311,81 @@ suite("Engine · Dates", t => {
   t("=MONTH(DATE(2026,4,30)) → 4",   () => evalTo(w(), '=MONTH(DATE(2026,4,30))', 4));
   t("=DAY(DATE(2026,4,30)) → 30",     () => evalTo(w(), '=DAY(DATE(2026,4,30))', 30));
   t("=TEXT(DATE(2026,4,30),\"yyyy-mm-dd\") → 2026-04-30", () => evalTo(w(), '=TEXT(DATE(2026,4,30),"yyyy-mm-dd")', "2026-04-30"));
+  t("=EOMONTH(DATE(2024,1,15),0) → Jan 31", () => evalTo(w(), '=DAY(EOMONTH(DATE(2024,1,15),0))', 31));
+  t("=EOMONTH(DATE(2024,1,15),1) → Feb 29 (leap)", () => evalTo(w(), '=DAY(EOMONTH(DATE(2024,1,15),1))', 29));
+  t("=EOMONTH(DATE(2025,1,15),1) → Feb 28 (non-leap)", () => evalTo(w(), '=DAY(EOMONTH(DATE(2025,1,15),1))', 28));
+  t("=EOMONTH(DATE(2024,12,15),2) → Feb 28 2025", () => {
+    const r = evalTo(w(), '=MONTH(EOMONTH(DATE(2024,12,15),2))', 2);
+    const r2 = evalTo(w(), '=YEAR(EOMONTH(DATE(2024,12,15),2))', 2025);
+    return { pass: r.pass && r2.pass, actual: r.actual+"/"+r2.actual, expected: "2/2025" };
+  });
+});
+
+suite("Engine · Financial functions", t => {
+  const w = () => iframe.contentWindow;
+
+  t("=PMT(0.08/12,360,200000) ≈ -1467.53 (home loan EMI)", () => {
+    const r = evalTo(w(), '=ROUND(PMT(0.08/12,360,200000),2)', -1467.53);
+    return r;
+  });
+  t("=PMT(0,12,12000) → -1000 (zero-rate)", () => evalTo(w(), '=PMT(0,12,12000)', -1000));
+  t("=PMT(0.1/12,60,50000,0,0) ≈ -1062.35", () => evalTo(w(), '=ROUND(PMT(0.1/12,60,50000),2)', -1062.35));
+
+  t("=PV(0.08/12,360,-1467.53) ≈ 200000", () => evalTo(w(), '=ROUND(PV(0.08/12,360,-1467.53),0)', 200000));
+  t("=PV(0.1,5,0,-100000) ≈ -62092 (lump sum PV)", () => evalTo(w(), '=ROUND(PV(0.1,5,0,-100000),0)', -62092));
+
+  t("=FV(0.07,10,0,-100000) ≈ 196715 (FD growth)", () => evalTo(w(), '=ROUND(FV(0.07,10,0,-100000),0)', 196715));
+  t("=FV(0.01,60,-5000) ≈ 348850 (SIP)", () => evalTo(w(), '=ROUND(FV(0.01,60,-5000),0)', 348850));
+  t("=FV(0,12,-1000) → 12000 (zero-rate)", () => evalTo(w(), '=FV(0,12,-1000)', 12000));
+
+  t("=NPER(0.01,-5000,0,348850) ≈ 60", () => evalTo(w(), '=ROUND(NPER(0.01,-5000,0,348850),0)', 60));
+
+  t("=NPV(0.1,-10000,3000,4200,6800) ≈ 1188.44", () => evalTo(w(), '=ROUND(NPV(0.1,-10000,3000,4200,6800),2)', 1188.44));
+
+  t("=IPMT(0.1/12,1,360,100000) ≈ -833.33 (first month interest)", () =>
+    evalTo(w(), '=ROUND(IPMT(0.1/12,1,360,100000),2)', -833.33));
+  t("=PPMT(0.1/12,1,360,100000) ≈ -224.13 (first month principal)", () =>
+    evalTo(w(), '=ROUND(PPMT(0.1/12,1,360,100000),2)', -224.13));
+  t("IPMT + PPMT = PMT", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1", "=ROUND(IPMT(0.1/12,6,360,100000)+PPMT(0.1/12,6,360,100000),2)");
+    win.setRaw("A2", "=ROUND(PMT(0.1/12,360,100000),2)");
+    const v1 = win.cellValue("A1", new Set());
+    const v2 = win.cellValue("A2", new Set());
+    return { pass: v1===v2, actual: String(v1), expected: String(v2) };
+  });
+
+  t("IRR with cell range", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1",-10000); win.setRaw("A2",3000); win.setRaw("A3",4200); win.setRaw("A4",6800);
+    return evalTo(win, '=ROUND(IRR(A1:A4)*100,2)', 18.03);
+  });
+
+  t("=RATE(360,-1467.53,200000) ≈ 0.00667 (monthly rate)", () =>
+    evalTo(w(), '=ROUND(RATE(360,-1467.53,200000)*1200,1)', 8.0));
+
+  t("=SLN(100000,10000,5) → 18000", () => evalTo(w(), '=SLN(100000,10000,5)', 18000));
+
+  t("XNPV basic", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1",-10000); win.setRaw("A2",3000); win.setRaw("A3",4200); win.setRaw("A4",6800);
+    win.setRaw("B1",win.evalStr("DATE(2024,1,1)", new Set()));
+    win.setRaw("B2",win.evalStr("DATE(2024,6,1)", new Set()));
+    win.setRaw("B3",win.evalStr("DATE(2025,1,1)", new Set()));
+    win.setRaw("B4",win.evalStr("DATE(2025,6,1)", new Set()));
+    return evalTo(win, '=ROUND(XNPV(0.1,A1:A4,B1:B4),0)', 2592);
+  });
+
+  t("XIRR basic", () => {
+    const win = w(); resetCells(win);
+    win.setRaw("A1",-10000); win.setRaw("A2",3000); win.setRaw("A3",4200); win.setRaw("A4",6800);
+    win.setRaw("B1",win.evalStr("DATE(2024,1,1)", new Set()));
+    win.setRaw("B2",win.evalStr("DATE(2024,6,1)", new Set()));
+    win.setRaw("B3",win.evalStr("DATE(2025,1,1)", new Set()));
+    win.setRaw("B4",win.evalStr("DATE(2025,6,1)", new Set()));
+    const r = evalTo(win, '=ROUND(XIRR(A1:A4,B1:B4)*100,0)', null);
+    return { pass: typeof parseFloat(r.actual)==="number" && parseFloat(r.actual)>20, actual: r.actual, expected: ">20%" };
+  });
 });
 
 suite("Engine · Cell refs & ranges", t => {
