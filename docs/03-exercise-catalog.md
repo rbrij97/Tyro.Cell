@@ -108,6 +108,58 @@ Full detail in [`demo/README.md`](../demo/README.md).
 
 ---
 
+## Staged exercises — `docs/vibranium/` (not yet in the app)
+
+**116 exercises across 13 files**, covering **38 functions**, all in the `EX.xxx` format used by `app/index.html`. When ready, copy the definitions into the `EX={}` block and add exercise IDs to the `COURSES` modules array. All exercises use Indian finance contexts (ticker masters, comps tables, tax slabs, FD maturity, receivable aging, etc.).
+
+By difficulty: **35 easy · 39 medium · 42 hard** — significantly harder skew than the current app exercises (23E/17M/5H).
+
+### Tier 1 — Lookups & multi-criteria aggregation (28 exercises)
+
+| File | Functions | Count | Levels |
+|---|---|---|---|
+| `tier1-vlookup.js` | VLOOKUP | 6 | 2E, 2M, 2H |
+| `tier1-xlookup.js` | XLOOKUP | 6 | 2E, 2M, 2H |
+| `tier1-indexmatch.js` | INDEX + MATCH | 6 | 2E, 2M, 2H |
+| `tier1-iferror.js` | IFERROR | 4 | 2E, 1M, 1H |
+| `tier1-countifs.js` | COUNTIFS | 3 | 1E, 1M, 1H |
+| `tier1-averageifs.js` | AVERAGEIFS | 3 | 1E, 1M, 1H |
+
+### Tier 2 — Text cleanup, logic, horizontal lookup (24 exercises)
+
+| File | Functions | Count | Levels |
+|---|---|---|---|
+| `tier2-text-cleanup.js` | TRIM, LEFT, RIGHT, MID, LEN, FIND, SUBSTITUTE | 14 | 5E, 5M, 4H |
+| `tier2-abs-and-or-hlookup.js` | ABS, AND, OR, HLOOKUP | 10 | 3E, 4M, 3H |
+
+### Tier 3 — Finance rewrites of generic exercises (16 exercises)
+
+| File | Functions | Count | Levels |
+|---|---|---|---|
+| `tier3-if-rewrites.js` | IF, nested IF, COUNTIF, SUMIF, ROUND, CONCAT, COUNT, COUNTA | 16 | 5E, 5M, 6H |
+
+### Tier 4 — Remaining engine-ready functions (48 exercises)
+
+| File | Functions | Count | Levels |
+|---|---|---|---|
+| `tier4-power-cagr.js` | POWER (CAGR) | 4 | 1E, 2M, 1H |
+| `tier4-rounding.js` | ROUNDUP, ROUNDDOWN | 4 | 2E, 2M |
+| `tier4-case-textjoin.js` | UPPER, LOWER, PROPER, TEXTJOIN | 7 | 4E, 3M |
+| `tier4-dates.js` | TODAY, YEAR, MONTH, DAY, DAYS, DATE, TEXT | 13 | 5E, 6M, 2H |
+| `tier4-math.js` | MOD, INT, SQRT, PRODUCT | 7 | 2E, 2M, 3H |
+| `tier4-stats.js` | MEDIAN, MIN, MAX, AVERAGEIF | 6 | 3E, 3M |
+| `tier4-logic-types.js` | NOT, ISNUMBER, ISBLANK, COUNTBLANK | 7 | 3E, 3M, 1H |
+
+### Functions covered by Vibranium but not the app
+
+VLOOKUP (6 more), XLOOKUP (6 more), INDEX+MATCH (6 more), IFERROR, COUNTIFS, AVERAGEIFS, TRIM, LEFT, RIGHT, MID, LEN, FIND, SUBSTITUTE, ABS, AND, OR, HLOOKUP, ROUNDUP, ROUNDDOWN, UPPER, LOWER, PROPER, TEXTJOIN, POWER, MOD, INT, SQRT, PRODUCT, MEDIAN, AVERAGEIF, NOT, ISNUMBER, ISBLANK, COUNTBLANK, TODAY, YEAR, MONTH, DAY, DAYS, DATE, TEXT, COUNTA.
+
+### Not covered by Vibranium (still no exercises anywhere)
+
+Financial functions (NPV, IRR, XNPV, XIRR, PMT, PV, FV, NPER, RATE, IPMT, PPMT, EOMONTH, SLN, DB), PI, RAND, RANDBETWEEN, NOW, CONCATENATE, ISTEXT, SUMIFS.
+
+---
+
 ## Content gaps
 
 Honest assessment of what's thin:
@@ -115,6 +167,10 @@ Honest assessment of what's thin:
 1. **The long tail is one-deep.** `SUM`/`AVERAGE`/`MIN-MAX` have 8–10 exercises each; `VLOOKUP`, `XLOOKUP`, `INDEX+MATCH`, `COUNTIF`, `ROUND` and dates have exactly one. Lookups are the most interview-relevant family and the least practised.
 2. **Only 5 hard exercises** out of 45, all in Course 1. There is no genuinely difficult financial-statement work.
 3. **Course 2 is still Tesla-only.** The India wedge is the core positioning claim and the financial-statements course contradicts it. Course 1 is now heavily Indian (TCS, Reliance, HDFC, Infosys, Zomato, SBI, ICICI, Nifty, SENSEX) — Course 2 has not caught up.
-4. **No financial functions exist**, so no DCF, LBO, NPV or IRR exercise can be written at all. See [09-keyboard-and-functions.md](09-keyboard-and-functions.md).
+4. **Financial functions now exist** (NPV, IRR, XNPV, XIRR, PMT, PV, FV, NPER, RATE, IPMT, PPMT, EOMONTH, SLN, DB) — DCF and loan-schedule exercises can now be written. No financial exercises exist in the app yet, but 116 new exercises covering 38 functions are staged in `docs/vibranium/`.
 5. **No FP&A / analyst-craft course** — named in the pitch as a differentiator, not yet built.
 6. **Only 2 fill-down and 1 picklist exercise.** Now that `Ctrl+D`/`Ctrl+R`/`Ctrl+Enter` exist, fill-down exercises are much cheaper for a learner to complete and are under-used.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[01-architecture]] · [[02-features]] · [[09-keyboard-and-functions]] · [[10-formulas]] · [[08-product-changes]] · [[vibranium-library]]

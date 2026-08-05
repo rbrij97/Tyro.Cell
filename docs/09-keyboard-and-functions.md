@@ -109,7 +109,7 @@ Caveat worth keeping: this was tested in an embedded browser pane. A standalone 
 
 # Part 2 · Functions
 
-**60 functions.** Everything below is implemented and covered by the test suite.
+**74 functions.** This is the canonical count — other docs reference this file. Everything below is implemented and covered by the test suite.
 
 ### Math & aggregation (17)
 `SUM` `AVERAGE` `MIN` `MAX` `MEDIAN` `PRODUCT` `ABS` `SQRT` `POWER` `MOD` `INT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PI` `RAND` `RANDBETWEEN`
@@ -129,8 +129,11 @@ Caveat worth keeping: this was tested in an embedded browser pane. A standalone 
 ### Lookup (5)
 `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH`
 
-### Date (8)
-`TODAY` `NOW` `DATE` `YEAR` `MONTH` `DAY` `DAYS` `TEXT`
+### Date (9)
+`TODAY` `NOW` `DATE` `YEAR` `MONTH` `DAY` `DAYS` `TEXT` `EOMONTH`
+
+### Financial (13)
+`NPV` `IRR` `XNPV` `XIRR` `PMT` `PV` `FV` `NPER` `RATE` `IPMT` `PPMT` `SLN` `DB`
 
 ### Info (3)
 `ISNUMBER` `ISTEXT` `ISBLANK`
@@ -150,6 +153,10 @@ These are real semantics that exercises can lean on — or trip over.
 
 Worth knowing before writing exercises that would need them:
 
-`SUMPRODUCT` · `IFNA` · `IFS` · `VALUE` · `DATEVALUE` · `SEARCH` (only case-sensitive `FIND` exists) · `EXACT` · `FILTER` · `UNIQUE` · `SORT` · `ROWS` · `COLUMNS` · `OFFSET` · `INDIRECT` · `EOMONTH` · `EDATE` · `NETWORKDAYS` · `YEARFRAC`
+`SUMPRODUCT` · `IFNA` · `IFS` · `VALUE` · `DATEVALUE` · `SEARCH` (only case-sensitive `FIND` exists) · `EXACT` · `FILTER` · `UNIQUE` · `SORT` · `ROWS` · `COLUMNS` · `OFFSET` · `INDIRECT` · `EDATE` · `NETWORKDAYS` · `YEARFRAC`
 
-**The notable gap is financial functions.** There is no `NPV`, `IRR`, `XIRR`, `PMT`, `PV`, `FV` or `RATE`. For a product aimed at FP&A and IB candidates that is a real hole — a DCF or LBO exercise cannot be written today. Worth deciding whether it belongs in the next content push.
+**Financial functions are now implemented** (NPV, IRR, XNPV, XIRR, PMT, PV, FV, NPER, RATE, IPMT, PPMT, EOMONTH, SLN, DB). DCF, loan schedule, and time-value-of-money exercises can now be written. `EOMONTH` has also been added to the date family.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[01-architecture]] · [[03-exercise-catalog]] · [[08-product-changes]] · [[10-formulas]]

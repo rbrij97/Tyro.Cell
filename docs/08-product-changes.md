@@ -160,7 +160,7 @@ Strategy in `07-monetization.md`. Sequenced sequentially per that plan.
 
 ## What's already done (so we don't re-do it)
 
-- Formula engine — **60 functions**, tokenizer/parser/evaluator, hand-written from scratch (100% our code, 0 external libraries).
+- Formula engine — **[74 functions](09-keyboard-and-functions.md)**, tokenizer/parser/evaluator, hand-written from scratch (100% our code, 0 external libraries).
 - **45 exercises** across 2 courses (23 easy / 17 medium / 5 hard), heavily Indian-company data in Course 1.
 - Grid UI with mouse selection, formula bar, point-mode formula editing, fill handle, clipboard with relative-reference shifting.
 - **Full Excel keyboard layer** — fill, undo/redo, `F4`, edge jump, AutoSum, `Ctrl+Enter`; grid is operable without a mouse. In-product **Keys** reference tab.
@@ -170,3 +170,7 @@ Strategy in `07-monetization.md`. Sequenced sequentially per that plan.
 - **`demo/` — standalone 3-exercise public demo**, Tyro.cell branded, own harness at 64/64, own README.
 - Complete pitch deck (HTML + PPTX + PDF) — still under the old FinCell name.
 - Full documentation set: overview → architecture → features → exercises → roadmap → design → gamification → monetization → this doc → keyboard & functions.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[01-architecture]] · [[02-features]] · [[03-exercise-catalog]] · [[05-design-language]] · [[06-gamification]] · [[07-monetization]] · [[09-keyboard-and-functions]] · [[10-formulas]]

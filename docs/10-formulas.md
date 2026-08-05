@@ -10,12 +10,15 @@ Counts read directly off the running app on 2026-08-01.
 
 | | |
 |---|---|
-| Functions the engine supports | **60** |
-| Functions with at least one exercise | **16** |
-| Functions with **no exercise at all** | **44** |
-| Exercises total | 45 |
+| | |
+|---|---|
+| Functions the engine supports | **74** (was 60; +14 financial functions added 2026-08-05) |
+| Functions with at least one exercise (in app) | **16** |
+| Functions with **no exercise in the app** | **58** |
+| Exercises in app | 45 |
+| Exercises staged in `docs/vibranium/` (not yet integrated) | **116** covering 38 functions |
 
-**73% of the engine is untaught.** The engine is far ahead of the content — building more functions is not the bottleneck, writing exercises for the ones that already work is.
+**78% of the engine is untaught in the app.** The engine is far ahead of the content — but 116 new exercises exist in `docs/vibranium/` ready to integrate. Writing exercises for the ones that already work is the bottleneck; the Vibranium library addresses this for 38 of the 58 untaught functions.
 
 ---
 
@@ -59,37 +62,49 @@ Six exercises teach no function at all — `rowfill`, `grossprofit`, `ncwc`, `se
 
 ---
 
-## The 44 formulas with zero exercises
+## The 58 formulas with no exercise in the app
 
-Ordered by what to build first.
+Ordered by what to build first. **38 of these are already covered by the 116 staged exercises in `docs/vibranium/`** — marked with ✅ below. Integrating Vibranium into the app is the single highest-leverage content action.
 
-### Priority 1 — high interview value, currently untaught
-| Formula | Why it matters |
-|---|---|
-| `IFERROR` | Every real model wraps lookups in it. Interviewers expect it. |
-| `TRIM` | The single most common data-cleaning fix; already the crux of a demo exercise |
-| `COUNTIFS` | The counting counterpart to `SUMIFS`, which has an exercise |
-| `AVERAGEIFS` | Same — conditional averaging is standard FP&A |
-| `COUNTA` | Named in the COUNT exercise's title but never actually practised |
-| `HLOOKUP` | Completes the lookup family |
+### Priority 1 — high interview value, currently untaught in app
+| Formula | Why it matters | Vibranium? |
+|---|---|---|
+| `IFERROR` | Every real model wraps lookups in it. Interviewers expect it. | ✅ 4 exercises |
+| `TRIM` | The single most common data-cleaning fix; already the crux of a demo exercise | ✅ in text-cleanup |
+| `COUNTIFS` | The counting counterpart to `SUMIFS`, which has an exercise | ✅ 3 exercises |
+| `AVERAGEIFS` | Same — conditional averaging is standard FP&A | ✅ 3 exercises |
+| `COUNTA` | Named in the COUNT exercise's title but never actually practised | ✅ in tier 3 |
+| `HLOOKUP` | Completes the lookup family | ✅ in tier 2 |
 
 ### Priority 2 — everyday analyst craft
-| Formula | Why it matters |
-|---|---|
-| `LEFT` `RIGHT` `MID` `LEN` `FIND` `SUBSTITUTE` | Ticker parsing, ID cleanup, splitting exported fields |
-| `CONCAT` `CONCATENATE` `TEXTJOIN` | Only the `&` operator is taught today |
-| `ROUNDUP` `ROUNDDOWN` | Share counts, headcount, unit economics |
-| `ABS` | Variance analysis — already load-bearing in the demo |
-| `AND` `OR` `NOT` | Multi-condition logic inside `IF` |
-| `ISNUMBER` `ISTEXT` `ISBLANK` | Data-quality checks; `ISNUMBER` is how you catch a text date |
-| `TODAY` `YEAR` `MONTH` `DAY` `TEXT` | Ageing, period labels, maturity buckets |
-| `MEDIAN` | Comps tables use it as often as `AVERAGE` |
+| Formula | Why it matters | Vibranium? |
+|---|---|---|
+| `LEFT` `RIGHT` `MID` `LEN` `FIND` `SUBSTITUTE` | Ticker parsing, ID cleanup, splitting exported fields | ✅ 14 exercises |
+| `TEXTJOIN` | Only the `&` operator is taught today | ✅ in tier 4 |
+| `ROUNDUP` `ROUNDDOWN` | Share counts, headcount, unit economics | ✅ 4 exercises |
+| `ABS` | Variance analysis — already load-bearing in the demo | ✅ in tier 2 |
+| `AND` `OR` `NOT` | Multi-condition logic inside `IF` | ✅ in tier 2/4 |
+| `ISNUMBER` `ISBLANK` `COUNTBLANK` | Data-quality checks | ✅ 7 exercises |
+| `TODAY` `YEAR` `MONTH` `DAY` `TEXT` | Ageing, period labels, maturity buckets | ✅ 13 exercises |
+| `MEDIAN` | Comps tables use it as often as `AVERAGE` | ✅ in tier 4 |
+| `UPPER` `LOWER` `PROPER` | Case normalization | ✅ in tier 4 |
+| `POWER` | CAGR calculations | ✅ 4 exercises |
 
 ### Priority 3 — real but lower frequency
-`PRODUCT` · `POWER` · `SQRT` · `MOD` · `INT` · `AVERAGEIF` · `UPPER` · `LOWER` · `PROPER` · `NOW`
+| Formula | Vibranium? |
+|---|---|
+| `MOD` · `INT` · `SQRT` · `PRODUCT` | ✅ 7 exercises |
+| `AVERAGEIF` | ✅ in tier 4 |
+| `NOW` | — no exercise (near-identical to TODAY) |
+
+### Financial functions — new, no exercises yet
+`NPV` · `IRR` · `XNPV` · `XIRR` · `PMT` · `PV` · `FV` · `NPER` · `RATE` · `IPMT` · `PPMT` · `EOMONTH` · `SLN` · `DB` — engine work done, exercises need to be authored. Not in Vibranium.
 
 ### Not worth teaching
 `PI` · `RAND` · `RANDBETWEEN` — non-deterministic or irrelevant to finance practice. `RAND`/`RANDBETWEEN` also can't be graded, since the checker compares against a computed expected value.
+
+### Also without exercises (low priority)
+`CONCATENATE` (covered by CONCAT/&) · `ISTEXT` (covered by ISNUMBER) · `SUMIFS` (covered by SUMIF + COUNTIFS pattern).
 
 ---
 
@@ -97,10 +112,10 @@ Ordered by what to build first.
 
 These need engine work before any exercise can exist.
 
-### Financial — the significant gap
-`NPV` · `IRR` · `XNPV` · `XIRR` · `PMT` · `PV` · `FV` · `RATE` · `NPER`
+### Financial — ~~the significant gap~~ CLOSED (2026-08-05)
+The following are now **implemented and tested**: `NPV` · `IRR` · `XNPV` · `XIRR` · `PMT` · `PV` · `FV` · `NPER` · `RATE` · `IPMT` · `PPMT` · `EOMONTH` · `SLN` · `DB`
 
-**None of these exist.** The product targets FP&A, IB and equity-research candidates, and today it is impossible to write a DCF, an LBO, a loan schedule or any time-value-of-money exercise. This is the largest single gap between what the product claims and what it can teach.
+DCF, loan schedule, depreciation, and time-value-of-money exercises can now be written. No financial exercises exist in the app yet — this is the next content priority.
 
 ### Lookup & array
 `SUMPRODUCT` · `FILTER` · `UNIQUE` · `SORT` · `OFFSET` · `INDIRECT` · `ROWS` · `COLUMNS`
@@ -111,9 +126,9 @@ Note the engine has **no array semantics at all** — `TRIM(A2:A21)` throws `#VA
 `IFS` · `IFNA` · `SWITCH` · `SEARCH` (only case-sensitive `FIND` exists) · `EXACT` · `VALUE` · `TEXTBEFORE` · `TEXTAFTER`
 
 ### Date
-`EOMONTH` · `EDATE` · `NETWORKDAYS` · `WORKDAY` · `YEARFRAC` · `DATEVALUE`
+`EDATE` · `NETWORKDAYS` · `WORKDAY` · `YEARFRAC` · `DATEVALUE`
 
-`EOMONTH` and `YEARFRAC` are worth having — period-end logic and day-count conventions are everywhere in finance.
+`EOMONTH` is now implemented. `YEARFRAC` is worth having — day-count conventions are everywhere in finance.
 
 ---
 
@@ -123,9 +138,9 @@ Note the engine has **no array semantics at all** — `TRIM(A2:A21)` throws `#VA
 2. **Add `IFERROR` and `TRIM` exercises.** Both already work; both are what separates a formula that survives real data from one that doesn't.
 3. **Fill in `COUNTIFS` / `AVERAGEIFS` / `COUNTA`.** Cheap, and they complete families that are already half-taught.
 4. **Text-cleanup module** — `LEFT`/`RIGHT`/`MID`/`FIND`/`SUBSTITUTE`/`TRIM` on messy exported data.
-5. **Then** engine work: financial functions (`NPV`, `IRR`, `XIRR`, `PMT`), which unlock a genuine modelling course.
+5. **Write financial-function exercises** — the engine now has NPV, IRR, PMT, etc. DCF and loan-schedule exercises are ready to be authored.
 
-Steps 1–4 need **no engine changes at all** — only exercise data.
+Steps 1–4 need **no engine changes at all** — only exercise data. Step 5 also needs no engine work now that financial functions are implemented.
 
 ---
 
@@ -141,3 +156,6 @@ Anything new has to satisfy all four, or the exercise will ship broken:
 ## See also
 - [09-keyboard-and-functions.md](09-keyboard-and-functions.md) — function syntax, engine semantics, keyboard shortcuts
 - [03-exercise-catalog.md](03-exercise-catalog.md) — every exercise, by course and module
+
+> **Obsidian graph links**
+> [[00-overview]] · [[01-architecture]] · [[03-exercise-catalog]] · [[08-product-changes]] · [[09-keyboard-and-functions]] · [[vibranium-library]]

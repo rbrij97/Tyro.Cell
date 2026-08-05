@@ -38,7 +38,12 @@ Every mechanic below is a standard engagement-loop pattern (streaks, levels, bad
 ## Data implications (for the backend discussion)
 Whatever mechanic gets built needs the account/database work already being planned (Google auth + per-user progress) — none of this can be more than session-deep without it. Minimum fields to plan for per user: `current_streak, longest_streak, last_active_date, exercises_completed[], courses_certified[], skill_tier, rankings_opt_in (bool)`.
 
-## Open questions still to resolve
-- Tier naming: **Option A** (Easy / Normal / Hard) vs **Option B** (Basic / Skilled / Pro) — see the design mockup in the browser pane for how both feel side-by-side.
-- Terminal (dark) mode: v1 or later?
-- Any mechanic here that feels off-brand or unnecessary to cut before we go further?
+## Open questions — resolved
+
+- Tier naming: **Resolved 2026-07-21 — Easy / Medium / Hard.** See [08-product-changes.md](08-product-changes.md) Q1.
+- Terminal (dark) mode: **Resolved — not in V1.** Light mode only. See [08-product-changes.md](08-product-changes.md) Q4.
+- Any mechanic here that feels off-brand or unnecessary to cut? **No cuts decided** — all mechanics kept as proposed, pending backend.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[05-design-language]] · [[07-monetization]] · [[08-product-changes]]

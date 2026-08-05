@@ -77,3 +77,7 @@ Do not introduce a purple/blue SaaS gradient, a bright cartoon palette, or Excel
 - **Terminal (dark) mode** — not in V1. Light only.
 - **Existing brand work** — resolved: the Tyro.cell mark is now the identity. See the block at the top of this file.
 - **Open:** whether to migrate `app/index.html` and `pitch/index.html` onto the Tyro.cell name and palette, or leave them until the product settles.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[02-features]] · [[06-gamification]] · [[08-product-changes]]

@@ -7,7 +7,7 @@
 | YouTube / Udemy | Video | No | Some | Yes |
 | WallStreetMojo / CFI | Video + templates | No | No | Partial |
 | Quantus (US) | Interactive sheet | Yes | No | No (IB-heavy) |
-| **FinCell** | Interactive sheet | Yes | **Yes** | **Yes — FP&A + analyst craft** |
+| **Tyro.cell** | Interactive sheet | Yes | **Yes** | **Yes — FP&A + analyst craft** |
 
 **Where we win:**
 1. **Made for India** — Indian listed companies, INR, Ind AS, prep framed around Big4/GCC/Indian IB/FP&A recruiting.
@@ -59,3 +59,7 @@ Genuinely unreachable, in any browser: `Ctrl+T`, `Ctrl+N`, `Ctrl+W`, `Ctrl+Shift
 Real pain, validated concept (Quantus proves the format works), and a defensible India-specific wedge. Held back by freemium economics and build risk. The directive is explicit: **prove demand before spending** — hence Phase 1 being nearly zero-cost and using the already-built prototype as the validation artifact.
 
 > Figures throughout the pitch are directional, not researched market sizing — a real fundraising pitch should replace them with sourced TAM/SAM/SOM numbers.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[07-monetization]] · [[08-product-changes]] · [[09-keyboard-and-functions]] · [[03-exercise-catalog]]

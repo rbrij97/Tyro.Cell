@@ -28,8 +28,8 @@ A hand-written spreadsheet formula interpreter, in three stages:
 
 Values are plain JS `number | string | boolean | ""`, or a wrapped `{__range: [[...]]}` for ranges, or `{__err: code}` for errors (thrown as exceptions and caught at the display/check layer).
 
-### Supported functions (`FUNCS`, **60 total** — full list in [09-keyboard-and-functions.md](09-keyboard-and-functions.md))
-Math (`SUM, AVERAGE, MIN, MAX, MEDIAN, PRODUCT, ROUND(UP/DOWN), ABS, SQRT, POWER, MOD, INT, PI, RAND, RANDBETWEEN`), counting (`COUNT, COUNTA, COUNTBLANK`), conditional (`IF, IFERROR, COUNTIF(S), SUMIF(S), AVERAGEIF(S), AND, OR, NOT`), text (`LEN, UPPER, LOWER, PROPER, TRIM, LEFT, RIGHT, MID, CONCATENATE/CONCAT, TEXTJOIN, FIND, SUBSTITUTE`), lookup (`VLOOKUP, HLOOKUP, INDEX, MATCH, XLOOKUP`), date (`TODAY, NOW, DATE, YEAR, MONTH, DAY, DAYS, TEXT`), info (`ISNUMBER, ISTEXT, ISBLANK`).
+### Supported functions (`FUNCS`, **74 total** — full list in [09-keyboard-and-functions.md](09-keyboard-and-functions.md))
+Math (`SUM, AVERAGE, MIN, MAX, MEDIAN, PRODUCT, ROUND(UP/DOWN), ABS, SQRT, POWER, MOD, INT, PI, RAND, RANDBETWEEN`), counting (`COUNT, COUNTA, COUNTBLANK`), conditional (`IF, IFERROR, COUNTIF(S), SUMIF(S), AVERAGEIF(S), AND, OR, NOT`), text (`LEN, UPPER, LOWER, PROPER, TRIM, LEFT, RIGHT, MID, CONCATENATE/CONCAT, TEXTJOIN, FIND, SUBSTITUTE`), lookup (`VLOOKUP, HLOOKUP, INDEX, MATCH, XLOOKUP`), date (`TODAY, NOW, DATE, YEAR, MONTH, DAY, DAYS, TEXT, EOMONTH`), financial (`NPV, IRR, XNPV, XIRR, PMT, PV, FV, NPER, RATE, IPMT, PPMT, SLN, DB`), info (`ISNUMBER, ISTEXT, ISBLANK`).
 
 `IF`, `IFERROR`, and `XLOOKUP` are in a `LAZY` set — their arguments are AST nodes, not pre-evaluated values, so short-circuiting and fallback-on-error work correctly (e.g. `IFERROR` must not evaluate its fallback unless the first expression throws).
 
@@ -80,7 +80,11 @@ A `TEST HOOKS` block near the end of the script exports them explicitly. Values 
 
 | Harness | Covers | Status |
 |---|---|---|
-| [`app/test.html`](../app/test.html) | The main app — engine arithmetic, all 60 functions, error codes, `shiftFormula`, every exercise solution against its own checker, DOM structure, state transitions | **155/155** |
+| [`app/test.html`](../app/test.html) | The main app — engine arithmetic, all 74 functions (including financial: PMT/PV/FV/NPV/IRR/XIRR etc.), error codes, `shiftFormula`, every exercise solution against its own checker, DOM structure, state transitions | **155/155** |
 | [`demo/demo-test.html`](../demo/demo-test.html) | The demo — solutions, published expected values, seeded data problems, exercise gating, each diagnostic rule, instrumentation privacy | **64/64** |
 
 Both load the real page in a hidden iframe rather than a copy, so they test what ships. Both need the folder served over HTTP (`npx serve`) — browsers block cross-frame access on `file://`.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[02-features]] · [[03-exercise-catalog]] · [[08-product-changes]] · [[09-keyboard-and-functions]] · [[10-formulas]]

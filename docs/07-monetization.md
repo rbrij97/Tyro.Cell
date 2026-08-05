@@ -88,3 +88,7 @@ These are directional. Real numbers require a Phase-1 pilot with paid conversion
 ## The pitch line (for verbal delivery, not the deck)
 
 > "We start with certificate sales — cheap, one-time, proves willingness to pay. Then subscription for retention. Then college licensing, which is where Indian edtech actually makes money. Corporate and GCC training is the third-year story. Anyone who tells you they're going to make ₹5 crore ARR in year one from B2C subscription in Indian edtech is either lying or hasn't looked at Unacademy's numbers."
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[04-roadmap-risks]] · [[06-gamification]] · [[08-product-changes]]

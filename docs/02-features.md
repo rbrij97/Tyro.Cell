@@ -25,7 +25,7 @@
 - **Copy/paste** (`Ctrl+C`/`Ctrl+V`): preserves formulas (shifted) and formatting across a rectangular block.
 - **Status bar**: live Sum/Average/Count for the current multi-cell selection.
 - **Concept panel** (left, exercise mode only): explains the concept being taught, states the task and the answer cell(s), and has a collapsible **Hint**.
-- **Right panel**: three tabs — *Outline* (this course's exercise list with progress), *Functions* (reference for all 60 functions with syntax + example), and *Keys* (every keyboard shortcut, plus an explicit note naming the keys the browser reserves and why they can't work).
+- **Right panel**: three tabs — *Outline* (this course's exercise list with progress), *Functions* (reference for [all 74 functions](09-keyboard-and-functions.md) with syntax + example), and *Keys* (every keyboard shortcut, plus an explicit note naming the keys the browser reserves and why they can't work).
 - **Exercise bar**: Previous / Reset / Hint / Solution / **Check Answer** / Next.
 - **Answer checking**: instant pass/fail with a **specific reason** on failure — wrong value with expected value shown, missing required function, hard-coded literal detected, off-by-one range, unquoted criteria operator, or a plain-English explanation of the Excel error code produced (`#DIV/0!`, `#N/A`, `#REF!`, `#NAME?` with "did you mean X?" suggestions).
 - **Dropdown/classification exercises**: some tasks (e.g. "classify this expense line") replace formula entry with a picklist per cell.
@@ -41,3 +41,7 @@ The floating AI chat drawer has been **cut and deleted from the code**. It calle
 
 ## Sandbox mode
 - A blank sheet with the full grid/engine/toolbar but no exercise, target cells, or checking — free-form practice or scratch modeling.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[01-architecture]] · [[03-exercise-catalog]] · [[09-keyboard-and-functions]] · [[05-design-language]]

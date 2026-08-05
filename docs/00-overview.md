@@ -31,7 +31,7 @@ Reps, not replays. A live in-browser grid where the user opens a real spreadshee
 ## Where the build actually is
 
 **Working today:**
-- Hand-written formula engine — **60 functions**, tokeniser → parser → evaluator, no libraries.
+- Hand-written formula engine — **[74 functions](09-keyboard-and-functions.md)**, tokeniser → parser → evaluator, no libraries.
 - **45 exercises** across 2 courses (23 easy / 17 medium / 5 hard).
 - Grid with selection, formula bar, point-mode reference picking, fill handle, clipboard with relative-reference shifting.
 - **Excel keyboard layer** — fill, undo/redo, `F4`, edge jump, AutoSum. See [09-keyboard-and-functions.md](09-keyboard-and-functions.md).
@@ -72,3 +72,6 @@ Lean, validate-first, in three phases — see [04-roadmap-risks.md](04-roadmap-r
 - [08-product-changes.md](08-product-changes.md) — the build backlog
 - [09-keyboard-and-functions.md](09-keyboard-and-functions.md) — every function and every key
 - **[10-formulas.md](10-formulas.md) — the formula registry. Start here when deciding what content to write.**
+
+> **Obsidian graph links**
+> [[README]] · [[01-architecture]] · [[02-features]] · [[03-exercise-catalog]] · [[04-roadmap-risks]] · [[05-design-language]] · [[06-gamification]] · [[07-monetization]] · [[08-product-changes]] · [[09-keyboard-and-functions]] · [[10-formulas]] · [[vibranium-library]]

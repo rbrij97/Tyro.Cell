@@ -1,5 +1,5 @@
 /* ================================================================
-   MAAL — Formula Drill Library
+   VIBRANIUM — Formula Drill Library
    ================================================================
 
    This folder contains all new exercise definitions in the exact

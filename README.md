@@ -57,12 +57,16 @@ Both suites should be green: **155/155** and **64/64**.
 
 ## Where things stand
 
-**Working:** hand-written formula engine (60 functions, no libraries) · 45 exercises across 2 courses · full Excel keyboard layer, operable without a mouse · answer checking with specific-cause diagnostics · two green test suites.
+**Working:** hand-written formula engine ([74 functions](docs/09-keyboard-and-functions.md), no libraries) · 45 exercises across 2 courses · full Excel keyboard layer, operable without a mouse · answer checking with specific-cause diagnostics · two green test suites.
 
 **Not built:** no backend, no accounts, no persistence (progress is in memory, exported to JSON by hand) · no payments · no streaks, certifications or rankings.
 
-**Next:** [`docs/10-formulas.md`](docs/10-formulas.md) has the content priority — 44 of the 60 supported functions still have no exercise, and the lookups that interviews actually test have one apiece.
+**Next:** [`docs/10-formulas.md`](docs/10-formulas.md) has the content priority — many of the 74 supported functions still have no exercise, and the lookups that interviews actually test have one apiece. 116 new exercises exist in `docs/vibranium/` covering 38 functions, awaiting integration.
 
 ## Naming
 
 The product is **Tyro.cell**. Earlier material used *FinCell* (pitch) and *FormulaLab* (app UI). Only `demo/` carries the current name and mark; `app/` and `pitch/` have not been migrated yet.
+
+---
+> **Obsidian graph links**
+> [[00-overview]] · [[01-architecture]] · [[02-features]] · [[03-exercise-catalog]] · [[04-roadmap-risks]] · [[05-design-language]] · [[06-gamification]] · [[07-monetization]] · [[08-product-changes]] · [[09-keyboard-and-functions]] · [[10-formulas]] · [[vibranium-library]]
