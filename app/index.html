@@ -844,7 +844,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
   </div>
 </div>
 
-<script>if(!/\/$/.test(location.pathname)){var b=document.createElement("base");b.href=location.pathname+"/";document.head.appendChild(b)}</script>
+<script>if(!/(\/$|\.[^\/]+$)/.test(location.pathname)){var b=document.createElement("base");b.href=location.pathname+"/";document.head.appendChild(b)}</script>
 <script src="engine.js"></script>
 <script>
 "use strict";
