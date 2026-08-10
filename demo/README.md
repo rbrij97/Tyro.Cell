@@ -162,3 +162,7 @@ Elapsed time per exercise is tracked but **never displayed** — there is no tim
 - The fonts come from Google Fonts via a `<link>`, matching the main app. Every family has a local fallback, so the page renders correctly offline — delete the two `<link>` tags if you want zero external requests.
 - `demo-test.html` must be served over HTTP; `file://` blocks cross-frame access.
 - Engine code is duplicated from the main app rather than shared. That is deliberate (the demo must stay self-contained) but means engine fixes need copying in both directions.
+
+---
+> **Obsidian graph links**
+> [[README]] · [[00-overview]] · [[05-design-language]] · [[03-exercise-catalog]]

@@ -3,30 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FormulaLab — Practice spreadsheet formulas</title>
+<title>tyro.cell — Practice spreadsheet formulas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='124 136 366 280' fill='none' stroke='%230A0A0A' stroke-width='18' stroke-linecap='round'><rect x='202' y='216' width='270' height='182'/><path d='M193 145V216'/><path d='M133 216H202'/><g stroke='none' fill='%230A0A0A'><rect x='250' y='277' width='88' height='22'/><rect x='250' y='320' width='88' height='22'/></g></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..600;1,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#FBFAF9; --ink:#17191C; --text-1:#40474F; --text-2:#5F646B; --text-3:#6B7076;
-  --muted:#9A9EA4; --hint:#B9BCC1;
-  --line-1:#EBE8E4; --line-2:#EFECE8; --line-3:#F3F1ED; --line-4:#E4E1DC;
-  --green:#16A05C; --green-dark:#0B6E3E; --green-tint:#F2FAF5; --green-select:#CDEFDC;
-  --amber:#946200; --amber-tint:#FDF6E3; --amber-line:#E8C77D;
+  /* surfaces */
+  --paper:#FFFFFF; --surface:#FAFAFA; --grid-bg:#F7F6F4; --header-bg:#F8F7F5;
+  /* ink ramp */
+  --ink:#0A0A0A; --text-1:#3F3F46; --text-2:#52525B; --text-3:#71717A;
+  --muted:#A1A1AA; --hint:#C4C4C8;
+  /* lines — lightest to heaviest */
+  --line-3:#F5F5F6; --line-2:#EFEFF1; --line-1:#E7E7E9; --line-4:#D6D6D9;
+  /* brand — black, every interactive surface */
+  --brand:#0A0A0A; --brand-soft:#2E2E33; --brand-tint:#F2F2F3; --select:#DCDCE0;
+  --dark:#0A0A0A;
+  /* semantic — correct */
+  --ok:#0F7A48; --ok-tint:#F2FAF6; --ok-line:#CFE7DB;
+  /* semantic — wrong */
   --red:#A4463C; --red-tint:#FBEFEC; --red-line:#E8CFC9;
-  --dark:#17191C; --dark-2:#2A2C30;
+  /* semantic — target / "your answer goes here" */
+  --gold:#8A6B12; --gold-tint:#FDF8E8; --gold-line:#DFC98A;
+  /* Excel point-mode blue */
+  --point:#2B6CB0; --point-tint:#E8F0FA;
+  /* legacy aliases (consumed by existing JS/CSS that still reference old names) */
+  --green:var(--ok); --green-dark:var(--ok); --green-tint:var(--ok-tint); --green-select:var(--select);
+  --amber:var(--gold); --amber-tint:var(--gold-tint); --amber-line:var(--gold-line);
+  /* type */
   --sans:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --serif:'Instrument Serif',Georgia,serif;
   --mono:'JetBrains Mono','Consolas','Menlo',monospace;
-  --r-sm:6px; --r-md:10px; --r-lg:16px; --r-pill:999px;
+  /* shape */
+  --r-sm:5px; --r-md:8px; --r-lg:12px; --r-pill:999px;
 }
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow:hidden}
-a{color:var(--green);text-decoration:none}
-a:hover{color:var(--green-dark)}
-::selection{background:var(--green-select)}
+a{color:var(--ink);text-decoration:none}
+a:hover{color:var(--brand-soft)}
+::selection{background:var(--select)}
 button{font-family:inherit;color:inherit}
 
 .view{display:none;height:100%}
@@ -36,43 +53,165 @@ button{font-family:inherit;color:inherit}
 .eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .btn{border:1px solid var(--line-4);background:#fff;color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 14px;border-radius:var(--r-pill);cursor:pointer;transition:background .15s,border-color .15s}
 .btn:hover{background:var(--line-2)}
-.btn.primary{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
-.btn.primary:hover{background:var(--green-dark);border-color:var(--green-dark)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--brand-soft);border-color:var(--brand-soft)}
 .btn.big{padding:12px 22px;font-size:15px}
 .btn:disabled{opacity:.35;cursor:default}
 
 /* ---------- pagenav (landing / courses / detail) ---------- */
-.pagenav{position:sticky;top:0;z-index:20;background:rgba(251,250,249,.82);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid transparent;transition:border-color .3s;display:flex;align-items:center;gap:12px 24px;padding:13px 24px;flex-wrap:wrap}
+.pagenav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid transparent;transition:border-color .3s;display:flex;align-items:center;gap:12px 24px;padding:13px 24px;flex-wrap:wrap}
 .pagenav.scrolled{border-bottom-color:var(--line-1)}
 .pagenav .brand{display:flex;align-items:center;gap:9px;color:var(--ink);font-size:15.5px;font-weight:600;letter-spacing:-.2px;cursor:pointer}
-.pagenav .brand-mark{width:22px;height:22px;border-radius:6px;background:var(--green);display:grid;place-items:center;color:#fff;font:700 12px var(--mono)}
+.pagenav .brand-mark{display:block;flex:none}
+.pagenav .brand .dot{color:var(--muted);font-weight:500}
 .pagenav .spacer{flex:1}
 .pagenav nav{display:flex;gap:22px;font-size:13.5px;color:var(--text-2)}
 .pagenav nav a{color:var(--text-2);cursor:pointer}
 .pagenav nav a:hover{color:var(--ink)}
-.pagenav .cta-link{color:var(--green);font-size:13.5px;font-weight:600;cursor:pointer}
+.pagenav .cta-link{color:var(--ink);font-size:13.5px;font-weight:600;cursor:pointer}
 .pagescroll{flex:1;overflow-y:auto}
-.pagewrap{max-width:1080px;margin:0 auto;padding:48px 24px 80px}
+.pagewrap{max-width:1080px;margin:0 auto;padding:36px 24px 48px}
 
 /* ---------- landing hero ---------- */
-.hero{padding:64px 0 22px;text-align:center}
+.hero{padding:56px 0 18px;text-align:center}
 .hero .eyebrow{margin-bottom:22px}
 .hero h1{font-size:clamp(38px,6vw,72px);line-height:1.02;letter-spacing:-1.8px;font-weight:600;margin:0 auto 22px;max-width:900px;text-wrap:balance}
-.hero h1 em{font-style:normal;color:var(--green)}
+.hero h1 em{font-style:italic;font-family:var(--serif);font-weight:400;color:inherit}
 .hero p.lede{font-size:18px;line-height:1.55;color:var(--text-3);margin:0 auto 28px;max-width:560px;text-wrap:pretty}
 .hero .cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
 .hero .proof{display:flex;justify-content:center;align-items:center;gap:16px;flex-wrap:wrap;font:italic 400 18px var(--serif);color:#8E9298}
 .hero .proof .dot{width:3px;height:3px;border-radius:50%;background:#D6D3CE}
 
 .featrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:34px;margin-top:72px;border-top:1px solid var(--line-1);padding-top:40px}
-.feat .fx{font:500 13.5px var(--mono);color:var(--green);margin-bottom:12px;display:block}
+.feat .fx{font:500 13.5px var(--mono);color:var(--ink);margin-bottom:12px;display:block}
 .feat h3{font-size:17px;font-weight:600;margin:0 0 7px;letter-spacing:-.2px}
 .feat p{font-size:14.5px;line-height:1.6;color:var(--text-3);margin:0}
+
+/* ---------- footer ---------- */
+.site-footer{margin-top:48px;padding:28px 0;border-top:1px solid var(--line-2);text-align:center;font:400 13px var(--mono);color:var(--hint);letter-spacing:.01em}
+.site-footer a{color:var(--muted);text-decoration:none;transition:color .15s}
+.site-footer a:hover{color:var(--ink)}
+.site-footer .heart{color:var(--red)}
+
+/* ---------- nav auth ---------- */
+.nav-auth{display:flex;align-items:center;gap:10px}
+.nav-login{font-size:13.5px;color:var(--text-2)!important;cursor:pointer;font-weight:500}
+.nav-login:hover{color:var(--ink)!important}
+
+/* ---------- product showcase ---------- */
+.showcase{margin-top:48px;display:flex;justify-content:center}
+.mock-window{width:100%;max-width:680px;border:1px solid var(--line-1);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 24px 64px -16px rgba(10,10,10,.10),0 4px 16px -6px rgba(10,10,10,.05);background:#fff}
+.mock-topbar{display:flex;align-items:center;gap:8px;padding:7px 14px;background:var(--dark);color:#fff}
+.mock-topbar .dots{display:flex;gap:5px}
+.mock-topbar .dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.18)}
+.mock-topbar .mock-brand{font:600 11px var(--sans);letter-spacing:-.1px;margin-left:4px;opacity:.7}
+.mock-fx{display:flex;align-items:center;border-bottom:1px solid var(--line-2);font:500 12px var(--mono);background:var(--surface)}
+.mock-fx .cell-ref{padding:6px 10px;border-right:1px solid var(--line-2);color:var(--muted);min-width:44px;text-align:center;font-size:11px}
+.mock-fx .formula{padding:6px 12px;color:var(--ink);flex:1}
+.mock-grid{font:400 12px var(--mono);border-collapse:collapse;width:100%}
+.mock-grid th{background:var(--surface);color:var(--muted);font-weight:500;padding:5px 14px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);font-size:10.5px;text-align:center}
+.mock-grid th:first-child{width:32px}
+.mock-grid td{padding:5px 14px;border-bottom:1px solid var(--line-3);border-right:1px solid var(--line-3);color:var(--text-1)}
+.mock-grid td:first-child{text-align:center;color:var(--muted);font-size:10.5px;background:var(--surface);border-right:1px solid var(--line-2)}
+.mock-grid td.num{text-align:right;font-variant-numeric:tabular-nums}
+.mock-grid td.target{background:var(--gold-tint);border:2px solid var(--gold-line);color:var(--ink);font-weight:600}
+.mock-grid td.sel{outline:2px solid var(--brand);outline-offset:-1px}
+.mock-grid tr.hdr td{font-weight:600;color:var(--ink)}
+.mock-result{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--ok-tint);border-top:2px solid var(--ok-line);font:500 13px var(--sans);color:var(--ok)}
+.mock-result .checkmark{font-weight:700;font-size:15px}
+.mock-result.bad{background:var(--red-tint);border-top-color:var(--red-line);color:var(--red)}
+.mock-typing{border-right:2px solid var(--ink);animation:blink .6s step-end infinite}
+@keyframes blink{50%{border-color:transparent}}
+.mock-cell-empty{background:var(--gold-tint)!important;border:2px solid var(--gold-line)!important;color:transparent!important}
+.nav-scroll{color:var(--text-2);cursor:pointer;scroll-behavior:smooth}
+
+/* ---------- learn modal ---------- */
+.learn-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);align-items:center;justify-content:center}
+.learn-overlay.on{display:flex}
+.learn-modal{background:#fff;border-radius:var(--r-lg);width:92%;max-width:860px;height:85vh;max-height:700px;display:flex;flex-direction:column;box-shadow:0 24px 64px -16px rgba(0,0,0,.3);overflow:hidden}
+.learn-modal-head{display:flex;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line-2);background:var(--surface);flex:none}
+.learn-modal-head .lm-title{font:600 13px var(--mono);color:var(--ink);letter-spacing:.02em}
+.learn-modal-head .spacer{flex:1}
+.learn-modal-head .lm-close{background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:var(--r-sm);transition:background .15s,color .15s}
+.learn-modal-head .lm-close:hover{background:var(--line-2);color:var(--ink)}
+.learn-modal iframe{flex:1;border:none;width:100%}
+#btnLearn{display:none;background:var(--brand-tint);border-color:var(--line-4);font-weight:600;gap:5px}
+#btnLearn::before{content:"▶";font-size:9px;color:var(--brand)}
+
+/* ---------- stats bar ---------- */
+.stats-bar{display:flex;justify-content:center;gap:48px;flex-wrap:wrap;margin-top:48px;padding:32px 0}
+.stat{text-align:center}
+.stat .num{font:600 42px var(--sans);letter-spacing:-1.5px;color:var(--ink);display:block;line-height:1}
+.stat .label{font:500 11.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:8px;display:block}
+
+/* ---------- how it works ---------- */
+.how-section{margin-top:48px}
+.how-section h2{font-size:26px;font-weight:600;letter-spacing:-.8px;margin:0 0 24px;text-align:center}
+.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:700px){.how-steps{grid-template-columns:1fr}}
+.how-step{padding:20px;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg)}
+.how-step .step-num{font:700 11px var(--mono);letter-spacing:.1em;color:var(--hint);margin-bottom:10px;display:block}
+.how-step h3{font-size:15px;font-weight:600;margin:0 0 5px;letter-spacing:-.2px}
+.how-step p{font-size:13.5px;color:var(--text-3);margin:0;line-height:1.55}
+
+/* ---------- built for ---------- */
+.built-for{margin-top:40px;text-align:center;padding:36px 28px;background:var(--ink);border-radius:var(--r-lg);color:#fff}
+.built-for h2{font-size:22px;font-weight:600;letter-spacing:-.5px;margin:0 0 8px}
+.built-for p{font-size:14.5px;color:rgba(255,255,255,.6);margin:0 auto;max-width:48ch;line-height:1.6}
+.built-for .btn-inv{margin-top:20px;display:inline-block;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;font:600 13.5px var(--sans);padding:10px 20px;border-radius:var(--r-pill);cursor:pointer;transition:background .15s}
+.built-for .btn-inv:hover{background:rgba(255,255,255,.1)}
+
+/* ---------- personas ---------- */
+.personas{margin-top:56px}
+.personas h2{font-size:26px;font-weight:600;letter-spacing:-.8px;margin:0 0 8px;text-align:center}
+.personas .sec-sub{font-size:14.5px;color:var(--text-3);margin:0 auto 24px;text-align:center;max-width:48ch}
+.persona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:700px){.persona-grid{grid-template-columns:1fr}}
+.persona{padding:22px 20px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--surface)}
+.persona .p-tag{font:600 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);margin-bottom:10px;display:block}
+.persona p{font-size:13.5px;color:var(--text-3);margin:0;line-height:1.6}
+
+/* ---------- comparison ---------- */
+.compare{margin-top:56px}
+.compare h2{font-size:26px;font-weight:600;letter-spacing:-.8px;margin:0 0 24px;text-align:center}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.compare-grid{grid-template-columns:1fr}}
+.compare-col{padding:24px 22px;border-radius:var(--r-lg)}
+.compare-col.old{background:var(--surface);border:1px solid var(--line-2)}
+.compare-col.new{background:var(--ink);color:#fff;border:1px solid var(--ink)}
+.compare-col .c-tag{font:600 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;display:block}
+.compare-col.old .c-tag{color:var(--muted)}
+.compare-col.new .c-tag{color:rgba(255,255,255,.5)}
+.compare-col ul{margin:0;padding:0 0 0 18px;font-size:13.5px;line-height:1.8}
+.compare-col.old ul{color:var(--text-3)}
+.compare-col.new ul{color:rgba(255,255,255,.75)}
+
+/* ---------- real data ---------- */
+.realdata{margin-top:56px;text-align:center}
+.realdata h2{font-size:26px;font-weight:600;letter-spacing:-.8px;margin:0 0 8px}
+.realdata .sec-sub{font-size:14.5px;color:var(--text-3);margin:0 auto 24px;max-width:50ch}
+.company-row{display:flex;justify-content:center;align-items:center;gap:24px;flex-wrap:wrap;font:600 15px var(--mono);letter-spacing:.02em;color:var(--ink)}
+.company-row .cdot{width:4px;height:4px;border-radius:50%;background:var(--line-4);flex:none}
+@media(max-width:600px){.company-row{gap:14px;font-size:13px}}
+
+/* ---------- faq ---------- */
+.faq{margin-top:56px}
+.faq h2{font-size:26px;font-weight:600;letter-spacing:-.8px;margin:0 0 24px;text-align:center}
+.faq-list{max-width:640px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--line-2);padding:18px 0}
+.faq-item:first-child{border-top:1px solid var(--line-2)}
+.faq-q{font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px;letter-spacing:-.2px}
+.faq-a{font-size:14px;color:var(--text-3);margin:0;line-height:1.6}
 
 /* ---------- courses list ---------- */
 .pgtitle{font-size:40px;line-height:1.08;letter-spacing:-1.4px;font-weight:600;margin:0 0 8px}
 .pgsub{color:var(--text-3);font-size:16px;margin:0 0 26px;max-width:60ch}
 .actionrow{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+
+.progress-util{margin-top:32px;text-align:center;font-size:13px;color:var(--muted)}
+.btn-text{background:none;border:none;font:500 13px var(--mono);color:var(--muted);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+.btn-text:hover{color:var(--ink)}
+.util-sep{margin:0 8px;color:var(--line-4)}
 
 .ccard{background:#fff;border:1px solid var(--line-1);border-radius:var(--r-lg);padding:22px 26px;margin-bottom:14px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .ccard:hover{border-color:var(--line-4);box-shadow:0 6px 18px -12px rgba(23,25,28,.14)}
@@ -81,11 +220,15 @@ button{font-family:inherit;color:inherit}
 .ccard .cdesc{font-size:14.5px;line-height:1.6;color:var(--text-3);margin:0 0 14px;max-width:66ch}
 .ccard .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .tag{font:500 11.5px var(--mono);color:var(--text-2);background:var(--line-2);border-radius:var(--r-sm);padding:4px 10px}
+.tag-more{background:none;color:var(--muted);font-style:italic}
 .ccard-foot{display:flex;align-items:center;gap:16px;margin-top:18px;flex-wrap:wrap}
 .ccard-pbar{flex:1;min-width:120px;height:4px;background:var(--line-2);border-radius:2px;overflow:hidden}
-.ccard-pbar>div{height:100%;background:var(--green);border-radius:2px}
+.ccard-pbar>div{height:100%;background:var(--brand);border-radius:2px}
 .ccard-pnote{font:500 12px var(--mono);color:var(--text-2)}
-.ccard-cta{font-size:14px;font-weight:600;color:var(--green)}
+.ccard-cta{font-size:14px;font-weight:600;color:var(--ink)}
+.ccard.upcoming{opacity:.7;cursor:default;pointer-events:none}
+.ccard.upcoming:hover{border-color:var(--line-1);box-shadow:none}
+.ccard .soon{display:inline-block;font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--line-2);border-radius:var(--r-sm);padding:3px 9px;margin-left:10px;vertical-align:middle}
 
 /* ---------- course detail ---------- */
 .cstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:22px;padding:22px 0;border-top:1px solid var(--line-1);border-bottom:1px solid var(--line-1);margin-bottom:28px}
@@ -98,33 +241,36 @@ button{font-family:inherit;color:inherit}
 .module.collapsed .mhead{border-bottom-color:transparent}
 #coursedetail.solo-mode .module.collapsed{display:none}
 #coursedetail.solo-mode .cstats,#coursedetail.solo-mode .progress-row{display:none}
-.back-to-all{display:none;font:500 11px var(--mono);color:var(--green-dark);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:6px 12px;border:1px solid var(--line-1);border-radius:var(--r-pill);background:#fff;margin-bottom:14px}
-.back-to-all:hover{background:var(--green-tint);border-color:var(--green)}
+.back-to-all{display:none;font:500 11px var(--mono);color:var(--ink);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:6px 12px;border:1px solid var(--line-1);border-radius:var(--r-pill);background:#fff;margin-bottom:14px}
+.back-to-all:hover{background:var(--brand-tint);border-color:var(--line-4)}
 #coursedetail.solo-mode .back-to-all{display:inline-block}
 .mhead{padding:12px 18px;background:#FCFBFA;border-bottom:1px solid var(--line-1);display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;transition:background .1s}
-.mhead:hover{background:var(--green-tint)}
+.mhead:hover{background:var(--brand-tint)}
 .mhead .chev{font-family:var(--mono);font-size:11px;color:var(--muted);width:12px;text-align:center;transition:transform .15s}
 .module.collapsed .mhead .chev{transform:rotate(-90deg)}
 .mhead .mtag{font:500 11px var(--mono);color:var(--muted);letter-spacing:.1em}
 .mhead .mtitle{font-size:15.5px;font-weight:600;letter-spacing:-.2px;flex:1}
 .mhead .mprog{font:500 12px var(--mono);color:var(--muted)}
+.mhead .mlearn{font:600 10.5px var(--mono);color:var(--ink);letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border:1px solid var(--line-4);border-radius:var(--r-pill);background:var(--paper);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.mhead .mlearn:hover{background:var(--brand);color:#fff}
 .exrow{padding:12px 18px;display:grid;grid-template-columns:24px 32px 1fr auto auto;gap:16px;align-items:center;border-bottom:1px solid var(--line-3);cursor:pointer;transition:background .1s;font-size:14px}
 .exrow:last-child{border-bottom:none}
-.exrow:hover{background:var(--green-tint)}
+.exrow:hover{background:var(--brand-tint)}
 .exrow .tick{width:20px;height:20px;border-radius:50%;border:1.5px solid #C6C9CD;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
-.exrow.done .tick{background:var(--green);border-color:var(--green)}
+.exrow.done .tick{background:var(--brand);border-color:var(--brand)}
 .exrow .exnum{font:400 11.5px var(--mono);color:var(--hint)}
-.exrow .exsyn{font:500 12px var(--mono);color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exrow .exsyn{font:500 12px var(--mono);color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .exrow .badge{font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:4px;justify-self:end}
-.exrow .exgo{font-size:13px;font-weight:600;color:var(--green);white-space:nowrap}
-.badge.easy{background:#E3EDF7;color:#2B5B8A}
-.badge.medium{background:#FDF1DD;color:#946200}
-.badge.hard{background:#F6E3E3;color:#93342C}
+.exrow .exgo{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
+.badge.easy{background:var(--line-2);color:var(--text-2);box-shadow:inset 0 0 0 1px var(--line-1)}
+.badge.medium{background:#DCDCE0;color:#2E2E33}
+.badge.hard{background:var(--brand);color:#fff}
 
 /* ---------- workspace ---------- */
 #titlebar{flex:none;display:flex;align-items:center;gap:12px 18px;padding:11px 20px;background:var(--dark);color:#fff;flex-wrap:wrap;font-size:13px}
 #titlebar .brand{display:flex;align-items:center;gap:9px;color:#fff;font-size:14.5px;font-weight:600;letter-spacing:-.2px;cursor:pointer}
-#titlebar .brand-mark{width:21px;height:21px;border-radius:6px;background:var(--green);display:grid;place-items:center;color:#fff;font:700 11.5px var(--mono)}
+#titlebar .brand-mark{display:block;flex:none}
+#titlebar .brand .dot{color:#8A8A90;font-weight:500}
 #titlebar .sep{font:400 12px var(--mono);color:#6E737A}
 #titlebar .crumb{color:#A7ABB1;cursor:pointer;font-size:13px}
 #titlebar .crumb:hover{color:#fff}
@@ -140,14 +286,14 @@ button{font-family:inherit;color:inherit}
 #exbar .spacer{flex:1;min-width:12px}
 #exbar .actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #exbar .btn{padding:8px 14px;font-size:13px}
-#exbar .btn.check{background:var(--green);border-color:var(--green);color:#fff;font-weight:600;padding:9px 18px}
-#exbar .btn.check:hover{background:var(--green-dark);border-color:var(--green-dark)}
+#exbar .btn.check{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;padding:9px 18px}
+#exbar .btn.check:hover{background:var(--brand-soft);border-color:var(--brand-soft)}
 #exbar .btn.nav{padding:8px 12px;min-width:36px}
 
 #toolbar{flex:none;display:flex;align-items:center;gap:8px;padding:8px 16px;background:#fff;border-bottom:1px solid var(--line-1);flex-wrap:wrap}
 .tbtn{border:1px solid transparent;background:none;padding:5px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;color:var(--text-2);font-family:inherit}
-.tbtn:hover{background:var(--green-tint);color:var(--green-dark)}
-.tbtn.active{background:var(--green-tint);color:var(--green-dark);border-color:var(--green-select)}
+.tbtn:hover{background:var(--brand-tint);color:var(--ink)}
+.tbtn.active{background:var(--brand-tint);color:var(--ink);border-color:var(--select)}
 .tsep{width:1px;height:18px;background:var(--line-1);margin:0 4px}
 #toolbar .hint{font-size:12px;color:var(--muted)}
 #toolbar .hint code{font-family:var(--mono);background:var(--line-2);padding:1px 5px;border-radius:3px}
@@ -156,7 +302,7 @@ button{font-family:inherit;color:inherit}
 #namebox{min-width:52px;padding:5px 8px;border:1px solid var(--line-4);border-radius:var(--r-sm);font:12px var(--mono);text-align:center;color:var(--text-2);background:#fff}
 #fx{font:italic 14px var(--serif);color:#A0A4AA}
 #formulainput{flex:1;padding:7px 11px;border:1px solid var(--line-4);border-radius:var(--r-sm);font:13px var(--mono);background:#fff;color:var(--ink)}
-#formulainput:focus,#namebox:focus{outline:2px solid var(--green);outline-offset:-1px}
+#formulainput:focus,#namebox:focus{outline:2px solid var(--brand);outline-offset:-1px}
 
 #main{flex:1;display:flex;min-height:0}
 #concept{flex:0 1 300px;min-width:260px;max-width:320px;background:#fff;border-right:1px solid var(--line-1);overflow-y:auto;padding:22px 20px;display:none}
@@ -165,9 +311,9 @@ button{font-family:inherit;color:inherit}
 #concept h2{font-size:19px;font-weight:600;letter-spacing:-.4px;margin:0 0 12px}
 #concept .cbody{font-size:14px;line-height:1.65;color:var(--text-1);margin:0 0 14px}
 #concept .cbody p{margin:0 0 10px}
-#concept .cbody b.term{color:var(--green-dark);font-weight:600}
+#concept .cbody b.term{color:var(--ink);font-weight:600}
 #concept .cbody code{font:12.5px var(--mono);background:var(--line-2);border-radius:3px;padding:1px 5px}
-#concept .cbody .formula,#concept .formula{font:500 13px var(--mono);color:var(--green-dark);background:var(--green-tint);border-radius:8px;padding:11px 13px;margin:8px 0 16px;display:block;word-break:break-word}
+#concept .cbody .formula,#concept .formula{font:500 13px var(--mono);color:var(--ink);background:var(--surface);border:1px solid var(--line-1);border-left:3px solid var(--brand);border-radius:var(--r-sm);padding:11px 13px;margin:8px 0 16px;display:block;word-break:break-word}
 #concept .task{font-size:14.5px;line-height:1.6;color:var(--ink);margin:10px 0 12px}
 .task-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:500 12px var(--mono);color:var(--amber);margin-bottom:16px}
 .task-meta .lb{color:var(--muted)}
@@ -182,10 +328,18 @@ button{font-family:inherit;color:inherit}
 .nudgebox .eyebrow{color:#B07813;margin-bottom:6px}
 .nudgebox p{font-size:13.5px;line-height:1.55;color:var(--amber);margin:0}
 .nudgebox p b{color:var(--amber);font-weight:600}
-.result{margin-top:18px;padding:12px 14px;border-radius:8px;display:none;font-size:13.5px;line-height:1.55}
-.result.ok{display:block;background:var(--green-tint);border:1px solid #DCEFE4;color:var(--green-dark)}
-.result.bad{display:block;background:var(--red-tint);border:1px solid var(--red-line);color:var(--red)}
-.result code{font:12px var(--mono);background:rgba(255,255,255,.6);border-radius:3px;padding:1px 5px}
+.result-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.35);align-items:center;justify-content:center}
+.result-overlay.on{display:flex}
+.result-card{background:#fff;border-radius:var(--r-lg);padding:28px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 16px 48px -12px rgba(0,0,0,.25)}
+.result-icon{font-size:36px;margin-bottom:10px}
+.result-msg{font-size:14.5px;line-height:1.6;color:var(--text-3);margin-bottom:22px}
+.result-msg code{font:12px var(--mono);background:var(--line-2);border-radius:3px;padding:1px 5px}
+.result-card.ok .result-icon{color:var(--ok)}
+.result-card.bad .result-icon{color:var(--red)}
+.result-card.ok .result-msg{color:var(--ok)}
+.result-card.bad .result-msg{color:var(--red)}
+.result-btns{display:flex;gap:10px;justify-content:center}
+.result-btns .btn{min-width:110px}
 
 #gridwrap{flex:1;overflow:auto;background:#F7F6F4;position:relative;padding:14px}
 table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1px solid var(--line-4);border-radius:var(--r-md);overflow:hidden}
@@ -194,7 +348,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 #grid thead th{top:0}
 #grid tbody th{left:0;width:38px;min-width:38px;text-align:center}
 #grid thead th.corner{left:0;z-index:4;width:38px;min-width:38px}
-#grid th.hl{color:var(--green-dark);background:var(--green-tint);font-weight:600}
+#grid th.hl{color:var(--ink);background:var(--select);font-weight:600}
 #grid td{width:110px;min-width:110px;padding:0 8px;white-space:nowrap;overflow:hidden;cursor:cell;background:#fff;font:12.5px var(--mono)}
 #grid td.num{text-align:right}
 #grid td.bool{text-align:center}
@@ -202,14 +356,14 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 #grid td.b{font-weight:700}
 #grid td.i{font-style:italic}
 #grid td.u{text-decoration:underline}
-#grid td.insel{background:var(--green-tint)}
-#grid td.sel{outline:2px solid var(--green);outline-offset:-2px;background:#fff}
+#grid td.insel{background:var(--brand-tint)}
+#grid td.sel{outline:2px solid var(--brand);outline-offset:-2px;background:#fff}
 #grid td.target{background:var(--amber-tint);box-shadow:inset 0 0 0 2px #E8A33D}
 #grid td.pt{outline:2px dashed #2B6CB0;outline-offset:-2px;background:#E8F0FA}
-#grid td.fillprev{outline:1px dashed var(--green);outline-offset:-1px;background:#EEF6F1}
-#fillhandle{position:absolute;width:8px;height:8px;background:var(--green);border:1px solid #fff;cursor:crosshair;z-index:6;display:none}
-#grid td input{position:absolute;inset:0;width:100%;height:100%;border:2px solid var(--green);padding:0 6px;font:12.5px var(--mono);z-index:5;border-radius:3px}
-#grid td select{position:absolute;inset:0;width:100%;height:100%;border:2px solid var(--green);font:12.5px inherit;z-index:5;background:#fff;border-radius:3px}
+#grid td.fillprev{outline:1px dashed var(--brand);outline-offset:-1px;background:var(--brand-tint)}
+#fillhandle{position:absolute;width:8px;height:8px;background:var(--brand);border:1px solid #fff;cursor:crosshair;z-index:6;display:none}
+#grid td input{position:absolute;inset:0;width:100%;height:100%;border:2px solid var(--brand);padding:0 6px;font:12.5px var(--mono);z-index:5;border-radius:3px}
+#grid td select{position:absolute;inset:0;width:100%;height:100%;border:2px solid var(--brand);font:12.5px inherit;z-index:5;background:#fff;border-radius:3px}
 #grid td input:focus,#grid td select:focus{outline:none}
 
 #statusbar{flex:none;display:flex;align-items:center;gap:20px;padding:8px 16px;background:#fff;border-top:1px solid var(--line-1);font:400 11.5px var(--mono);color:var(--text-3);flex-wrap:wrap}
@@ -220,24 +374,24 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 #panel{width:300px;min-width:260px;background:#fff;border-left:1px solid var(--line-1);display:flex;flex-direction:column;min-height:0}
 #paneltabs{display:flex;border-bottom:1px solid var(--line-1);flex-shrink:0}
 #paneltabs button{flex:1;border:none;background:#FCFBFA;padding:10px 0;font-size:11.5px;font-weight:600;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em}
-#paneltabs button.on{color:var(--green-dark);border-bottom-color:var(--green);background:#fff}
+#paneltabs button.on{color:var(--ink);border-bottom-color:var(--brand);background:#fff}
 .pbody{flex:1;overflow-y:auto;padding:14px;display:none}
 .pbody.on{display:block}
 .outline .omod{font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0}
 .outline .oex{padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);margin-bottom:6px;font-size:13px;cursor:pointer;display:flex;gap:10px;align-items:center;transition:background .1s,border-color .1s}
 .outline .oex:hover{border-color:var(--line-4);background:#FCFBFA}
-.outline .oex.cur{border-color:var(--green);background:var(--green-tint);color:var(--green-dark);font-weight:600}
+.outline .oex.cur{border-color:var(--brand);background:var(--brand-tint);color:var(--ink);font-weight:600}
 .outline .oex .tick{width:14px;height:14px;border-radius:50%;border:1.5px solid #C6C9CD;flex-shrink:0}
-.outline .oex.done .tick{background:var(--green);border-color:var(--green)}
-.ol-back{font:500 10.5px var(--mono);color:var(--green-dark);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:6px 12px;border:1px solid var(--line-1);border-radius:var(--r-pill);background:#fff;margin-bottom:14px;display:inline-block}
-.ol-back:hover{background:var(--green-tint);border-color:var(--green)}
+.outline .oex.done .tick{background:var(--brand);border-color:var(--brand)}
+.ol-back{font:500 10.5px var(--mono);color:var(--ink);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:6px 12px;border:1px solid var(--line-1);border-radius:var(--r-pill);background:#fff;margin-bottom:14px;display:inline-block}
+.ol-back:hover{background:var(--brand-tint);border-color:var(--line-4)}
 .ol-modhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
 .ol-modhead .ol-prog{font:500 11px var(--mono);color:var(--muted)}
-.ol-next{margin-top:14px;padding:12px 14px;background:var(--green);border:1px solid var(--green);border-radius:var(--r-md);color:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:background .1s;display:flex;align-items:center;justify-content:center;gap:8px}
-.ol-next:hover{background:var(--green-dark)}
+.ol-next{margin-top:14px;padding:12px 14px;background:var(--brand);border:1px solid var(--brand);border-radius:var(--r-md);color:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:background .1s;display:flex;align-items:center;justify-content:center;gap:8px}
+.ol-next:hover{background:var(--brand-soft)}
 .ol-next small{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.8}
 .fnref details{border:1px solid var(--line-1);border-radius:var(--r-sm);margin-bottom:6px;background:#FCFBFA}
-.fnref summary{padding:8px 12px;cursor:pointer;font:600 12.5px var(--mono);color:var(--green-dark);list-style:none}
+.fnref summary{padding:8px 12px;cursor:pointer;font:600 12.5px var(--mono);color:var(--ink);list-style:none}
 .fnref summary::before{content:"▸ ";color:var(--muted)}
 .fnref details[open] summary::before{content:"▾ "}
 .fnref details[open]{background:#fff}
@@ -254,12 +408,118 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 .keyref .knote{font-size:11.5px;line-height:1.5;color:var(--muted);background:var(--line-3);border-radius:var(--r-sm);padding:9px 11px;margin-top:12px}
 .keyref .knote kbd{background:var(--line-2);border-color:var(--line-4)}
 
+/* ---------- onboarding ---------- */
+.onboard-overlay{display:none;position:fixed;inset:0;z-index:300;pointer-events:none}
+.onboard-overlay.on{display:block}
+.onboard-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);pointer-events:auto}
+.onboard-spot{position:absolute;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);z-index:1;pointer-events:none;transition:top .4s,left .4s,width .4s,height .4s}
+.onboard-tip{position:absolute;z-index:2;background:var(--dark);color:#fff;border-radius:var(--r-md);padding:18px 22px;max-width:320px;width:max-content;pointer-events:auto;box-shadow:0 12px 40px -8px rgba(0,0,0,.35)}
+.onboard-tip::after{content:"";position:absolute;width:12px;height:12px;background:var(--dark);transform:rotate(45deg)}
+.onboard-tip.arrow-top::after{top:-5px;left:28px}
+.onboard-tip.arrow-bottom::after{bottom:-5px;left:28px}
+.onboard-tip.arrow-left::after{left:-5px;top:18px}
+.onboard-step{font:500 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.onboard-text{font-size:14px;line-height:1.6;margin-bottom:16px}
+.onboard-text b{color:#fff;font-weight:600}
+.onboard-btns{display:flex;gap:10px;align-items:center}
+.onboard-btns .btn{border-color:rgba(255,255,255,.2);color:#fff;font-size:13px;padding:7px 16px}
+.onboard-btns .btn:hover{background:rgba(255,255,255,.1)}
+.onboard-btns .btn.primary{background:#fff;color:var(--dark);border-color:#fff}
+.onboard-btns .btn.primary:hover{background:var(--line-2);border-color:var(--line-2)}
+.onboard-skip{font:400 12px var(--sans);color:var(--muted);cursor:pointer;margin-left:auto}
+.onboard-skip:hover{color:#fff}
+
 @media (max-width:900px){
   #main{flex-direction:column}
   #concept{max-width:none;max-height:34%;border-right:none;border-bottom:1px solid var(--line-1)}
   #panel{width:100%;max-height:38%;border-left:none;border-top:1px solid var(--line-1)}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ---------- mobile ---------- */
+@media(max-width:600px){
+  /* nav: hide section links, keep brand + Courses + auth */
+  .pagenav{padding:10px 16px;gap:8px 16px}
+  .pagenav .nav-scroll{display:none}
+  .pagenav nav{gap:14px}
+  /* hero */
+  .hero{padding:32px 0 12px}
+  .hero h1{letter-spacing:-1px}
+  .hero p.lede{font-size:16px}
+  .pagewrap{padding:24px 16px 36px}
+  /* showcase */
+  .showcase{margin:0 -8px}
+  .showcase table{font-size:12px}
+  /* stats */
+  .stats{gap:24px}
+  .stat-num{font-size:36px}
+  /* faq */
+  .faq-q{font-size:15px;padding:14px 0}
+  /* course cards */
+  .ccard{padding:22px 18px}
+  .ccard h3{font-size:20px}
+  /* course detail */
+  .cstats{grid-template-columns:1fr 1fr}
+  .mhead{padding:10px 14px}
+  .exrow{padding:8px 14px 8px 38px}
+  /* workspace titlebar: truncate breadcrumbs */
+  #titlebar{padding:8px 14px;gap:6px 10px;font-size:12px}
+  #titlebar .brand{font-size:13px;gap:6px}
+  #titlebar .brand-mark{height:16px;width:21px}
+  #titlebar .crumb{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #titlebar .streak{font-size:10px}
+  /* exercise bar: compact */
+  #exbar{padding:8px 12px;gap:6px 8px}
+  #exbar .extitle{font-size:13.5px}
+  #exbar .exmod{font-size:13px}
+  #exbar .actions{gap:5px}
+  #exbar .btn{padding:6px 10px;font-size:12px}
+  #exbar .btn.check{padding:7px 14px}
+  #exbar .btn.nav{padding:6px 8px;min-width:28px}
+  /* toolbar: hide keyboard hints, compact */
+  #toolbar{padding:6px 12px;gap:6px}
+  #toolbar .hint{display:none}
+  .tbtn{padding:4px 8px;font-size:12px}
+  /* formula bar */
+  .fbar{padding:6px 10px;gap:6px}
+  .fbar .namebox{width:50px;font-size:11px;padding:4px 6px}
+  .fbar .fbinput{font-size:12px}
+  /* concept panel: less padding, smaller text */
+  #concept{padding:14px 14px;min-width:0;flex:0 1 260px}
+  #concept h2{font-size:16px}
+  #concept .cbody{font-size:13px}
+  #concept .task{font-size:13.5px}
+  /* panel */
+  #panel{min-width:0}
+  /* grid */
+  #grid th,#grid td{padding:4px 6px;font-size:12px}
+  #grid th{font-size:9.5px}
+  /* status bar: hide keyboard hints on touch devices */
+  #statusbar{padding:4px 12px;font-size:11px}
+  #statusbar .keys{display:none}
+  /* result modal */
+  .result-card{padding:22px 20px;max-width:320px}
+  .result-icon{font-size:28px}
+  .result-msg{font-size:13.5px;margin-bottom:16px}
+  .result-btns .btn{min-width:90px;font-size:13px}
+  /* learn modal */
+  .learn-modal{width:96%;height:90vh;max-height:none}
+  .learn-modal-head{padding:10px 14px}
+  /* onboarding */
+  .onboard-tip{max-width:280px;padding:14px 18px}
+  .onboard-text{font-size:13px}
+}
+/* ---------- scroll reveal ---------- */
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-children>*{opacity:0;transform:translateY(24px);transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1)}
+.reveal-children.visible>*{opacity:1;transform:translateY(0)}
+.reveal-children.visible>*:nth-child(1){transition-delay:.05s}
+.reveal-children.visible>*:nth-child(2){transition-delay:.12s}
+.reveal-children.visible>*:nth-child(3){transition-delay:.19s}
+.reveal-children.visible>*:nth-child(4){transition-delay:.26s}
+.reveal-children.visible>*:nth-child(5){transition-delay:.33s}
+.reveal-scale{opacity:0;transform:scale(.92);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+.reveal-scale.visible{opacity:1;transform:scale(1)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.reveal,.reveal-scale,.reveal-children>*{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -267,23 +527,29 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 <!-- ============ VIEW: LANDING ============ -->
 <div class="view on" id="view-landing">
   <div class="pagenav">
-    <span class="brand" data-go="landing"><span class="brand-mark">f</span>FormulaLab</span>
+    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="currentColor"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
     <span class="spacer"></span>
     <nav>
+      <a href="#s-showcase" class="nav-scroll">Product</a>
+      <a href="#s-personas" class="nav-scroll">Who it's for</a>
+      <a href="#s-compare" class="nav-scroll">Why us</a>
+      <a href="#s-faq" class="nav-scroll">FAQ</a>
       <a data-go="courses">Courses</a>
-      <a data-go="sandbox">Sandbox</a>
     </nav>
-    <a class="cta-link" data-go="courses">Start free →</a>
+    <div class="nav-auth">
+      <a class="nav-login" href="#" onclick="event.preventDefault();alert('Log in is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Log in</a>
+      <button class="btn primary" onclick="alert('Sign up is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Sign up</button>
+    </div>
   </div>
-  <div class="pagescroll">
+  <div class="pagescroll" id="landing-scroll">
     <div class="pagewrap">
+
+      <!-- hero -->
       <section class="hero">
-        <div class="eyebrow">For finance interview prep</div>
         <h1>Learn spreadsheet formulas by <em>writing them</em>, not watching them.</h1>
-        <p class="lede">A working spreadsheet grid with a real formula engine, structured courses, and instant answer checking.</p>
+        <p class="lede">A working spreadsheet grid with real Indian company data, structured courses, and instant answer checking.</p>
         <div class="cta-row">
-          <button class="btn primary big" data-go="courses">Browse courses</button>
-          <button class="btn big" data-go="sandbox">Open blank sheet</button>
+          <button class="btn primary big" data-go="courses">Start practising</button>
         </div>
         <div class="proof">
           <span>No install</span>
@@ -293,23 +559,145 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
           <span>No video queue</span>
         </div>
       </section>
-      <section class="featrow">
-        <div class="feat">
-          <span class="fx">=SUM(B2:B6)</span>
-          <h3>Real formula engine</h3>
-          <p>45+ functions, cell references, ranges, error values, point-mode range selection with arrow keys — the mechanics of Excel, in the browser.</p>
-        </div>
-        <div class="feat">
-          <span class="fx">✓ Check Answer</span>
-          <h3>Verified practice</h3>
-          <p>Each exercise checks your result and that you used the intended function — hard-coded answers fail. Hints and solutions on demand.</p>
-        </div>
-        <div class="feat">
-          <span class="fx">A → B → C</span>
-          <h3>Structured courses</h3>
-          <p>Guided paths from basic aggregation to lookups and financial-statement metrics, with per-module progress tracking.</p>
+
+      <!-- product showcase -->
+      <section class="showcase reveal-scale" id="s-showcase">
+        <div class="mock-window" id="mock-anim">
+          <div class="mock-topbar">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <span class="mock-brand">tyro.cell</span>
+          </div>
+          <div class="mock-fx">
+            <span class="cell-ref">C11</span>
+            <span class="formula" id="mock-formula"></span>
+          </div>
+          <table class="mock-grid">
+            <tr><th></th><th>A</th><th>B</th><th>C</th></tr>
+            <tr class="hdr"><td>1</td><td>Branch</td><td>Region</td><td class="num">Sales (&#8377;L)</td></tr>
+            <tr><td>2</td><td>Mumbai HQ</td><td>West</td><td class="num">1,200</td></tr>
+            <tr><td>3</td><td>Delhi NCR</td><td>North</td><td class="num">980</td></tr>
+            <tr><td>4</td><td>Pune</td><td>West</td><td class="num">870</td></tr>
+            <tr><td>5</td><td>Chennai</td><td>South</td><td class="num">1,340</td></tr>
+            <tr><td>6</td><td>Kolkata</td><td>East</td><td class="num">610</td></tr>
+            <tr><td>7</td><td>Ahmedabad</td><td>West</td><td class="num">780</td></tr>
+            <tr><td>8</td><td>Bangalore</td><td>South</td><td class="num">1,460</td></tr>
+            <tr><td>9</td><td>Jaipur</td><td>North</td><td class="num">520</td></tr>
+            <tr><td>10</td><td></td><td></td><td></td></tr>
+            <tr><td>11</td><td>Total West</td><td></td><td class="num target sel" id="mock-cell"></td></tr>
+          </table>
+          <div class="mock-result" id="mock-result" style="display:none"></div>
         </div>
       </section>
+
+      <!-- who is this for -->
+      <section class="personas reveal" id="s-personas">
+        <h2>Who is this for?</h2>
+        <p class="sec-sub">If you learn better by doing than by watching, this is your kind of tool.</p>
+        <div class="persona-grid reveal-children">
+          <div class="persona">
+            <span class="p-tag">CA &amp; CMA Students</span>
+            <p>Preparing for articleship at a Big 4 or mid-tier firm. You'll live in Excel from day one — reconciliations, schedules, audit workpapers. Start building muscle memory now.</p>
+          </div>
+          <div class="persona">
+            <span class="p-tag">MBA &amp; B.Com Graduates</span>
+            <p>Entering FP&amp;A, investment banking, or equity research. Interviewers test VLOOKUP, INDEX+MATCH, and SUMIFS — not theory, but whether you can actually write them.</p>
+          </div>
+          <div class="persona">
+            <span class="p-tag">Working Analysts</span>
+            <p>Already on the job but still Googling XLOOKUP every time. Fifteen minutes a day here beats a four-hour course you'll never finish.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- stats -->
+      <section class="stats-bar reveal-children">
+        <div class="stat"><span class="num">74</span><span class="label">Functions</span></div>
+        <div class="stat"><span class="num">158</span><span class="label">Exercises</span></div>
+        <div class="stat"><span class="num">2</span><span class="label">Courses</span></div>
+      </section>
+
+      <!-- comparison -->
+      <section class="compare reveal" id="s-compare">
+        <h2>This is not another video course</h2>
+        <div class="compare-grid reveal-children">
+          <div class="compare-col old">
+            <span class="c-tag">Video tutorials</span>
+            <ul>
+              <li>Watch someone else type</li>
+              <li>Pause, rewind, re-watch</li>
+              <li>Feel like you understood</li>
+              <li>Open Excel — forget everything</li>
+            </ul>
+          </div>
+          <div class="compare-col new">
+            <span class="c-tag">tyro.cell</span>
+            <ul>
+              <li>You write the formula yourself</li>
+              <li>Real data, not dummy rows</li>
+              <li>Instant feedback on every attempt</li>
+              <li>Specific diagnostics, not just "wrong"</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- how it works -->
+      <section class="how-section reveal">
+        <h2>How it works</h2>
+        <div class="how-steps reveal-children">
+          <div class="how-step">
+            <span class="step-num">01</span>
+            <h3>Pick an exercise</h3>
+            <p>Structured courses take you from SUM to XLOOKUP. Each exercise mirrors a real job scenario.</p>
+          </div>
+          <div class="how-step">
+            <span class="step-num">02</span>
+            <h3>Write the formula</h3>
+            <p>Same keys as Excel — arrow-key references, F4 for $-locks, Tab to confirm, Ctrl+D to fill down.</p>
+          </div>
+          <div class="how-step">
+            <span class="step-num">03</span>
+            <h3>Get instant feedback</h3>
+            <p>Right or wrong in one click. When you're off, the diagnostic tells you exactly why — not just "incorrect."</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- faq -->
+      <section class="faq reveal" id="s-faq">
+        <h2>Common questions</h2>
+        <div class="faq-list">
+          <div class="faq-item">
+            <p class="faq-q">Is this free?</p>
+            <p class="faq-a">Yes, completely free right now. No credit card, no trial expiry.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Do I need Excel installed?</p>
+            <p class="faq-a">No. Tyro.cell runs entirely in your browser — desktop, laptop, or tablet. Nothing to download.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Will my progress be saved?</p>
+            <p class="faq-a">Right now progress stays in your browser session. Google sign-in is coming soon so it persists across devices.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">How is this different from YouTube tutorials?</p>
+            <p class="faq-a">You write every formula yourself in a real spreadsheet grid. No watching, no pausing, no "I'll try it later." You either get it right or you get a specific diagnostic telling you why not.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">What formulas are covered?</p>
+            <p class="faq-a">74 functions from SUM to XLOOKUP to INDEX+MATCH, across 158 exercises. All with Indian finance context — rupee figures, real company names, actual business scenarios.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- built for -->
+      <section class="built-for reveal-scale">
+        <h2>Built for people who learn by doing</h2>
+        <p>No videos to sit through. No slides to memorise. Open a real spreadsheet, write the formula yourself, and know instantly if you got it right.</p>
+        <button class="btn-inv" data-go="courses">Start practising</button>
+      </section>
+
+      <footer class="site-footer">Made with <span class="heart">&hearts;</span> in Amdavad &nbsp;&middot;&nbsp; <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>
     </div>
   </div>
 </div>
@@ -317,23 +705,28 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 <!-- ============ VIEW: COURSES ============ -->
 <div class="view" id="view-courses">
   <div class="pagenav">
-    <span class="brand" data-go="landing"><span class="brand-mark">f</span>FormulaLab</span>
+    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="currentColor"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
     <span class="spacer"></span>
     <nav>
       <a data-go="courses">Courses</a>
-      <a data-go="sandbox">Sandbox</a>
     </nav>
+    <div class="nav-auth">
+      <a class="nav-login" href="#" onclick="event.preventDefault();alert('Log in is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Log in</a>
+      <button class="btn primary" onclick="alert('Sign up is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Sign up</button>
+    </div>
   </div>
   <div class="pagescroll">
     <div class="pagewrap">
-      <h2 class="pgtitle">Two paths, one grid.</h2>
-      <p class="pgsub">Pick a path. Progress is in-memory for now — use Export to save it to a file, Import to restore.</p>
-      <div class="actionrow">
-        <button class="btn" id="btnExportProg">Export progress</button>
-        <button class="btn" id="btnImportProg">Import progress</button>
+      <h2 class="pgtitle">Courses</h2>
+      <p class="pgsub">Pick a course and start writing formulas. Each exercise uses real company data and checks your answer instantly.</p>
+      <div id="coursecards"></div>
+      <div class="progress-util">
+        <button class="btn-text" id="btnExportProg">Export progress</button>
+        <span class="util-sep">&middot;</span>
+        <button class="btn-text" id="btnImportProg">Import progress</button>
         <input type="file" id="progFile" accept="application/json" style="display:none">
       </div>
-      <div id="coursecards"></div>
+      <footer class="site-footer">Made with <span class="heart">&hearts;</span> in Amdavad &nbsp;&middot;&nbsp; <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>
     </div>
   </div>
 </div>
@@ -341,12 +734,15 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 <!-- ============ VIEW: COURSE DETAIL ============ -->
 <div class="view" id="view-course">
   <div class="pagenav">
-    <span class="brand" data-go="landing"><span class="brand-mark">f</span>FormulaLab</span>
+    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="currentColor"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
     <span class="spacer"></span>
     <nav>
       <a data-go="courses">Courses</a>
-      <a data-go="sandbox">Sandbox</a>
     </nav>
+    <div class="nav-auth">
+      <a class="nav-login" href="#" onclick="event.preventDefault();alert('Log in is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Log in</a>
+      <button class="btn primary" onclick="alert('Sign up is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Sign up</button>
+    </div>
   </div>
   <div class="pagescroll"><div class="pagewrap" id="coursedetail"></div></div>
 </div>
@@ -354,10 +750,12 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 <!-- ============ VIEW: WORKSPACE ============ -->
 <div class="view" id="view-app">
   <div id="titlebar">
-    <span class="brand" data-go="landing"><span class="brand-mark">f</span>FormulaLab</span>
+    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="currentColor"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
     <span class="sep">/</span>
     <span class="crumb" data-go="courses">Courses</span>
     <span class="sep" id="ws-sep2" style="display:none">/</span>
+    <span class="crumb" id="ws-course" style="display:none"></span>
+    <span class="sep" id="ws-sep3" style="display:none">/</span>
     <span class="crumb current" id="ws-crumb">Sandbox</span>
     <span class="spacer"></span>
     <span class="streak">Streak · <b id="ws-streak">0</b></span>
@@ -369,6 +767,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
     <span class="spacer"></span>
     <div class="actions">
       <button class="btn nav" id="btnPrev" title="Previous">←</button>
+      <button class="btn" id="btnLearn">Learn</button>
       <button class="btn" id="btnHint">Hint</button>
       <button class="btn" id="btnSolution">Solution</button>
       <button class="btn" id="btnResetEx">Reset</button>
@@ -413,425 +812,52 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
   </div>
 </div>
 
+<div class="learn-overlay" id="learnOverlay" onclick="if(event.target===this)closeLearn()">
+  <div class="learn-modal">
+    <div class="learn-modal-head">
+      <span class="lm-title" id="learnTitle">Learn</span>
+      <span class="spacer"></span>
+      <button class="lm-close" onclick="closeLearn()">&times;</button>
+    </div>
+    <iframe id="learnFrame" src="about:blank"></iframe>
+  </div>
+</div>
+
+<div class="onboard-overlay" id="onboardOverlay">
+  <div class="onboard-dim" onclick="finishOnboard()"></div>
+  <div class="onboard-spot" id="onboardSpot"></div>
+  <div class="onboard-tip" id="onboardTip">
+    <div class="onboard-step" id="onboardStep"></div>
+    <div class="onboard-text" id="onboardText"></div>
+    <div class="onboard-btns">
+      <button class="btn primary" id="onboardNext">Next</button>
+      <span class="onboard-skip" onclick="finishOnboard()">Skip</span>
+    </div>
+  </div>
+</div>
+
+<div class="result-overlay" id="resultOverlay" onclick="if(event.target===this)closeResult()">
+  <div class="result-card" id="resultCard">
+    <div class="result-icon" id="resultIcon"></div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="result-btns" id="resultBtns"></div>
+  </div>
+</div>
+
+<script>if(!/\/$/.test(location.pathname)){var b=document.createElement("base");b.href=location.pathname+"/";document.head.appendChild(b)}</script>
+<script src="engine.js"></script>
 <script>
 "use strict";
-/* =========================================================================
-   ENGINE MODULE  —  formula engine, cell storage, coordinate system.
-   Pure logic, no DOM. Everything from here to the ENGINE PUBLIC API block
-   below is engine-internal. Grid UI consumes it only via the `Engine`
-   namespace object, so this whole section is portable — the same code can
-   later run in Node for server-side answer re-verification.
-   ========================================================================= */
-const COLS = 16, ROWS = 60;
-const colName = i => { let s=""; i++; while(i>0){ s=String.fromCharCode(65+(i-1)%26)+s; i=Math.floor((i-1)/26);} return s; };
-const COLNAMES = Array.from({length:COLS},(_,i)=>colName(i));
-let cells = {};
+const {COLS,ROWS,COLNAMES,refOf,parseRef,getCell,setRaw,cellValue,evalStr,
+       tokenize,parse,evalNode,rangeCells,displayOf,fmtNum,toText,isErr,FErr,FUNCS,shiftFormula}=Engine;
+let cells = Engine._cells;
 let sel = {r:1,c:0};
 let selEnd = null;
 let editing = null;
 let targetRefs = [];
 
-const refOf=(r,c)=>COLNAMES[c]+r;
-function parseRef(s){ const m=String(s).trim().toUpperCase().match(/^\$?([A-Z]{1,2})\$?(\d{1,3})$/); if(!m)return null;
-  const c=COLNAMES.indexOf(m[1]); const r=+m[2]; if(c<0||r<1||r>ROWS)return null; return {r,c}; }
-const getCell=ref=>cells[ref]||null;
-function setRaw(ref,val){ if(val===""||val==null){ if(cells[ref]){delete cells[ref].raw; if(!cells[ref].b&&!cells[ref].i&&!cells[ref].u)delete cells[ref]; else cells[ref].raw="";} }
-  else { (cells[ref]=cells[ref]||{}).raw=String(val); } }
-
-/* ================= FORMULA ENGINE ================= */
-const FErr = code => ({ __err: code });
-const isErr = v => v && typeof v==="object" && v.__err;
-
-function tokenize(src){
-  const toks=[]; let i=0;
-  while(i<src.length){
-    const ch=src[i];
-    if(ch===" "||ch==="\t"){i++;continue;}
-    if(ch==='"'){ let j=i+1,s="";
-      while(j<src.length){ if(src[j]==='"'){ if(src[j+1]==='"'){s+='"';j+=2;} else break; } else {s+=src[j];j++;} }
-      if(j>=src.length) throw FErr("#VALUE!");
-      toks.push({t:"str",v:s}); i=j+1; continue; }
-    if(/[0-9]/.test(ch)||(ch==="."&&/[0-9]/.test(src[i+1]||""))){
-      let j=i; while(j<src.length&&/[0-9.]/.test(src[j]))j++;
-      if((src[j]==="e"||src[j]==="E")&&/[0-9+\-]/.test(src[j+1]||"")){ j++; if(/[+\-]/.test(src[j]))j++; while(/[0-9]/.test(src[j]||""))j++; }
-      toks.push({t:"num",v:parseFloat(src.slice(i,j))}); i=j; continue; }
-    if(/[A-Za-z_$]/.test(ch)){
-      let j=i; while(j<src.length&&/[A-Za-z0-9_.$]/.test(src[j]))j++;
-      const w=src.slice(i,j); i=j;
-      if(src[i]==="("){ toks.push({t:"func",v:w.toUpperCase()}); continue; }
-      if(/^(TRUE|FALSE)$/i.test(w)){ toks.push({t:"bool",v:/^t/i.test(w)}); continue; }
-      if(/^\$?[A-Za-z]{1,2}\$?\d{1,3}$/.test(w)){ toks.push({t:"ref",v:w.replace(/\$/g,"").toUpperCase()}); continue; }
-      throw FErr("#NAME?"); }
-    if(ch==="<"&&src[i+1]==="="){toks.push({t:"op",v:"<="});i+=2;continue;}
-    if(ch===">"&&src[i+1]==="="){toks.push({t:"op",v:">="});i+=2;continue;}
-    if(ch==="<"&&src[i+1]===">"){toks.push({t:"op",v:"<>"});i+=2;continue;}
-    if(src.startsWith("#REF!",i)){toks.push({t:"errtok",v:"#REF!"});i+=5;continue;}
-    if("+-*/^&%(),:=<>".includes(ch)){toks.push({t:"op",v:ch});i++;continue;}
-    throw FErr("#NAME?");
-  }
-  return toks;
-}
-
-function parse(toks){
-  let p=0;
-  const peek=()=>toks[p], eat=()=>toks[p++];
-  const isOp=v=>peek()&&peek().t==="op"&&peek().v===v;
-  function primary(){
-    const t=peek(); if(!t) throw FErr("#VALUE!");
-    if(t.t==="errtok"){eat();throw FErr(t.v);}
-    if(t.t==="num"||t.t==="str"||t.t==="bool"){eat();return{k:t.t,v:t.v};}
-    if(t.t==="ref"){ eat();
-      if(isOp(":")){ eat(); const t2=eat(); if(!t2||t2.t!=="ref") throw FErr("#REF!"); return{k:"range",a:t.v,b:t2.v}; }
-      return{k:"ref",v:t.v}; }
-    if(t.t==="func"){ eat();
-      if(!isOp("(")) throw FErr("#VALUE!"); eat();
-      const args=[];
-      if(!isOp(")")){ args.push(expr()); while(isOp(",")){eat();args.push(expr());} }
-      if(!isOp(")")) throw FErr("#VALUE!"); eat();
-      return{k:"call",fn:t.v,args}; }
-    if(isOp("(")){ eat(); const e=expr(); if(!isOp(")")) throw FErr("#VALUE!"); eat(); return e; }
-    throw FErr("#VALUE!");
-  }
-  function postfix(){ let e=primary(); while(isOp("%")){eat(); e={k:"pct",e};} return e; }
-  function unary(){ if(isOp("-")){eat();return{k:"neg",e:unary()};} if(isOp("+")){eat();return unary();} return postfix(); }
-  function power(){ let l=unary(); while(isOp("^")){eat(); l={k:"bin",op:"^",l,r:unary()};} return l; }
-  function mul(){ let l=power(); while(isOp("*")||isOp("/")){const o=eat().v; l={k:"bin",op:o,l,r:power()};} return l; }
-  function add(){ let l=mul(); while(isOp("+")||isOp("-")){const o=eat().v; l={k:"bin",op:o,l,r:mul()};} return l; }
-  function concat(){ let l=add(); while(isOp("&")){eat(); l={k:"bin",op:"&",l,r:add()};} return l; }
-  function expr(){ let l=concat();
-    while(peek()&&peek().t==="op"&&["=","<",">","<=",">=","<>"].includes(peek().v)){
-      const o=eat().v; l={k:"bin",op:o,l,r:concat()}; }
-    return l; }
-  const e=expr();
-  if(p<toks.length) throw FErr("#VALUE!");
-  return e;
-}
-
-function cellValue(ref, visiting){
-  const c=getCell(ref);
-  const raw=c&&c.raw!=null?String(c.raw):"";
-  if(raw==="") return "";
-  if(raw[0]==="="){
-    if(visiting.has(ref)) throw FErr("#REF!");
-    visiting.add(ref);
-    try{ return evalStr(raw.slice(1),visiting); }
-    finally{ visiting.delete(ref); }
-  }
-  if(/^-?(\d+\.?\d*|\.\d+)([eE][+\-]?\d+)?$/.test(raw.trim())) return parseFloat(raw);
-  if(/^(true|false)$/i.test(raw.trim())) return /^t/i.test(raw.trim());
-  return raw;
-}
-function evalStr(src,visiting){ return evalNode(parse(tokenize(src)),visiting); }
-
-function rangeCells(a,b){
-  const A=parseRef(a),B=parseRef(b); if(!A||!B) throw FErr("#REF!");
-  const r1=Math.min(A.r,B.r),r2=Math.max(A.r,B.r),c1=Math.min(A.c,B.c),c2=Math.max(A.c,B.c);
-  const out=[];
-  for(let r=r1;r<=r2;r++){const row=[];for(let c=c1;c<=c2;c++)row.push(refOf(r,c));out.push(row);}
-  return out;
-}
-function evalNode(n,visiting){
-  switch(n.k){
-    case "num": case "str": case "bool": return n.v;
-    case "ref": { if(!parseRef(n.v)) throw FErr("#REF!"); return cellValue(n.v,visiting); }
-    case "range": return { __range: rangeCells(n.a,n.b).map(row=>row.map(rf=>cellValue(rf,visiting))) };
-    case "pct": return toNum(scalar(evalNode(n.e,visiting)))/100;
-    case "neg": return -toNum(scalar(evalNode(n.e,visiting)));
-    case "bin": {
-      const L=scalar(evalNode(n.l,visiting)), R=scalar(evalNode(n.r,visiting));
-      switch(n.op){
-        case "+": return toNum(L)+toNum(R);
-        case "-": return toNum(L)-toNum(R);
-        case "*": return toNum(L)*toNum(R);
-        case "/": { const d=toNum(R); if(d===0) throw FErr("#DIV/0!"); return toNum(L)/d; }
-        case "^": return Math.pow(toNum(L),toNum(R));
-        case "&": return toText(L)+toText(R);
-        default: return compare(L,R,n.op);
-      } }
-    case "call": return callFn(n.fn,n.args,visiting);
-  }
-}
-const isRange=v=>v&&typeof v==="object"&&v.__range;
-function scalar(v){ if(isRange(v)){ const f=v.__range; if(f.length===1&&f[0].length===1) return f[0][0]; throw FErr("#VALUE!"); } return v; }
-function toNum(v){
-  if(typeof v==="number"){ if(!isFinite(v)) throw FErr("#NUM!"); return v; }
-  if(typeof v==="boolean") return v?1:0;
-  if(v==="") return 0;
-  if(typeof v==="string"&&/^-?(\d+\.?\d*|\.\d+)([eE][+\-]?\d+)?$/.test(v.trim())) return parseFloat(v);
-  throw FErr("#VALUE!");
-}
-function toText(v){ if(typeof v==="boolean")return v?"TRUE":"FALSE"; if(typeof v==="number")return fmtNum(v); return String(v); }
-function toBool(v){ if(typeof v==="boolean")return v; if(typeof v==="number")return v!==0; if(v==="")return false;
-  if(/^true$/i.test(v))return true; if(/^false$/i.test(v))return false; throw FErr("#VALUE!"); }
-function compare(a,b,op){
-  let res;
-  if(typeof a==="string"||typeof b==="string"){
-    if(typeof a==="string"&&typeof b==="string"){ const x=a.toLowerCase(),y=b.toLowerCase(); res=x<y?-1:x>y?1:0; }
-    else res = typeof a==="string"?1:-1;
-  } else res = toNum(a)<toNum(b)?-1:toNum(a)>toNum(b)?1:0;
-  switch(op){case"=":return res===0;case"<>":return res!==0;case"<":return res<0;case">":return res>0;case"<=":return res<=0;case">=":return res>=0;}
-}
-function flat(args){ const out=[]; for(const a of args){ if(isRange(a)) a.__range.forEach(r=>r.forEach(v=>out.push(v))); else out.push(a);} return out; }
-const numsOnly = vals => vals.filter(v=>typeof v==="number");
-function criteriaTest(crit){
-  if(typeof crit==="number"||typeof crit==="boolean") return v=>{try{return compare(v,crit,"=");}catch(e){return false;}};
-  const s=String(crit); const m=s.match(/^(<=|>=|<>|=|<|>)(.*)$/);
-  let op="=",rhs=s; if(m){op=m[1];rhs=m[2];}
-  const rn=/^-?(\d+\.?\d*|\.\d+)$/.test(rhs.trim())?parseFloat(rhs):rhs;
-  return v=>{ try{ return compare(v,rn,op); }catch(e){ return false; } };
-}
-function reqRange(a){ if(!isRange(a)) throw FErr("#VALUE!"); return a.__range; }
-function _pmt(r,n,pv,fv,tp){if(r===0)return -(pv+fv)/n;const q=Math.pow(1+r,n);return -(r*(pv*q+fv))/(q-1)/(1+r*tp);}
-function _fv(r,n,pmt,pv,tp){if(r===0)return -pv-pmt*n;const q=Math.pow(1+r,n);return -pv*q-pmt*(1+r*tp)*((q-1)/r);}
-
-const FUNCS={
-  SUM:a=>numsOnly(flat(a).map(v=>typeof v==="string"&&v!==""&&/^-?[\d.]+$/.test(v.trim())?parseFloat(v):v)).reduce((s,v)=>s+v,0),
-  AVERAGE:a=>{const n=numsOnly(flat(a));if(!n.length)throw FErr("#DIV/0!");return n.reduce((s,v)=>s+v,0)/n.length;},
-  MIN:a=>{const n=numsOnly(flat(a));return n.length?Math.min(...n):0;},
-  MAX:a=>{const n=numsOnly(flat(a));return n.length?Math.max(...n):0;},
-  COUNT:a=>flat(a).filter(v=>typeof v==="number").length,
-  COUNTA:a=>flat(a).filter(v=>v!==""&&v!=null).length,
-  COUNTBLANK:a=>flat(a).filter(v=>v===""||v==null).length,
-  MEDIAN:a=>{const n=numsOnly(flat(a)).sort((x,y)=>x-y);if(!n.length)throw FErr("#NUM!");const m=n.length>>1;return n.length%2?n[m]:(n[m-1]+n[m])/2;},
-  PRODUCT:a=>numsOnly(flat(a)).reduce((s,v)=>s*v,1),
-  COUNTIF:a=>{const rng=flat([a[0]]);const t=criteriaTest(scalar(a[1]));return rng.filter(v=>v!==""&&t(v)).length;},
-  SUMIF:a=>{const rng=reqRange(a[0]).flat();const t=criteriaTest(scalar(a[1]));
-    const sums=a[2]?reqRange(a[2]).flat():rng;
-    let s=0;rng.forEach((v,i)=>{if(v!==""&&t(v)&&typeof sums[i]==="number")s+=sums[i];});return s;},
-  AVERAGEIF:a=>{const rng=reqRange(a[0]).flat();const t=criteriaTest(scalar(a[1]));
-    const src=a[2]?reqRange(a[2]).flat():rng;let s=0,c=0;
-    rng.forEach((v,i)=>{if(v!==""&&t(v)&&typeof src[i]==="number"){s+=src[i];c++;}});
-    if(!c)throw FErr("#DIV/0!");return s/c;},
-  IF:(a,vis,nodes)=>{const c=toBool(scalar(evalNode(nodes[0],vis)));
-    if(c)return nodes[1]!=null?scalar(evalNode(nodes[1],vis)):true;
-    return nodes[2]!=null?scalar(evalNode(nodes[2],vis)):false;},
-  IFERROR:(a,vis,nodes)=>{try{return scalar(evalNode(nodes[0],vis));}catch(e){return scalar(evalNode(nodes[1],vis));}},
-  AND:a=>flat(a).filter(v=>v!=="").every(v=>toBool(v)),
-  OR:a=>flat(a).filter(v=>v!=="").some(v=>toBool(v)),
-  NOT:a=>!toBool(scalar(a[0])),
-  ROUND:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return Math.round((n*f+(n>=0?1e-9:-1e-9)))/f;},
-  ROUNDUP:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return (n>=0?Math.ceil(n*f-1e-9):Math.floor(n*f+1e-9))/f;},
-  ROUNDDOWN:a=>{const n=toNum(scalar(a[0])),d=Math.trunc(toNum(scalar(a[1]??0)));const f=Math.pow(10,d);return (n>=0?Math.floor(n*f+1e-9):Math.ceil(n*f-1e-9))/f;},
-  ABS:a=>Math.abs(toNum(scalar(a[0]))),
-  SQRT:a=>{const n=toNum(scalar(a[0]));if(n<0)throw FErr("#NUM!");return Math.sqrt(n);},
-  POWER:a=>Math.pow(toNum(scalar(a[0])),toNum(scalar(a[1]))),
-  MOD:a=>{const d=toNum(scalar(a[1]));if(d===0)throw FErr("#DIV/0!");const n=toNum(scalar(a[0]));return n-d*Math.floor(n/d);},
-  INT:a=>Math.floor(toNum(scalar(a[0]))),
-  PI:()=>Math.PI,
-  RAND:()=>Math.random(),
-  RANDBETWEEN:a=>{const lo=Math.ceil(toNum(scalar(a[0]))),hi=Math.floor(toNum(scalar(a[1])));return lo+Math.floor(Math.random()*(hi-lo+1));},
-  LEN:a=>toText(scalar(a[0])).length,
-  UPPER:a=>toText(scalar(a[0])).toUpperCase(),
-  LOWER:a=>toText(scalar(a[0])).toLowerCase(),
-  PROPER:a=>toText(scalar(a[0])).replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase()),
-  TRIM:a=>toText(scalar(a[0])).replace(/\s+/g," ").trim(),
-  LEFT:a=>toText(scalar(a[0])).slice(0,Math.max(0,Math.trunc(toNum(scalar(a[1]??1))))),
-  RIGHT:a=>{const s=toText(scalar(a[0]));const n=Math.max(0,Math.trunc(toNum(scalar(a[1]??1))));return n?s.slice(-n):"";},
-  MID:a=>{const s=toText(scalar(a[0]));const st=Math.trunc(toNum(scalar(a[1])));const n=Math.trunc(toNum(scalar(a[2])));if(st<1||n<0)throw FErr("#VALUE!");return s.slice(st-1,st-1+n);},
-  CONCATENATE:a=>flat(a).map(toText).join(""),
-  CONCAT:a=>flat(a).map(toText).join(""),
-  TEXTJOIN:a=>{const d=toText(scalar(a[0]));const ig=toBool(scalar(a[1]));
-    return flat(a.slice(2)).filter(v=>!ig||v!=="").map(toText).join(d);},
-  FIND:a=>{const i=toText(scalar(a[1])).indexOf(toText(scalar(a[0])),Math.trunc(toNum(scalar(a[2]??1)))-1);if(i<0)throw FErr("#VALUE!");return i+1;},
-  SUBSTITUTE:a=>toText(scalar(a[0])).split(toText(scalar(a[1]))).join(toText(scalar(a[2]))),
-  TODAY:()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)+25569;},
-  NOW:()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)+25569
-           +(d.getHours()*3600+d.getMinutes()*60+d.getSeconds())/86400;},
-  DATE:a=>{const y=Math.trunc(toNum(scalar(a[0]))),m=Math.trunc(toNum(scalar(a[1]))),d=Math.trunc(toNum(scalar(a[2])));
-    return Math.floor(Date.UTC(y,m-1,d)/86400000)+25569;},
-  YEAR:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCFullYear(),
-  MONTH:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCMonth()+1,
-  DAY:a=>new Date((toNum(scalar(a[0]))-25569)*86400000).getUTCDate(),
-  DAYS:a=>Math.trunc(toNum(scalar(a[0])))-Math.trunc(toNum(scalar(a[1]))),
-  TEXT:a=>{const v=toNum(scalar(a[0]));const f=toText(scalar(a[1])).toLowerCase();
-    const dt=new Date((v-25569)*86400000);const p2=n=>String(n).padStart(2,"0");
-    return f.replace(/yyyy/g,dt.getUTCFullYear()).replace(/mm/g,p2(dt.getUTCMonth()+1)).replace(/dd/g,p2(dt.getUTCDate()));},
-  SUMIFS:a=>{const sums=reqRange(a[0]).flat();let mask=sums.map(()=>true);
-    for(let i=1;i+1<a.length||i+1===a.length;i+=2){ if(a[i]==null)break;
-      const rng=reqRange(a[i]).flat(); if(rng.length!==sums.length)throw FErr("#VALUE!");
-      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
-    let s=0;sums.forEach((v,j)=>{if(mask[j]&&typeof v==="number")s+=v;});return s;},
-  COUNTIFS:a=>{const first=reqRange(a[0]).flat();let mask=first.map(()=>true);
-    for(let i=0;i+1<a.length;i+=2){
-      const rng=reqRange(a[i]).flat(); if(rng.length!==first.length)throw FErr("#VALUE!");
-      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
-    return mask.filter(Boolean).length;},
-  AVERAGEIFS:a=>{const src=reqRange(a[0]).flat();let mask=src.map(()=>true);
-    for(let i=1;i+1<a.length;i+=2){
-      const rng=reqRange(a[i]).flat(); if(rng.length!==src.length)throw FErr("#VALUE!");
-      const t=criteriaTest(scalar(a[i+1])); mask=mask.map((m,j)=>m&&rng[j]!==""&&t(rng[j])); }
-    let s=0,c=0;src.forEach((v,j)=>{if(mask[j]&&typeof v==="number"){s+=v;c++;}});
-    if(!c)throw FErr("#DIV/0!");return s/c;},
-  XLOOKUP:(a,vis,nodes)=>{
-    const key=scalar(evalNode(nodes[0],vis));
-    const lr=reqRange(evalNode(nodes[1],vis)).flat();
-    const rr=reqRange(evalNode(nodes[2],vis)).flat();
-    if(lr.length!==rr.length)throw FErr("#VALUE!");
-    for(let i=0;i<lr.length;i++){try{if(compare(lr[i],key,"="))return rr[i];}catch(e){}}
-    if(nodes[3]!=null)return scalar(evalNode(nodes[3],vis));
-    throw FErr("#N/A");},
-  VLOOKUP:a=>{
-    const key=scalar(a[0]); const tbl=reqRange(a[1]); const col=Math.trunc(toNum(scalar(a[2])));
-    const exact = a.length>=4 ? !toBool(scalar(a[3])) : false;
-    if(col<1||col>tbl[0].length) throw FErr("#REF!");
-    if(exact){
-      for(const row of tbl){ try{ if(compare(row[0],key,"=")) return row[col-1]; }catch(e){} }
-      throw FErr("#N/A");
-    } else {
-      let best=null;
-      for(const row of tbl){ try{ if(compare(row[0],key,"<=")) best=row; else break; }catch(e){} }
-      if(!best) throw FErr("#N/A"); return best[col-1];
-    } },
-  HLOOKUP:a=>{
-    const key=scalar(a[0]); const tbl=reqRange(a[1]); const rIdx=Math.trunc(toNum(scalar(a[2])));
-    const exact = a.length>=4 ? !toBool(scalar(a[3])) : false;
-    if(rIdx<1||rIdx>tbl.length) throw FErr("#REF!");
-    const hdr=tbl[0];
-    if(exact){ for(let c=0;c<hdr.length;c++){try{if(compare(hdr[c],key,"="))return tbl[rIdx-1][c];}catch(e){}} throw FErr("#N/A"); }
-    let bc=-1; for(let c=0;c<hdr.length;c++){try{if(compare(hdr[c],key,"<="))bc=c;else break;}catch(e){}}
-    if(bc<0)throw FErr("#N/A"); return tbl[rIdx-1][bc]; },
-  INDEX:a=>{const tbl=reqRange(a[0]);const r=Math.trunc(toNum(scalar(a[1])));const c=a[2]!=null?Math.trunc(toNum(scalar(a[2]))):1;
-    if(r<1||r>tbl.length||c<1||c>tbl[0].length)throw FErr("#REF!");return tbl[r-1][c-1];},
-  MATCH:a=>{const key=scalar(a[0]);const arr=reqRange(a[1]).flat();
-    const type=a[2]!=null?Math.trunc(toNum(scalar(a[2]))):1;
-    if(type===0){for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,"="))return i+1;}catch(e){}}throw FErr("#N/A");}
-    if(type===1){let b=-1;for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,"<="))b=i;else break;}catch(e){}}if(b<0)throw FErr("#N/A");return b+1;}
-    let b=-1;for(let i=0;i<arr.length;i++){try{if(compare(arr[i],key,">="))b=i;else break;}catch(e){}}if(b<0)throw FErr("#N/A");return b+1;},
-  ISNUMBER:a=>typeof scalar(a[0])==="number",
-  ISTEXT:a=>typeof scalar(a[0])==="string"&&scalar(a[0])!=="",
-  ISBLANK:a=>scalar(a[0])==="",
-
-  // --- Financial functions (TVM family) ---
-  NPV:a=>{const r=toNum(scalar(a[0]));const cfs=numsOnly(flat(a.slice(1)));
-    let npv=0;for(let i=0;i<cfs.length;i++) npv+=cfs[i]/Math.pow(1+r,i+1);return npv;},
-  PMT:a=>{const r=toNum(scalar(a[0])),n=toNum(scalar(a[1])),pv=toNum(scalar(a[2]));
-    const fv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
-    if(r===0)return -(pv+fv)/n;
-    const pvif=Math.pow(1+r,n);return -(r*(pv*pvif+fv))/(pvif-1)/(1+r*tp);},
-  PV:a=>{const r=toNum(scalar(a[0])),n=toNum(scalar(a[1])),pmt=toNum(scalar(a[2]));
-    const fv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
-    if(r===0)return -pmt*n-fv;
-    const pvif=Math.pow(1+r,n);return (-(pmt*(1+r*tp)*((pvif-1)/r)+fv))/pvif;},
-  FV:a=>{const r=toNum(scalar(a[0])),n=toNum(scalar(a[1])),pmt=toNum(scalar(a[2]));
-    const pv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
-    if(r===0)return -pv-pmt*n;
-    const pvif=Math.pow(1+r,n);return -pv*pvif-pmt*(1+r*tp)*((pvif-1)/r);},
-  NPER:a=>{const r=toNum(scalar(a[0])),pmt=toNum(scalar(a[1])),pv=toNum(scalar(a[2]));
-    const fv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
-    if(r===0){if(pmt===0)throw FErr("#NUM!");return -(pv+fv)/pmt;}
-    const z=pmt*(1+r*tp)/r;const t=Math.log((-fv+z)/(pv+z));if(!isFinite(t))throw FErr("#NUM!");
-    return t/Math.log(1+r);},
-  IPMT:a=>{const r=toNum(scalar(a[0])),per=toNum(scalar(a[1])),n=toNum(scalar(a[2])),pv=toNum(scalar(a[3]));
-    const fv=a[4]!=null?toNum(scalar(a[4])):0;const tp=a[5]!=null?(toBool(scalar(a[5]))?1:0):0;
-    if(per<1||per>n)throw FErr("#NUM!");const pmt=_pmt(r,n,pv,fv,tp);
-    if(tp&&per===1)return 0;
-    const bal=tp?_fv(r,per-2,pmt,pv,1):_fv(r,per-1,pmt,pv,0);
-    return tp?(bal+pmt)*r:bal*r;},
-  PPMT:a=>{const r=toNum(scalar(a[0])),per=toNum(scalar(a[1])),n=toNum(scalar(a[2])),pv=toNum(scalar(a[3]));
-    const fv=a[4]!=null?toNum(scalar(a[4])):0;const tp=a[5]!=null?(toBool(scalar(a[5]))?1:0):0;
-    if(per<1||per>n)throw FErr("#NUM!");const pmt=_pmt(r,n,pv,fv,tp);
-    const bal=tp?(per===1?0:(_fv(r,per-2,pmt,pv,1)+pmt)*r):_fv(r,per-1,pmt,pv,0)*r;
-    return pmt-bal;},
-  RATE:a=>{const n=toNum(scalar(a[0])),pmt=toNum(scalar(a[1])),pv=toNum(scalar(a[2]));
-    const fv=a[3]!=null?toNum(scalar(a[3])):0;const tp=a[4]!=null?(toBool(scalar(a[4]))?1:0):0;
-    let guess=a[5]!=null?toNum(scalar(a[5])):0.1;
-    for(let i=0;i<100;i++){
-      const pvif=Math.pow(1+guess,n);const z=pmt*(1+guess*tp);
-      const f=pv*pvif+z*((pvif-1)/guess)+fv;
-      const df=pv*n*Math.pow(1+guess,n-1)+z*(n*Math.pow(1+guess,n-1)*guess-(pvif-1))/(guess*guess)
-               +pmt*tp*((pvif-1)/guess);
-      if(Math.abs(df)<1e-20)break;const next=guess-f/df;
-      if(Math.abs(next-guess)<1e-10)return next;guess=next;}
-    throw FErr("#NUM!");},
-  IRR:a=>{const vals=numsOnly(flat([a[0]]));
-    if(vals.length<2)throw FErr("#NUM!");
-    let guess=a[1]!=null?toNum(scalar(a[1])):0.1;
-    for(let i=0;i<300;i++){
-      let f=0,df=0;
-      for(let t=0;t<vals.length;t++){const p=Math.pow(1+guess,t);f+=vals[t]/p;df-=t*vals[t]/Math.pow(1+guess,t+1);}
-      if(Math.abs(df)<1e-20)break;const next=guess-f/df;
-      if(Math.abs(next-guess)<1e-10)return next;guess=next;}
-    throw FErr("#NUM!");},
-
-  // --- Date-based finance ---
-  XNPV:a=>{const r=toNum(scalar(a[0]));const vals=reqRange(a[1]).flat();const dates=reqRange(a[2]).flat();
-    if(vals.length!==dates.length)throw FErr("#NUM!");
-    const d0=toNum(dates[0]);let npv=0;
-    for(let i=0;i<vals.length;i++){const v=toNum(vals[i]);const di=toNum(dates[i]);
-      npv+=v/Math.pow(1+r,(di-d0)/365);}return npv;},
-  XIRR:a=>{const vals=reqRange(a[0]).flat().map(toNum);const dates=reqRange(a[1]).flat().map(toNum);
-    if(vals.length!==dates.length)throw FErr("#NUM!");
-    const d0=dates[0];let guess=a[2]!=null?toNum(scalar(a[2])):0.1;
-    for(let i=0;i<300;i++){
-      let f=0,df=0;
-      for(let t=0;t<vals.length;t++){const yrs=(dates[t]-d0)/365;const p=Math.pow(1+guess,yrs);
-        f+=vals[t]/p;df-=yrs*vals[t]/Math.pow(1+guess,yrs+1);}
-      if(Math.abs(df)<1e-20)break;const next=guess-f/df;
-      if(Math.abs(next-guess)<1e-10)return next;guess=next;}
-    throw FErr("#NUM!");},
-  EOMONTH:a=>{const serial=Math.trunc(toNum(scalar(a[0])));const months=Math.trunc(toNum(scalar(a[1])));
-    const dt=new Date((serial-25569)*86400000);
-    const y=dt.getUTCFullYear(),m=dt.getUTCMonth()+months;
-    const last=new Date(Date.UTC(y,m+1,0));
-    return Math.floor(last.getTime()/86400000)+25569;},
-
-  // --- Misc financial ---
-  SLN:a=>{const cost=toNum(scalar(a[0])),salvage=toNum(scalar(a[1])),life=toNum(scalar(a[2]));
-    if(life===0)throw FErr("#DIV/0!");return (cost-salvage)/life;},
-  DB:a=>{const cost=toNum(scalar(a[0])),salvage=toNum(scalar(a[1])),life=toNum(scalar(a[2]));
-    const per=toNum(scalar(a[3]));const mo=a[4]!=null?toNum(scalar(a[4])):12;
-    if(life===0)throw FErr("#DIV/0!");
-    const rate=Math.round((1-Math.pow(salvage/cost,1/life))*1000)/1000;
-    let total=0,dep=0;
-    for(let i=1;i<=per;i++){
-      if(i===1){dep=cost*rate*mo/12;}
-      else if(i===life+1){dep=(cost-total)*rate*(12-mo)/12;}
-      else{dep=(cost-total)*rate;}
-      total+=dep;}
-    return dep;},
-};
-const LAZY = new Set(["IF","IFERROR","XLOOKUP"]);
-function callFn(name,argNodes,visiting){
-  const fn=FUNCS[name]; if(!fn) throw FErr("#NAME?");
-  if(LAZY.has(name)) return fn(null,visiting,argNodes);
-  const args=argNodes.map(n=>evalNode(n,visiting));
-  return fn(args);
-}
-
-/* ================= DISPLAY ================= */
-function fmtNum(n){
-  if(Number.isInteger(n)&&Math.abs(n)<1e15) return String(n);
-  let s=n.toPrecision(10); if(s.includes(".")) s=s.replace(/0+$/,"").replace(/\.$/,"");
-  return s;
-}
-function displayOf(ref){
-  try{
-    const v=cellValue(ref,new Set());
-    if(v==="") return {text:"",cls:""};
-    if(typeof v==="number") return {text:fmtNum(v),cls:"num"};
-    if(typeof v==="boolean") return {text:v?"TRUE":"FALSE",cls:"bool"};
-    return {text:String(v),cls:""};
-  }catch(e){ return {text:isErr(e)?e.__err:"#VALUE!",cls:"err"}; }
-}
-
-/* ========================= ENGINE PUBLIC API =========================
-   The formula engine is exposed as a single namespace object. Everything
-   the UI needs — coordinate math, cell CRUD, evaluation, display formatting,
-   introspection for the checker — is reached through `Engine.*`.
-   `shiftFormula` is attached below where it's defined.
-   ==================================================================== */
-const Engine = {
-  get COLS(){return COLS;}, get ROWS(){return ROWS;}, COLNAMES,
-  refOf, parseRef,
-  getCell, setRaw,
-  cellValue, evalStr,
-  tokenize, parse, evalNode,
-  rangeCells, displayOf, fmtNum,
-  isErr, FErr,
-  get FUNCS(){return FUNCS;},
-  get _cells(){return cells;},
-};
-
+function resetCells(obj){cells=obj;Engine._cells=obj;}
+/* engine code now in engine.js */
 /* =========================================================================
    GRID UI  —  consumes ENGINE via the public API. Owns DOM, selection,
    keyboard, mouse, formula bar, fill handle, clipboard, in-cell editing.
@@ -956,35 +982,6 @@ function pointFromMouse(inputEl,td){
   const up=()=>{document.removeEventListener("mouseover",move);document.removeEventListener("mouseup",up);};
   document.addEventListener("mouseover",move);document.addEventListener("mouseup",up);
 }
-
-/* ---- relative-reference formula shifting ---- */
-function shiftFormula(raw,dr,dc){
-  if(!raw||raw[0]!=="=")return raw;
-  const s=raw; let out="="; let i=1; let inStr=false;
-  while(i<s.length){
-    const ch=s[i];
-    if(inStr){ out+=ch; if(ch==='"'){ if(s[i+1]==='"'){out+='"';i+=2;continue;} inStr=false;} i++; continue; }
-    if(ch==='"'){inStr=true;out+=ch;i++;continue;}
-    const m=/^(\$?)([A-Za-z]{1,2})(\$?)(\d{1,3})/.exec(s.slice(i));
-    const prevOK=!/[A-Za-z0-9_.$]/.test(s[i-1]||"");
-    if(m&&prevOK){
-      const after=s[i+m[0].length]||"";
-      if(!/[A-Za-z0-9_(]/.test(after)){
-        const cAbs=m[1]==="$", rAbs=m[3]==="$";
-        let c=COLNAMES.indexOf(m[2].toUpperCase()), r=+m[4];
-        if(c>=0){
-          if(!cAbs)c+=dc; if(!rAbs)r+=dr;
-          if(c<0||c>=COLS||r<1||r>ROWS) out+="#REF!";
-          else out+=(cAbs?"$":"")+COLNAMES[c]+(rAbs?"$":"")+r;
-          i+=m[0].length; continue;
-        }
-      }
-    }
-    out+=ch;i++;
-  }
-  return out;
-}
-Engine.shiftFormula = shiftFormula;
 
 /* ---- clipboard (Ctrl+C / Ctrl+V) ---- */
 let clip=null;
@@ -1233,7 +1230,7 @@ const UNDO=[], REDO=[], UNDO_LIMIT=80;
 const snap=()=>JSON.stringify(cells);
 function pushUndo(){ UNDO.push(snap()); if(UNDO.length>UNDO_LIMIT)UNDO.shift(); REDO.length=0; }
 function clearHistory(){ UNDO.length=0; REDO.length=0; }
-function applySnap(s){ cells=JSON.parse(s); renderAll(); }
+function applySnap(s){ resetCells(JSON.parse(s)); renderAll(); }
 function flash(msg){ const el=document.getElementById("st-mode"); if(!el)return; el.textContent=msg;
   clearTimeout(flash._t); flash._t=setTimeout(()=>{ el.textContent="Ready"; },1500); }
 function undo(){ if(!UNDO.length){flash("Nothing to undo");return;} REDO.push(snap()); applySnap(UNDO.pop()); flash("Undo"); }
@@ -1406,7 +1403,7 @@ document.getElementById("btnBold").onclick=()=>toggleStyle("b");
 document.getElementById("btnItalic").onclick=()=>toggleStyle("i");
 document.getElementById("btnUnder").onclick=()=>toggleStyle("u");
 document.getElementById("btnClear").onclick=()=>{pushUndo();const {r1,r2,c1,c2}=selRange();for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)delete cells[refOf(r,c)];renderAll();};
-document.getElementById("btnClearAll").onclick=()=>{pushUndo();cells={};if(!currentEx)targetRefs=[];renderAll();};
+document.getElementById("btnClearAll").onclick=()=>{pushUndo();resetCells({});if(!currentEx)targetRefs=[];renderAll();};
 
 /* panel tabs */
 document.querySelectorAll("#paneltabs button").forEach(b=>{
@@ -2480,12 +2477,13 @@ const COURSES=[
    {title:"NOT",ex:["not_exclude","not_invert_screen"]},
    {title:"ISNUMBER & ISBLANK",ex:["isnumber_validate","isblank_mandatory","isblank_default"]},
    {title:"COUNTBLANK",ex:["countblank_coverage","countblank_completeness"]}]},
- {id:"fin",title:"Financial Statements Fundamentals",level:"Beginner / Intermediate",hours:"~2 hours",prereq:"Excel Formula Fundamentals (recommended)",
+ {id:"fin",title:"Financial Statements Fundamentals",level:"Beginner / Intermediate",hours:"~2 hours",prereq:"Excel Formula Fundamentals (recommended)",upcoming:true,
   desc:"Income-statement and balance-sheet metrics: gross profit and margin on real Tesla FY2023 figures, expense classification, segment fill-down, working capital.",
   modules:[
    {title:"Income statement",ex:["grossprofit","grossmargin","expenseclass","segmentgp"]},
    {title:"Balance sheet & liquidity",ex:["ncwc","currentratio"]}]},
 ];
+const LEARN_MAP={"SUM":"sum","AVERAGE":null,"MIN & MAX":"min","COUNT & COUNTA":"count","IF":"if","COUNTIF":"countif","SUMIF & SUMIFS":"sumif","ROUND":"round","Text join (&, CONCAT)":"concat","Fill handle & relative refs":null,"Dates (DATE, DAYS)":"date","VLOOKUP":"vlookup","INDEX + MATCH":"index","XLOOKUP":"xlookup","IFERROR":"iferror","COUNTIFS":"countifs","AVERAGEIFS":"averageifs","TRIM":"trim","LEFT, RIGHT & MID":"left","LEN":"len","FIND":"find","SUBSTITUTE":"substitute","ABS":"abs","AND & OR":"and","HLOOKUP":"hlookup","POWER (CAGR)":"power","ROUNDUP & ROUNDDOWN":"roundup","UPPER, LOWER & PROPER":"upper","TEXTJOIN":"textjoin","YEAR, MONTH & DAY":null,"TEXT":null,"MOD":"mod","INT":"int","SQRT":"sqrt","PRODUCT":"product","MEDIAN":"median","AVERAGEIF":"averageif","NOT":"not","ISNUMBER & ISBLANK":"isnumber","COUNTBLANK":"countblank","Income statement":null,"Balance sheet & liquidity":null};
 let currentCourse=null, currentEx=null, currentExId=null;
 const doneEx=new Set();
 
@@ -2523,19 +2521,143 @@ document.querySelectorAll(".pagescroll").forEach(sc=>{
   });
 });
 
+/* Nav scroll links — scroll inside .pagescroll, not the page */
+document.querySelectorAll(".nav-scroll").forEach(a=>{
+  a.addEventListener("click",e=>{
+    e.preventDefault();
+    const id=a.getAttribute("href").slice(1);
+    const target=document.getElementById(id);
+    const scroller=document.getElementById("landing-scroll");
+    if(target&&scroller){
+      const top=target.offsetTop-scroller.offsetTop-60;
+      scroller.scrollTo({top,behavior:"smooth"});
+    }
+  });
+});
+
+/* ================= SHOWCASE ANIMATION ================= */
+(function(){
+  const fw=document.getElementById("mock-formula");
+  const cell=document.getElementById("mock-cell");
+  const res=document.getElementById("mock-result");
+  if(!fw||!cell||!res)return;
+
+  const STEPS=[
+    {phase:"empty",  delay:800},
+    {phase:"typing", text:"=SUM(C2:C9)",          delay:1800},
+    {phase:"wrong",  formula:"=SUM(C2:C9)", val:"7760", msg:"Result is 7,760 — that sums all regions, not just West. Use SUMIFS to filter by criteria.", delay:2500},
+    {phase:"clear",  delay:600},
+    {phase:"typing", text:'=SUMIFS(C2:C9,B2:B9,"West")', delay:2200},
+    {phase:"correct",formula:'=SUMIFS(C2:C9,B2:B9,"West")', val:"3,850", msg:'<span class="checkmark">&#10003;</span> Correct — SUMIFS with the right criteria. Nice work!', delay:3000},
+    {phase:"hold",   delay:2000}
+  ];
+
+  let running=false, timer=null;
+
+  function typeText(el,text,cb){
+    el.textContent="";
+    el.classList.add("mock-typing");
+    let i=0;
+    const speed=Math.max(30,Math.min(60,1200/text.length));
+    function tick(){
+      if(i<text.length){el.textContent=text.slice(0,++i);timer=setTimeout(tick,speed);}
+      else{el.classList.remove("mock-typing");cb();}
+    }
+    tick();
+  }
+
+  function runStep(idx){
+    if(!running)return;
+    const s=STEPS[idx%STEPS.length];
+    const next=()=>{timer=setTimeout(()=>runStep(idx+1),s.delay);};
+
+    if(s.phase==="empty"){
+      fw.textContent="";
+      cell.textContent="";
+      cell.classList.add("mock-cell-empty");
+      res.style.display="none";
+      res.className="mock-result";
+      next();
+    }else if(s.phase==="typing"){
+      cell.classList.add("mock-cell-empty");
+      cell.textContent="";
+      res.style.display="none";
+      typeText(fw,s.text,next);
+    }else if(s.phase==="wrong"){
+      fw.textContent=s.formula;
+      cell.classList.remove("mock-cell-empty");
+      cell.textContent=s.val;
+      res.className="mock-result bad";
+      res.innerHTML=s.msg;
+      res.style.display="flex";
+      next();
+    }else if(s.phase==="clear"){
+      res.style.display="none";
+      res.className="mock-result";
+      fw.textContent="";
+      cell.textContent="";
+      cell.classList.add("mock-cell-empty");
+      next();
+    }else if(s.phase==="correct"){
+      fw.textContent=s.formula;
+      cell.classList.remove("mock-cell-empty");
+      cell.textContent=s.val;
+      res.className="mock-result";
+      res.innerHTML=s.msg;
+      res.style.display="flex";
+      next();
+    }else if(s.phase==="hold"){
+      next();
+    }
+  }
+
+  function startAnim(){
+    if(running)return;
+    running=true;
+    runStep(0);
+  }
+  function stopAnim(){
+    running=false;
+    if(timer){clearTimeout(timer);timer=null;}
+  }
+
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting)startAnim(); else stopAnim();
+    });
+  },{threshold:0.3});
+  obs.observe(document.getElementById("mock-anim"));
+})();
+
+/* ================= SCROLL REVEAL ================= */
+(function(){
+  const scroller=document.getElementById("landing-scroll");
+  if(!scroller)return;
+  const targets=scroller.querySelectorAll(".reveal,.reveal-scale,.reveal-children");
+  const revealObs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting)e.target.classList.add("visible");
+    });
+  },{root:scroller,threshold:0.15});
+  targets.forEach(t=>revealObs.observe(t));
+})();
+
 /* ================= PAGES ================= */
 function renderCourses(){
   const el=document.getElementById("coursecards");
   el.innerHTML=COURSES.map((c,ci)=>{
     const total=flatEx(c).length, done=courseDone(c), pct=Math.round(done/total*100);
     const num = "COURSE " + String(ci+1).padStart(2,"0");
-    const tags = c.modules.map(m=>`<span class="tag">${esc(m.title)}</span>`).join("");
-    const cta = done===0 ? "Start →" : done===total ? "Review →" : "Continue →";
-    return `<div class="ccard" data-course="${c.id}">
+    const MAX_TAGS=8;
+    const allTags=c.modules.map(m=>m.title);
+    const shown=allTags.slice(0,MAX_TAGS).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
+    const more=allTags.length>MAX_TAGS?`<span class="tag tag-more">+${allTags.length-MAX_TAGS} more</span>`:"";
+    const cta = c.upcoming ? "" : done===0 ? "Start →" : done===total ? "Review →" : "Continue →";
+    return `<div class="ccard${c.upcoming?" upcoming":""}" data-course="${c.id}">
       <div class="ccard-meta">${num} · ${esc(c.level)} · ${esc(c.hours)}</div>
-      <h3>${esc(c.title)}</h3>
+      <h3>${esc(c.title)}${c.upcoming?'<span class="soon">Coming soon</span>':''}</h3>
       <div class="cdesc">${esc(c.desc)}</div>
-      <div class="tags">${tags}</div>
+      <div class="tags">${shown}${more}</div>
       <div class="ccard-foot">
         <div class="ccard-pbar"><div style="width:${pct}%"></div></div>
         <span class="ccard-pnote">${String(done).padStart(2,"0")} / ${String(total).padStart(2,"0")} done</span>
@@ -2566,11 +2688,13 @@ function openCourse(id){
     <button class="back-to-all" id="btnBackToAll">← All formulas</button>
     ${c.modules.map((m,mi)=>{
       const md=m.ex.filter(x=>doneEx.has(x)).length;
+      const learnFn=LEARN_MAP[m.title];
       return `<div class="module collapsed" data-mi="${mi}">
         <div class="mhead">
           <span class="chev">▸</span>
           <span class="mtag">M${String(mi+1).padStart(2,"0")}</span>
           <span class="mtitle">${esc(m.title)}</span>
+          ${learnFn?`<a class="mlearn" href="#" onclick="event.preventDefault();event.stopPropagation();openLearn('${learnFn}','${esc(m.title)}')">Learn ▶</a>`:""}
           <span class="mprog">${md} / ${m.ex.length}</span>
         </div>
         ${m.ex.map(xid=>{
@@ -2611,18 +2735,20 @@ function openCourse(id){
 /* ================= WORKSPACE ================= */
 function openSandbox(){
   currentEx=null; currentExId=null; currentCourse=null;
-  cells={}; targetRefs=[]; clearHistory();
+  resetCells({}); targetRefs=[]; clearHistory();
   document.getElementById("exbar").style.display="none";
   document.getElementById("concept").classList.remove("on");
   document.getElementById("ws-crumb").textContent="Sandbox";
   document.getElementById("ws-sep2").style.display="none";
+  document.getElementById("ws-course").style.display="none";
+  document.getElementById("ws-sep3").style.display="none";
   updateStreak();
   renderOutline(); renderAll(); select(1,0); show("app");
 }
 function openEx(exId){
   const ex=EX[exId]; currentEx=ex; currentExId=exId;
   hintViewed = false; solutionClickCount = 0;
-  cells={}; clearHistory();
+  resetCells({}); clearHistory();
   for(const ref in ex.data) setRaw(ref,ex.data[ref]);
   for(const ref in ex.data){const p=parseRef(ref);if(p&&(p.r===1))(cells[ref]=cells[ref]||{}).b=true;}
   targetRefs = ex.pick ? Object.keys(ex.pick)
@@ -2634,16 +2760,25 @@ function openEx(exId){
   const badge = document.getElementById("ex-badge");
   badge.textContent = ex.lvl;
   badge.className = "badge " + ex.lvl;
-  document.getElementById("ex-title").textContent = ex.title;
   const mod = moduleForEx(currentCourse, exId);
-  document.getElementById("ex-mod").textContent = mod ? mod.title : "";
+  document.getElementById("ex-title").textContent = mod ? mod.title : ex.title;
+  document.getElementById("ex-mod").textContent = mod ? ex.title : "";
+  const learnFn = mod ? LEARN_MAP[mod.title] : null;
+  const btnL = document.getElementById("btnLearn");
+  if(learnFn){btnL.style.display="inline-block";btnL.dataset.fn=learnFn;btnL.dataset.title=mod.title;}
+  else{btnL.style.display="none";}
 
   if(currentCourse){
-    document.getElementById("ws-crumb").textContent = ex.title;
     document.getElementById("ws-sep2").style.display = "inline";
-  } else {
+    document.getElementById("ws-course").style.display = "inline";
+    document.getElementById("ws-course").textContent = currentCourse.title;
+    document.getElementById("ws-sep3").style.display = "inline";
     document.getElementById("ws-crumb").textContent = ex.title;
+  } else {
     document.getElementById("ws-sep2").style.display = "none";
+    document.getElementById("ws-course").style.display = "none";
+    document.getElementById("ws-sep3").style.display = "none";
+    document.getElementById("ws-crumb").textContent = ex.title;
   }
 
   const modOfEx = currentCourse ? currentCourse.modules.find(mm => mm.ex.includes(exId)) : null;
@@ -2656,6 +2791,7 @@ function openEx(exId){
   renderOutline();
   renderAll();
   show("app");
+  try{if(!localStorage.getItem("tyro_onboard"))setTimeout(startOnboard,600);}catch(e){}
 }
 function renderConcept(ex){
   const cp=document.getElementById("concept");
@@ -2683,12 +2819,12 @@ function renderConcept(ex){
       <div class="eyebrow">Solution</div>
       <p>${esc(ex.solution||"")}</p>
     </div>
-    <div class="result" id="resBox"></div>`;
+    `;
 }
 function renderOutline(){
   const el=document.getElementById("tab-outline");
   if(!currentCourse){
-    el.innerHTML=`<p style="font-size:13px;color:var(--muted)">No course active. <a href="#" id="ol-browse" style="color:var(--green-dark);text-decoration:underline">Browse courses</a> or use the sheet freely.</p>`;
+    el.innerHTML=`<p style="font-size:13px;color:var(--muted)">No course active. <a href="#" id="ol-browse" style="color:var(--ink);text-decoration:underline">Browse courses</a> or use the sheet freely.</p>`;
     const a=el.querySelector("#ol-browse"); if(a)a.onclick=e=>{e.preventDefault();renderCourses();show("courses");};
     return;
   }
@@ -2760,6 +2896,22 @@ function stepEx(d){
   if(i>=0 && i<list.length) openEx(list[i]);
 }
 document.getElementById("btnCheck").onclick=()=>{ if(currentEx) checkEx(currentEx); };
+document.getElementById("ws-course").onclick=()=>{ if(currentCourse){ openCourse(currentCourse.id); show("course"); }};
+document.getElementById("btnLearn").onclick=()=>{
+  const fn=document.getElementById("btnLearn").dataset.fn;
+  const title=document.getElementById("btnLearn").dataset.title;
+  if(fn)openLearn(fn,title);
+};
+function openLearn(fn,title){
+  document.getElementById("learnTitle").textContent="Learn — "+(title||fn);
+  const dir=location.pathname.replace(/\/?(index\.html)?$/,'/');
+  document.getElementById("learnFrame").src=dir+"learn/#"+encodeURIComponent(fn);
+  document.getElementById("learnOverlay").classList.add("on");
+}
+function closeLearn(){
+  document.getElementById("learnOverlay").classList.remove("on");
+  document.getElementById("learnFrame").src="about:blank";
+}
 
 /* checker */
 function expectedValue(ex){
@@ -2780,8 +2932,7 @@ function expectedAt(ex,ref){
 }
 function checkEx(ex){
   if(editing)commitEdit(true);
-  const rb=document.getElementById("resBox"); if(!rb)return;
-  const fail=msg=>{rb.className="result bad";rb.innerHTML=msg;};
+  const fail=msg=>showResult("bad",msg);
   if(ex.pick){
     for(const ref in ex.pick){
       const raw=(getCell(ref)||{}).raw||"";
@@ -2830,13 +2981,29 @@ function checkEx(ex){
 }
 function pass(ex,msg){
   doneEx.add(currentExId);
-  const rb=document.getElementById("resBox");
-  rb.className="result ok";
+  showResult("ok","✓ Correct — "+msg);
+  updateStreak(); renderOutline(); renderAll();
+}
+function showResult(type,msg){
+  const ov=document.getElementById("resultOverlay");
+  const card=document.getElementById("resultCard");
+  const icon=document.getElementById("resultIcon");
+  const msgEl=document.getElementById("resultMsg");
+  const btns=document.getElementById("resultBtns");
+  card.className="result-card "+type;
+  icon.textContent=type==="ok"?"✓":"✗";
+  msgEl.innerHTML=msg;
   const list=currentCourse?flatEx(currentCourse):[];
   const i=list.indexOf(currentExId);
-  const more=currentCourse&&i>=0&&i<list.length-1;
-  rb.innerHTML="✓ Correct — "+msg+(more?" Use <b>Next →</b> to continue.":"");
-  updateStreak(); renderOutline(); renderAll();
+  const hasNext=currentCourse&&i>=0&&i<list.length-1;
+  let b='<button class="btn" onclick="closeResult();openEx(currentExId)">Repeat</button>';
+  if(type==="ok"&&hasNext) b+='<button class="btn primary" onclick="closeResult();stepEx(1)">Next →</button>';
+  else if(type==="bad") b='<button class="btn primary" onclick="closeResult()">Try again</button>';
+  btns.innerHTML=b;
+  ov.classList.add("on");
+}
+function closeResult(){
+  document.getElementById("resultOverlay").classList.remove("on");
 }
 
 /* ================= PROGRESS EXPORT / IMPORT ================= */
@@ -2966,16 +3133,27 @@ const KEYDOCS=[
    them explicitly is what makes the regression harness able to run at all.
    Values that get reassigned (cells, currentEx…) need accessors, not copies. */
 window.Engine   = Engine;
-window.isErr    = isErr;      /* const arrow functions are lexical too */
+window.isErr    = isErr;
 window.FErr     = FErr;
 window.getCell  = getCell;
+window.setRaw   = setRaw;
 window.refOf    = refOf;
+window.evalStr  = evalStr;
+window.cellValue= cellValue;
+window.toText   = toText;
+window.shiftFormula = shiftFormula;
+window.rangeCells   = rangeCells;
+window.parseRef     = parseRef;
 window.EX       = EX;
 window.COURSES  = COURSES;
 window.doneEx   = doneEx;
 window.COLS     = COLS;
 window.ROWS     = ROWS;
-Object.defineProperty(window,"_cells",      {get:()=>cells, configurable:true});
+window.openEx   = openEx;
+window.checkEx  = checkEx;
+Object.defineProperty(window,"_cells",      {get:()=>Engine._cells, configurable:true});
+Object.defineProperty(window,"_cells_direct",    {value:ref=>Engine._cells[ref], configurable:true});
+Object.defineProperty(window,"_cells_direct_set",{value:(ref,v)=>{Engine._cells[ref]=v;}, configurable:true});
 Object.defineProperty(window,"targetRefs",  {get:()=>targetRefs, configurable:true});
 Object.defineProperty(window,"currentEx",   {get:()=>currentEx,    set:v=>{currentEx=v;},    configurable:true});
 Object.defineProperty(window,"currentExId", {get:()=>currentExId,  set:v=>{currentExId=v;},  configurable:true});
@@ -2987,7 +3165,89 @@ renderOutline();
 renderAll();
 select(1,0);
 updateStreak();
+
 show("landing");
+
+/* ================= ONBOARDING ================= */
+(function(){
+  let onboardStep=0;
+  const STEPS=[
+    {
+      target:()=>document.getElementById("concept"),
+      text:"<b>Read the task here.</b> It tells you which formula to write, which cell to put it in, and gives you the syntax.",
+      arrow:"arrow-left",pos:"right"
+    },
+    {
+      target:()=>{const t=targetRefs&&targetRefs[0];if(!t)return null;const td=document.querySelector('#grid td[data-ref="'+t+'"]');return td;},
+      text:"<b>Type your formula in the gold cell.</b> Click it, press <b>=</b> to start, then write the formula — arrow keys pick references, just like Excel.",
+      arrow:"arrow-top",pos:"below"
+    },
+    {
+      target:()=>document.getElementById("btnCheck"),
+      text:"<b>Check your answer.</b> You'll get instant feedback — a green pass or a specific reason why it's wrong.",
+      arrow:"arrow-bottom",pos:"above"
+    }
+  ];
+
+  function positionStep(i){
+    const step=STEPS[i];
+    const el=step.target();
+    if(!el)return false;
+    el.scrollIntoView({block:"center",behavior:"instant"});
+    const r=el.getBoundingClientRect();
+    const spot=document.getElementById("onboardSpot");
+    const tip=document.getElementById("onboardTip");
+    const pad=6;
+    spot.style.top=(r.top-pad)+"px";
+    spot.style.left=(r.left-pad)+"px";
+    spot.style.width=(r.width+pad*2)+"px";
+    spot.style.height=(r.height+pad*2)+"px";
+
+    document.getElementById("onboardStep").textContent="Step "+(i+1)+" of "+STEPS.length;
+    document.getElementById("onboardText").innerHTML=step.text;
+    const btn=document.getElementById("onboardNext");
+    btn.textContent=i<STEPS.length-1?"Next":"Got it";
+
+    const vw=window.innerWidth;
+    const vh=window.innerHeight;
+    let pos=step.pos;
+    if(pos==="right"&&(vw-r.right)<340) pos="below";
+    if(pos==="below"&&(vh-r.bottom)<200) pos="above";
+    if(pos==="above"&&r.top<200) pos="below";
+
+    tip.style.top=tip.style.bottom=tip.style.left=tip.style.right="auto";
+    if(pos==="right"){
+      tip.className="onboard-tip arrow-left";
+      tip.style.top=r.top+"px";
+      tip.style.left=(r.right+16)+"px";
+    }else if(pos==="below"){
+      tip.className="onboard-tip arrow-top";
+      tip.style.top=(r.bottom+16)+"px";
+      tip.style.left=Math.max(12,Math.min(r.left,vw-340))+"px";
+    }else if(pos==="above"){
+      tip.className="onboard-tip arrow-bottom";
+      tip.style.bottom=(vh-r.top+16)+"px";
+      tip.style.left=Math.max(12,Math.min(r.left,vw-340))+"px";
+    }
+    return true;
+  }
+
+  window.startOnboard=function(){
+    onboardStep=0;
+    const ov=document.getElementById("onboardOverlay");
+    ov.classList.add("on");
+    positionStep(0);
+  };
+  window.finishOnboard=function(){
+    document.getElementById("onboardOverlay").classList.remove("on");
+    try{localStorage.setItem("tyro_onboard","1");}catch(e){}
+  };
+  document.getElementById("onboardNext").onclick=function(){
+    onboardStep++;
+    if(onboardStep>=STEPS.length){finishOnboard();return;}
+    positionStep(onboardStep);
+  };
+})();
 </script>
 </body>
 </html>

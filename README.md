@@ -8,8 +8,13 @@ No build step, no dependencies, no backend. Every file below opens directly in a
 
 ```
 app/                 THE PRODUCT
-  index.html           the app — engine, grid, 45 exercises, 2 courses
-  test.html            regression harness · 155 tests
+  index.html           the app — grid, 158 exercises, 2 courses, 42 modules
+  engine.js            formula engine (shared by app and demo)
+  test.html            regression harness · 283 tests
+  learn/               interactive formula explainers (47 formulas)
+    index.html           learn page shell (hash routing: learn/#sum)
+    engine.js            explainer engine (animation, transport, TTS)
+    formulas/            47 formula config files (sum.js, vlookup.js, etc.)
 
 demo/                PUBLIC DEMO — standalone, 3 exercises, Tyro.cell branded
   index.html           the demo
@@ -24,7 +29,7 @@ docs/                DOCUMENTATION
   00-overview.md            what this is, where the build actually is
   01-architecture.md        how the app is built
   02-features.md            feature walkthrough
-  03-exercise-catalog.md    all 45 exercises
+  03-exercise-catalog.md    all 158 exercises
   04-roadmap-risks.md       business model, competition, risks
   05-design-language.md     visual identity
   06-gamification.md        engagement mechanics (proposed)
@@ -57,15 +62,15 @@ Both suites should be green: **155/155** and **64/64**.
 
 ## Where things stand
 
-**Working:** hand-written formula engine ([74 functions](docs/09-keyboard-and-functions.md), no libraries) · 45 exercises across 2 courses · full Excel keyboard layer, operable without a mouse · answer checking with specific-cause diagnostics · two green test suites.
+**Working:** hand-written formula engine ([74 functions](docs/09-keyboard-and-functions.md), no libraries) · 158 exercises across 2 courses, 42 modules (Vibranium library integrated) · Tyro.cell design system (monochrome brand, semantic-only color) · full Excel keyboard layer, operable without a mouse · answer checking with specific-cause diagnostics · two green test suites · landing page with content sections, showcase animation, scroll-reveal animations · 47 interactive Learn explainers (iframe modal popup) · result popup with Next/Repeat flow · breadcrumb navigation · mobile responsive layout · 3-step onboarding walkthrough for first-time users.
 
 **Not built:** no backend, no accounts, no persistence (progress is in memory, exported to JSON by hand) · no payments · no streaks, certifications or rankings.
 
-**Next:** [`docs/10-formulas.md`](docs/10-formulas.md) has the content priority — many of the 74 supported functions still have no exercise, and the lookups that interviews actually test have one apiece. 116 new exercises exist in `docs/vibranium/` covering 38 functions, awaiting integration.
+**Next:** [`docs/10-formulas.md`](docs/10-formulas.md) has the content priority — remaining untaught functions are mostly financial (NPV, IRR, PMT) that need engine work before exercises can be written.
 
 ## Naming
 
-The product is **Tyro.cell**. Earlier material used *FinCell* (pitch) and *FormulaLab* (app UI). Only `demo/` carries the current name and mark; `app/` and `pitch/` have not been migrated yet.
+The product is **Tyro.cell**. Earlier material used *FinCell* (pitch) and *FormulaLab* (learn pages). As of 2026-08-08, `app/`, `app/learn/`, and `demo/` all carry the Tyro.cell identity. Only `pitch/` still uses the old FinCell name.
 
 ---
 > **Obsidian graph links**

@@ -16,7 +16,7 @@
 >
 > Type: **Instrument Sans** (UI), **Instrument Serif** (italic accents), **JetBrains Mono** (all data, formulas, cell refs, labels). Background is neutral white, not warm paper — cream fought the stark black mark. Corner radii are tight (5–8px) to sit with a hard-edged square logo. Difficulty badges read as **increasing ink density** (light grey → grey → solid black) rather than three unrelated hues.
 >
-> **Applied so far to `demo/` only.** `app/index.html` still uses the earlier Instrument Sans + `#16A05C` green scheme and the FormulaLab name; `pitch/index.html` still uses the ledger palette and the FinCell name. Neither has been migrated.
+> **Applied to `app/index.html`, `app/learn/`, and `demo/` (2026-08-08).** The full design system — tokens, brand mark, buttons, hero DotField, course cards, exercise rows, workspace grid, and learn explainer pages — has been migrated from FormulaLab green to the Tyro.cell monochrome system. Learn pages use the same SVG brand mark, monochrome play/progress controls, and `target="_top"` on the brand link so clicks navigate the parent frame when embedded. Source: Claude Design handoff ZIP (`tyro-cell-design-system-extracted/`). Only `pitch/index.html` still uses the old FinCell name and ledger palette.
 
 ---
 
@@ -76,7 +76,7 @@ Do not introduce a purple/blue SaaS gradient, a bright cartoon palette, or Excel
 ## Resolved
 - **Terminal (dark) mode** — not in V1. Light only.
 - **Existing brand work** — resolved: the Tyro.cell mark is now the identity. See the block at the top of this file.
-- **Open:** whether to migrate `app/index.html` and `pitch/index.html` onto the Tyro.cell name and palette, or leave them until the product settles.
+- **App migration** — resolved 2026-08-08. `app/index.html` fully migrated to Tyro.cell identity and monochrome design system. `pitch/index.html` not yet migrated.
 
 ---
 > **Obsidian graph links**

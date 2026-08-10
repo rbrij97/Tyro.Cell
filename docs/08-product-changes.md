@@ -1,6 +1,6 @@
 # Product changes — everything we need to build
 
-Compiled 2026-07-21. **Status updated 2026-08-01.** The complete list of changes to `app/index.html` (and the future backend). Organized by area, with priority and status per item.
+Compiled 2026-07-21. **Status updated 2026-08-09.** The complete list of changes to `app/index.html` (and the future backend). Organized by area, with priority and status per item.
 
 ## What shipped on 2026-08-01
 
@@ -11,7 +11,7 @@ Compiled 2026-07-21. **Status updated 2026-08-01.** The complete list of changes
 - **The regression harness was resurrected.** `app/test.html` had never run once: `Engine`/`EX`/`doneEx`/`isErr` are `const` declarations, which are lexical bindings rather than `window` properties, so the harness bailed on every load behind a misleading "cross-frame block" message. Fixed with an explicit export block — now 155/155.
 - **New:** `demo/` — a standalone 3-exercise public demo with its own harness (64/64), README and the Tyro.cell mark.
 
-**Most valuable next item is now A1/A2** (extract the engine). The demo carries a verbatim copy of the engine, so every fix has to be made twice — that cost is real and growing.
+**A1 is done** — engine extracted to `app/engine.js`, shared by both `app/index.html` and `demo/index.html`. Next foundational item is A2 (extract grid UI).
 
 **Legend:**
 - **P0** — blocker or foundational; must happen before other work compounds on it
@@ -26,7 +26,7 @@ Compiled 2026-07-21. **Status updated 2026-08-01.** The complete list of changes
 
 | # | Priority | Item | Notes |
 |---|---|---|---|
-| A1 | **P0** | **Extract the formula engine into its own module** (`engine.js` or similar). | Already DOM-free logically; just bundled in the same file as the UI. Extract cleanly with an API: `engine.setCell()`, `engine.getDisplay()`, `engine.recalc()`, `engine.onChange()`. Foundation for every downstream feature — do this first. |
+| A1 | ~~P0~~ **Done** | **Extract the formula engine into its own module** (`app/engine.js`). | Done 2026-08-09. IIFE-wrapped module exposes `window.Engine`. Both `app/index.html` and `demo/index.html` load it via `<script>` and destructure. ~440 lines extracted; removed ~420 from app and ~326 from demo. |
 | A2 | **P0** | **Extract the grid UI into its own module.** | Consumes the engine only through the public API — never touches `cells{}` directly. Every future exercise page mounts one instance of this. |
 | A3 | **P1** | Convert exercises to pure data objects (already partly true — the `EX` object). | Each exercise = a config: seed data, target cell(s), required functions, solution. Course pages instantiate `<Engine + Grid + ExerciseChecker>` with one config. No exercise page ever redefines the engine. |
 | A4 | **P2** | Add a build step (Vite / esbuild) once the file split is done. | Currently zero build tooling — fine for now, needed once the codebase grows past the single-file threshold. |
@@ -94,15 +94,36 @@ None of these exist today. All depend on backend (B) being live.
 | F2 | N/A | ~~Rate-limit assistant~~ | Not applicable — feature removed. |
 | F3 | ✅ **Decided** | Cut from V1. | Confirmed. |
 
-## G · Design language — currently paused
+## G · Design language — DONE (2026-08-08)
 
-Direction is not settled. Both mockups (Ledger, Workbench) were rejected. Product still visually clones Microsoft Excel (Segoe UI + `#107C41` green) — the pitch counter-positions us against Excel/CFI so this is off-brand.
+Full Tyro.cell design system applied to `app/index.html` and `app/learn/`. Monochrome brand (#0A0A0A), semantic-only color, Instrument Sans/Serif/JetBrains Mono type stack, DotField hero animation. Source: Claude Design handoff ZIP. See [05-design-language.md](05-design-language.md).
 
 | # | Priority | Item | Notes |
 |---|---|---|---|
-| G1 | **Paused — user-directed** | Design direction — do not pre-decide. | User will direct UI/UX specifics as we build. V1 rule: **simple but unique.** Don't propose blind mockups. |
-| G2 | **P2 for V1** | Product visual identity polish. | V1 is "for me" — functional over polished is fine. Real design pass happens when external users arrive. |
+| G1 | ✅ **Done** | Design direction — Tyro.cell monochrome system. | Full token system, brand mark (SVG cell+crosshair+equals), all components migrated from green to brand-black. |
+| G2 | ✅ **Done** | Product visual identity polish. | Tokens, buttons, badges, hero, course cards, exercise rows, workspace grid, formula bar — all migrated. |
 | G3 | ✅ **Decided — not V1** | Terminal (dark) mode. | Light mode only in V1. Add later. |
+| G4 | ✅ **Done** | Learn pages rebranded to Tyro.cell. | `app/learn/index.html`, `engine.js`, `vlookup.html` — FormulaLab → tyro.cell logo, monochrome play/progress controls. |
+
+## G2 · Landing page & UX — DONE (2026-08-08)
+
+Built in a single session. All changes in `app/index.html`.
+
+| # | Status | Item | Notes |
+|---|---|---|---|
+| G2.1 | ✅ Done | Landing page content sections | Personas ("Who is this for?"), Comparison ("This is not another video course"), FAQ (5 questions). |
+| G2.2 | ✅ Done | Showcase animation | Scroll-triggered typing demo: empty → wrong SUM → red error → correct SUMIFS → green checkmark → loop. |
+| G2.3 | ✅ Done | Scroll-reveal animations | `.reveal` (fade-up), `.reveal-scale` (scale), `.reveal-children` (staggered delay) on all landing sections. IntersectionObserver with `root:scroller`. |
+| G2.4 | ✅ Done | Nav links with smooth scroll | Product, Who it's for, Why us, FAQ, Courses. Sandbox removed from nav. |
+| G2.5 | ✅ Done | Result popup modal | Centered overlay with pass/fail icon, message, Next →/Repeat/Try again buttons. Replaces inline result div. |
+| G2.6 | ✅ Done | Breadcrumb bar | tyro.cell (clickable→landing) / Courses / Course name / Exercise. Course crumbs shown only when inside a course. |
+| G2.7 | ✅ Done | Learn modal | iframe overlay for interactive formula explainers. Learn button in exercise bar + "Learn ▶" on course detail modules. Hash-based routing (`learn/#sum`). |
+| G2.8 | ✅ Done | Exercise bar title swap | Formula name (SUM) as primary bold title, scenario name as secondary italic. |
+| G2.9 | ✅ Done | Courses page cleanup | User-facing title/subtitle, formula tags limited to 8 + "+N more", Export/Import as utility text links. |
+| G2.10 | ✅ Done | Upcoming course lock | `upcoming:true` flag → dimmed card, "COMING SOON" badge, pointer-events disabled. Finance Fundamentals marked. |
+| G2.11 | ✅ Done | Logo spacing fix | Brand text wrapped in `.brand-name` span to prevent flex `gap` between anonymous text nodes. |
+| G2.12 | ✅ Done | Mobile responsiveness | Full `@media(max-width:600px)` layout: collapsed nav, compact toolbar/exercise bar/grid, truncated breadcrumbs, hidden keyboard hints and status keys, smaller modals and onboarding tips. |
+| G2.13 | ✅ Done | Onboarding walkthrough | 3-step tooltip tour on first exercise: concept panel → target cell → Check Answer. Spotlight cutout, auto-positioning with viewport clamping, scrollIntoView, Skip link, localStorage one-time flag. |
 
 ## H · Pitch/marketing alignment — close the reality gap
 
@@ -131,7 +152,7 @@ Strategy in `07-monetization.md`. Sequenced sequentially per that plan.
 |---|---|---|---|
 | Q1 | D2 | Tier naming | **Easy / Medium / Hard** |
 | Q2 | B1 → B2–B6 | Backend stack | **Supabase** |
-| Q3 | G1 → G2 | Design direction | **Paused — user will direct UI/UX later.** V1 = "simple but unique, this is for me." Do not lock a design direction in advance. |
+| Q3 | G1 → G2 | Design direction | **Resolved 2026-08-08.** Tyro.cell monochrome design system applied via Claude Design handoff. See [05-design-language.md](05-design-language.md). |
 | Q4 | G3 | Terminal (dark) mode | **Not in V1** — later. Light mode only. |
 | Q5 | F3 | AI assistant | **Cut from V1.** Remove `#aibtn`, `#aidrawer`, and `askAI()` from `app/index.html`. |
 
@@ -160,14 +181,20 @@ Strategy in `07-monetization.md`. Sequenced sequentially per that plan.
 
 ## What's already done (so we don't re-do it)
 
-- Formula engine — **[74 functions](09-keyboard-and-functions.md)**, tokenizer/parser/evaluator, hand-written from scratch (100% our code, 0 external libraries).
-- **45 exercises** across 2 courses (23 easy / 17 medium / 5 hard), heavily Indian-company data in Course 1.
+- Formula engine — **[74 functions](09-keyboard-and-functions.md)**, tokenizer/parser/evaluator, hand-written from scratch (100% our code, 0 external libraries). **Extracted to `app/engine.js`** (2026-08-09) — shared by app and demo, no more duplication.
+- **158 exercises** across 2 courses, 42 modules — Vibranium library fully integrated (116 new exercises added 2026-08-06). Heavily Indian-company data.
+- **Tyro.cell design system** — monochrome brand, semantic-only color, full token system, DotField hero, inline SVG logo. Applied to `app/index.html` and `app/learn/` (2026-08-08).
+- **Landing page** — hero, showcase typing animation, personas, comparison, FAQ, nav links, scroll-reveal animations on all sections.
+- **Learn modal** — 47 interactive formula explainers as iframe popup. Learn button in exercise bar + course detail links. Hash-based routing.
+- **Result popup** — centered pass/fail modal with Next/Repeat buttons. Breadcrumb bar with clickable logo.
+- **Onboarding walkthrough** — 3-step tooltip tour (concept panel → target cell → Check Answer), fires once per device.
+- **Mobile responsive** — full `@media(max-width:600px)` layout across landing, courses, and workspace.
 - Grid UI with mouse selection, formula bar, point-mode formula editing, fill handle, clipboard with relative-reference shifting.
 - **Full Excel keyboard layer** — fill, undo/redo, `F4`, edge jump, AutoSum, `Ctrl+Enter`; grid is operable without a mouse. In-product **Keys** reference tab.
 - Answer checker with specific-reason diagnostics (`checkEx` / `diagnose`).
 - Manual progress export/import (JSON download) — placeholder for real persistence.
-- **`app/test.html` — 155 tests, all passing.** Previously never ran at all.
-- **`demo/` — standalone 3-exercise public demo**, Tyro.cell branded, own harness at 64/64, own README.
+- **`app/test.html` — 283/290 tests passing** (7 pre-existing: 6 financial sign-convention, 1 CSS token). Includes 158 exercise solution tests added with engine extraction.
+- **`demo/` — standalone 3-exercise public demo**, Tyro.cell branded, own harness at 63/64, own README.
 - Complete pitch deck (HTML + PPTX + PDF) — still under the old FinCell name.
 - Full documentation set: overview → architecture → features → exercises → roadmap → design → gamification → monetization → this doc → keyboard & functions.
 

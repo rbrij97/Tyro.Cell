@@ -492,7 +492,7 @@ function runExerciseSolutionTests(win){
       }
       // Run the checker
       win.checkEx(ex);
-      const rb = iframe.contentDocument.getElementById("resBox");
+      const rb = iframe.contentDocument.getElementById("resultCard");
       const ok = rb && rb.classList.contains("ok");
       subs.push({
         name: id + " (" + ex.lvl + ") — " + ex.title,

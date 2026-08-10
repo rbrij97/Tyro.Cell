@@ -1,26 +1,56 @@
 # Architecture — `app/index.html`
 
-Single-file HTML/CSS/vanilla-JS application (no build step, no dependencies). ~1,990 lines. Everything — engine, UI, content — lives in one file.
+HTML/CSS/vanilla-JS application (no build step, no dependencies). Core app — engine, UI, content — split across two files. Learn explainers are separate files loaded via iframe.
 
 ## High-level structure
 
 ```
+app/
+├── index.html          The product (SPA: CSS, HTML views, UI/exercise/router JS)
+├── engine.js           Formula engine (shared by app and demo)
+├── test.html           Regression harness (290 tests)
+└── learn/
+    ├── index.html      Learn page shell (loads formula configs via hash routing)
+    ├── engine.js       Explainer Engine (animation, transport, TTS)
+    ├── vlookup.html    Standalone VLOOKUP explainer (legacy)
+    └── formulas/       47 formula config files (sum.js, vlookup.js, etc.)
+```
+
+### `app/engine.js` — formula engine module
+```
+(function(){                IIFE wrapper — keeps const/let declarations out of global scope
+  cells = {}                Sparse cell storage (ref → {raw, b, i, u})
+  tokenize / parse          Tokenizer + recursive-descent parser
+  evalNode / cellValue      AST evaluator + lazy cell resolution with cycle detection
+  FUNCS (74)                All spreadsheet functions (math, text, lookup, financial, date)
+  shiftFormula              Relative-reference shifting for copy/fill/paste
+  displayOf / fmtNum        Display helpers
+  window.Engine = {...}     Public API — consumed by index.html and demo/index.html
+})()
+```
+
+Both `app/index.html` and `demo/index.html` load `engine.js` via `<script>` and destructure from `window.Engine`. The demo calls `Engine.init(8, 26)` to configure its smaller grid; the app uses the default 16×60.
+
+### `app/index.html` views
+```
 <style>            All CSS, scoped by view (landing/courses/course-detail/workspace)
 <body>
-  #view-landing     Marketing/landing page
+  #view-landing     Marketing/landing page (hero, showcase, personas, comparison, FAQ)
   #view-courses     Course catalog (cards, progress bars, export/import)
   #view-course      Course detail (modules -> exercises list)
   #view-app         The spreadsheet workspace
-<script>            Engine, grid UI, keyboard layer, exercise data, router, test hooks
+  .learn-overlay    Learn modal (iframe to app/learn/#formula)
+  .result-overlay   Result popup (pass/fail with Next/Repeat)
+<script>            Grid UI, keyboard layer, exercise data, router, test hooks
 ```
 
 The floating AI assistant (`#aibtn` / `#aidrawer` / `askAI()`) **has been removed** — it required an API-proxied environment and never worked standalone.
 
-Only one `.view` has class `on` at a time; `show(view)` toggles between them — this is a simple client-side SPA router with no history/URL state.
+Only one `.view` has class `on` at a time; `show(view)` toggles between them — this is a simple client-side SPA router with no history/URL state. Two overlay modals (learn, result) float above all views via `position:fixed` with `z-index` stacking.
 
-## Formula engine (the technical core)
+## Formula engine (`app/engine.js`)
 
-A hand-written spreadsheet formula interpreter, in three stages:
+A hand-written spreadsheet formula interpreter in `app/engine.js`, in three stages:
 
 1. **Tokenizer** (`tokenize`) — turns a formula string into tokens: numbers, strings, booleans, cell refs (`A1`), functions (`SUM(`), operators, and inline error literals (`#REF!`).
 2. **Parser** (`parse`) — recursive-descent parser producing an AST. Precedence climbs through: primary → postfix (`%`) → unary (`-`/`+`) → power (`^`) → mul/div → add/sub → concat (`&`) → comparison (`= < > <= >= <>`).
@@ -43,10 +73,19 @@ Math (`SUM, AVERAGE, MIN, MAX, MEDIAN, PRODUCT, ROUND(UP/DOWN), ABS, SQRT, POWER
 - **Clipboard** (`copySelection`, `pasteClip`) — `Ctrl+C`/`Ctrl+V` copy a rectangular block including formulas (shifted) and formatting.
 - **Diagnostics** (`diagnose`) — heuristic feedback generator for wrong answers: detects likely typos in function names (Levenshtein distance ≤2 suggests the closest real function), off-by-one range boundaries, hard-coded literals instead of formulas, missing quotes around criteria operators, common error codes (`#DIV/0!`, `#N/A`, `#REF!`) with plain-English explanations.
 
+## Learn explainer system (`app/learn/`)
+
+Interactive formula explainers, loaded as an iframe modal inside the main app.
+
+- **Routing**: hash-based (`learn/#sum`). The learn shell (`learn/index.html`) reads `location.hash`, loads `formulas/{fn}.js`, and passes the config to `ExplainerEngine.init()`. Hash routing avoids query-param stripping by Vite's clean-URL redirects.
+- **Engine** (`learn/engine.js`): a data-driven animation player. Each formula config (`FORMULA_CONFIG`) defines a data table, column headers, formula text with syntax-colorable tokens, and a step array. Steps can highlight cells, move a cursor, type formula text character-by-character, float values, and display subtitles. Transport: play/pause, speed (1×/2×/3×), step scrubbing via progress bar.
+- **Integration**: `openLearn(fn, title)` in the main app constructs the iframe URL from `location.pathname` (resolving the base path for both `/app` and `/app/index.html` cases), sets the iframe src, and shows the `.learn-overlay`. `closeLearn()` hides the overlay and sets the iframe to `about:blank`. The `LEARN_MAP` object maps module titles to formula function names (or `null` for modules without explainers).
+- **47 formula configs** in `learn/formulas/`: sum, average, min, max, if, vlookup, xlookup, countif, countifs, sumif, averageif, averageifs, trim, left, right, mid, len, find, substitute, abs, and, or, hlookup, index, round, roundup, rounddown, concat, count, counta, upper, lower, proper, textjoin, power, today, days, date, mod, int, sqrt, product, median, not, isnumber, isblank, countblank, iferror.
+
 ## Exercise / course system
 
 - `EX` — a flat object of exercise definitions keyed by id (e.g. `sum`, `vlookup`, `grossprofit`). Each has: level (`basic|core|adv`), title, concept HTML, task description, seed `data` (cell → value), an answer spec (`target` single cell, `targetRange` for fill-down exercises, or `pick` for classification/dropdown exercises), required tokens/refs, `solution` formula, and a `hint`.
-- `COURSES` — ordered list of `{id, title, level, hours, prereq, desc, modules: [{title, ex: [ids]}]}`. Currently two courses: **Excel Formula Fundamentals** (39 exercises, 14 modules — one module per formula) and **Financial Statements Fundamentals** (6 exercises, 2 modules, using real Tesla FY2023 figures). Full list: [03-exercise-catalog.md](03-exercise-catalog.md).
+- `COURSES` — ordered list of `{id, title, level, hours, prereq, desc, upcoming, modules: [{title, ex: [ids]}]}`. `upcoming:true` marks courses as locked/coming-soon in the UI. Currently two courses: **Excel Formula Fundamentals** (152 exercises, 40 modules) and **Financial Statements Fundamentals** (6 exercises, 2 modules, upcoming/locked). Full list: [03-exercise-catalog.md](03-exercise-catalog.md).
 - `doneEx` — a `Set` of completed exercise ids, held in memory only (no `localStorage`/backend) — hence the explicit **Export/Import progress** buttons that serialize `doneEx` to/from a downloaded JSON file.
 - **Checker** (`checkEx`) — dispatches on answer type:
   - `pick` exercises: every dropdown must match the expected answer.
@@ -69,19 +108,33 @@ Top-level `const`/`let` create global **lexical bindings**, which are *not* prop
 
 A `TEST HOOKS` block near the end of the script exports them explicitly. Values that get **reassigned** (`cells`, `currentEx`, `currentExId`, `currentCourse`, `targetRefs`) are exported as accessors rather than copies, so the harness never reads a stale reference. Anything added later that the harness needs must be exported here too.
 
+## Landing page & scroll animations
+
+- **Showcase animation** (`#s-showcase`): IntersectionObserver-triggered. A multi-phase state machine: empty → typing wrong formula (`=SUM(C2:C9)`) → red error flash → clear → typing correct formula (`=SUMIFS(C2:C9,B2:B9,"West")`) → green checkmark → hold → loop. Uses character-by-character `typeText()` with a blinking CSS cursor. Resets and restarts on each loop.
+- **Scroll reveal** (`.reveal`, `.reveal-scale`, `.reveal-children`): an IntersectionObserver with `root:` set to the `.pagescroll` container (not the viewport, since sections scroll inside a container). At `threshold:0.15`, adds `.visible` class which triggers CSS transitions (translateY, scale, or staggered-delay children).
+- **Nav links** (`.nav-scroll`): smooth-scroll to section IDs via `scrollIntoView({behavior:'smooth'})` on the `.pagescroll` container.
+
+## Onboarding walkthrough
+
+A 3-step tooltip tour that fires on first exercise open (guarded by `localStorage` key `tyro_onboard`). Triggered from `openEx()` via `setTimeout(startOnboard, 600)`.
+
+- **STEPS array**: each step defines a `target()` function (returns the DOM element to spotlight), instructional `text`, and a preferred `pos` ("right"/"below"/"above").
+- **`positionStep(i)`**: scrolls the target into view (`scrollIntoView({block:"center"})`), measures its `getBoundingClientRect()`, positions a spotlight cutout (`box-shadow: 0 0 0 9999px rgba(0,0,0,.45)`) over it, and places the tooltip. Auto-flips position when there isn't enough room: right→below, below→above, above→below. Clamps horizontal position to keep the tooltip within the viewport.
+- **`finishOnboard()`**: hides the overlay and sets `localStorage.setItem("tyro_onboard","1")`. Called by both the "Skip" link and the final "Got it" button.
+
 ## Notable design choices / constraints
 
 - **No backend, no persistence layer** — everything is client-side and in-memory; progress survives only via manual export/import. A real "Phase 2" (per the pitch roadmap) needs accounts + server-side progress storage.
-- **No build tooling** — plain HTML/CSS/JS in one file, easy to iterate on with Claude Code / any editor, but will need splitting into modules once it grows further.
-- **Content and engine are interleaved** in the same script block — exercise data (`EX`, `COURSES`) is hard-coded JS, not loaded from a CMS/database.
-- **The engine is duplicated.** `demo/index.html` carries its own verbatim copy, because the demo has to stay self-contained. Any engine fix has to be applied in both files. This is the strongest argument for the `engine.js` extraction (A1/A2 in [08-product-changes.md](08-product-changes.md)) and the cost will grow.
+- **No build tooling** — plain HTML/CSS/JS, easy to iterate on with Claude Code / any editor. The engine is extracted to `engine.js`; further module splitting (exercise data, UI) is possible but not yet needed.
+- **Content and UI are interleaved** in `index.html` — exercise data (`EX`, `COURSES`) is hard-coded JS, not loaded from a CMS/database.
+- **Shared engine** — `app/engine.js` is loaded by both `app/index.html` and `demo/index.html`. A dynamic `<base>` tag in `index.html` ensures the relative script `src` resolves correctly even under `serve`'s clean-URL redirects.
 
 ## Testing
 
 | Harness | Covers | Status |
 |---|---|---|
-| [`app/test.html`](../app/test.html) | The main app — engine arithmetic, all 74 functions (including financial: PMT/PV/FV/NPV/IRR/XIRR etc.), error codes, `shiftFormula`, every exercise solution against its own checker, DOM structure, state transitions | **155/155** |
-| [`demo/demo-test.html`](../demo/demo-test.html) | The demo — solutions, published expected values, seeded data problems, exercise gating, each diagnostic rule, instrumentation privacy | **64/64** |
+| [`app/test.html`](../app/test.html) | The main app — engine arithmetic, all 74 functions (including financial: PMT/PV/FV/NPV/IRR/XIRR etc.), error codes, `shiftFormula`, every exercise solution against its own checker, DOM structure, state transitions | **283/290** |
+| [`demo/demo-test.html`](../demo/demo-test.html) | The demo — solutions, published expected values, seeded data problems, exercise gating, each diagnostic rule, instrumentation privacy | **63/64** |
 
 Both load the real page in a hidden iframe rather than a copy, so they test what ships. Both need the folder served over HTTP (`npx serve`) — browsers block cross-frame access on `file://`.
 

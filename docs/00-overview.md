@@ -1,6 +1,6 @@
 # Tyro.cell — Overview
 
-> **Naming.** The product is **Tyro.cell**. Earlier material used *FinCell* (pitch deck) and *FormulaLab* (app UI); both names still appear in `pitch/index.html` and `app/index.html` and have not been renamed yet. Only `demo/` carries the current identity.
+> **Naming.** The product is **Tyro.cell**. Earlier material used *FinCell* (pitch deck) and *FormulaLab* (learn pages). As of 2026-08-08, `app/index.html`, `app/learn/`, and `demo/` all carry the Tyro.cell identity (logo, name, favicon, design tokens). Only `pitch/index.html` still uses the old FinCell name.
 
 ## What this is
 
@@ -10,7 +10,8 @@ A browser-based platform where finance and commerce students in India learn Exce
 
 | File | Role | State |
 |---|---|---|
-| [`app/index.html`](../app/index.html) | **The product.** Single-file app: engine, grid, 45 exercises, 2 courses. | Active build target |
+| [`app/index.html`](../app/index.html) | **The product.** Single-file app: engine, grid, 158 exercises, 2 courses, 42 modules. Landing page with content sections, scroll animations, showcase. Tyro.cell branded. | Active build target |
+| [`app/learn/`](../app/learn/) | **Learn modal content.** Interactive formula explainers (47 formulas), loaded as iframe inside the main app. Tyro.cell branded. | Active |
 | [`app/test.html`](../app/test.html) | Regression harness for the product. 155 tests. | 155/155 passing |
 | [`demo/index.html`](../demo/index.html) | Standalone 3-exercise public demo, Tyro.cell branded. | Complete, frozen |
 | [`demo/demo-test.html`](../demo/demo-test.html) | Harness for the demo. 64 tests. | 64/64 passing |
@@ -32,7 +33,11 @@ Reps, not replays. A live in-browser grid where the user opens a real spreadshee
 
 **Working today:**
 - Hand-written formula engine — **[74 functions](09-keyboard-and-functions.md)**, tokeniser → parser → evaluator, no libraries.
-- **45 exercises** across 2 courses (23 easy / 17 medium / 5 hard).
+- **158 exercises** across 2 courses, 42 modules — lookup-heavy, Indian finance contexts throughout.
+- **Tyro.cell design system** — monochrome brand (#0A0A0A), semantic-only color, Instrument Sans/Serif/JetBrains Mono type stack, DotField hero animation. Applied to main app and learn pages.
+- **Landing page** — hero, showcase animation (scroll-triggered typing demo), persona section, comparison section, real-data callouts, FAQ, nav links with smooth scroll, scroll-reveal animations on all sections.
+- **Learn modal** — 47 interactive formula explainers open as iframe popups inside the exercise workspace. Animated step-by-step formula walkthroughs with data tables, cell highlighting, and subtitle narration.
+- **Result popup** — centered modal with pass/fail feedback, Next and Repeat buttons for exercise flow.
 - Grid with selection, formula bar, point-mode reference picking, fill handle, clipboard with relative-reference shifting.
 - **Excel keyboard layer** — fill, undo/redo, `F4`, edge jump, AutoSum. See [09-keyboard-and-functions.md](09-keyboard-and-functions.md).
 - Answer checker with specific-cause diagnostics.
@@ -64,7 +69,7 @@ Lean, validate-first, in three phases — see [04-roadmap-risks.md](04-roadmap-r
 ## See also
 - [01-architecture.md](01-architecture.md) — how it's built
 - [02-features.md](02-features.md) — feature walkthrough
-- [03-exercise-catalog.md](03-exercise-catalog.md) — all 45 exercises
+- [03-exercise-catalog.md](03-exercise-catalog.md) — all exercises
 - [04-roadmap-risks.md](04-roadmap-risks.md) — business model, competition, risks
 - [05-design-language.md](05-design-language.md) — visual identity
 - [06-gamification.md](06-gamification.md) — engagement mechanics (proposed)

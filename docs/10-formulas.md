@@ -13,12 +13,12 @@ Counts read directly off the running app on 2026-08-01.
 | | |
 |---|---|
 | Functions the engine supports | **74** (was 60; +14 financial functions added 2026-08-05) |
-| Functions with at least one exercise (in app) | **16** |
-| Functions with **no exercise in the app** | **58** |
-| Exercises in app | 45 |
-| Exercises staged in `docs/vibranium/` (not yet integrated) | **116** covering 38 functions |
+| Functions with at least one exercise (in app) | **~50** (was 16; Vibranium integration added 38 function families) |
+| Functions with **no exercise in the app** | **~24** (mostly financial functions needing engine work) |
+| Exercises in app | **158** (was 45; +116 from Vibranium integration 2026-08-06) |
+| Exercises source archive in `docs/vibranium/` | 116 — now integrated, kept as reference |
 
-**78% of the engine is untaught in the app.** The engine is far ahead of the content — but 116 new exercises exist in `docs/vibranium/` ready to integrate. Writing exercises for the ones that already work is the bottleneck; the Vibranium library addresses this for 38 of the 58 untaught functions.
+**The content gap has narrowed dramatically.** The Vibranium library integration brought 116 exercises covering 38 function families into the app. The remaining untaught functions are mostly financial (NPV, IRR, PMT, XNPV, XIRR, etc.) that need engine work before exercises can be written.
 
 ---
 

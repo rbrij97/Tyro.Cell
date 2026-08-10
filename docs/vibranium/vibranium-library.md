@@ -1,8 +1,6 @@
 # Vibranium — Formula Drill Library
 
-**116 exercises across 13 files**, covering **38 functions**. All use Indian finance contexts. Not yet integrated into the app — definitions are in the `EX.xxx` format used by `app/index.html`.
-
-To integrate: copy EX definitions into the `EX={}` block in `app/index.html` and add exercise IDs to the `COURSES` modules array.
+**116 exercises across 13 files**, covering **38 functions**. All use Indian finance contexts. **Fully integrated into `app/index.html` (2026-08-06)** — definitions copied into the `EX={}` block, exercise IDs added to the `COURSES` modules array. These files remain as the source archive.
 
 ## Tiers
 

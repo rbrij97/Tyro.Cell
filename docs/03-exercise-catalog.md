@@ -1,16 +1,15 @@
 # Exercise catalog
 
-**45 exercises across 2 courses**, defined in the `EX` and `COURSES` objects in `app/index.html`. Counts verified against the running app.
+**158 exercises across 2 courses (42 modules)**, defined in the `EX` and `COURSES` objects in `app/index.html`. Counts verified against the running app (2026-08-08).
 
-By difficulty: **23 easy · 17 medium · 5 hard**
-By answer type: **42 single-target · 2 fill-down range · 1 picklist**
+The original 45 exercises were expanded by the Vibranium library integration (116 exercises across 13 files from `docs/vibranium/`, integrated 2026-08-06). Course 1 grew from 14 modules to 40 modules.
 
-Every exercise's stated solution is asserted to pass its own checker by `app/test.html` (45/45).
+Every exercise's stated solution is asserted to pass its own checker by `app/test.html`.
 
 ---
 
 ## Course 1 — Excel Formula Fundamentals
-*Beginner / Intermediate · ~5 hours · No prerequisite · 39 exercises across 14 modules*
+*Beginner / Intermediate · ~5 hours · No prerequisite · 152 exercises across 40 modules*
 
 Organised **one module per formula**, so a learner drills a single function across many realistic contexts rather than meeting it once. `SUM`, `AVERAGE` and `MIN/MAX` have deep practice packs; the rest have 1–2 and are the obvious place for the next content push.
 
@@ -108,11 +107,11 @@ Full detail in [`demo/README.md`](../demo/README.md).
 
 ---
 
-## Staged exercises — `docs/vibranium/` (not yet in the app)
+## Vibranium exercises — `docs/vibranium/` (INTEGRATED 2026-08-06)
 
-**116 exercises across 13 files**, covering **38 functions**, all in the `EX.xxx` format used by `app/index.html`. When ready, copy the definitions into the `EX={}` block and add exercise IDs to the `COURSES` modules array. All exercises use Indian finance contexts (ticker masters, comps tables, tax slabs, FD maturity, receivable aging, etc.).
+**116 exercises across 13 files**, covering **38 functions**. All have been integrated into `app/index.html` — the definitions were copied into the `EX={}` block and exercise IDs added to the `COURSES` modules array. The files in `docs/vibranium/` remain as the source archive. All exercises use Indian finance contexts (ticker masters, comps tables, tax slabs, FD maturity, receivable aging, etc.).
 
-By difficulty: **35 easy · 39 medium · 42 hard** — significantly harder skew than the current app exercises (23E/17M/5H).
+By difficulty: **35 easy · 39 medium · 42 hard** — significantly harder skew than the original 45 app exercises (23E/17M/5H). Now integrated, these rebalance the overall difficulty curve.
 
 ### Tier 1 — Lookups & multi-criteria aggregation (28 exercises)
 
@@ -164,10 +163,10 @@ Financial functions (NPV, IRR, XNPV, XIRR, PMT, PV, FV, NPER, RATE, IPMT, PPMT, 
 
 Honest assessment of what's thin:
 
-1. **The long tail is one-deep.** `SUM`/`AVERAGE`/`MIN-MAX` have 8–10 exercises each; `VLOOKUP`, `XLOOKUP`, `INDEX+MATCH`, `COUNTIF`, `ROUND` and dates have exactly one. Lookups are the most interview-relevant family and the least practised.
-2. **Only 5 hard exercises** out of 45, all in Course 1. There is no genuinely difficult financial-statement work.
-3. **Course 2 is still Tesla-only.** The India wedge is the core positioning claim and the financial-statements course contradicts it. Course 1 is now heavily Indian (TCS, Reliance, HDFC, Infosys, Zomato, SBI, ICICI, Nifty, SENSEX) — Course 2 has not caught up.
-4. **Financial functions now exist** (NPV, IRR, XNPV, XIRR, PMT, PV, FV, NPER, RATE, IPMT, PPMT, EOMONTH, SLN, DB) — DCF and loan-schedule exercises can now be written. No financial exercises exist in the app yet, but 116 new exercises covering 38 functions are staged in `docs/vibranium/`.
+1. ~~**The long tail is one-deep.**~~ **Largely addressed.** After Vibranium integration, VLOOKUP/XLOOKUP/INDEX+MATCH each have 7 exercises, COUNTIF/SUMIF/IF have 3–6 each. The long tail now has real depth.
+2. ~~**Only 5 hard exercises.**~~ **Addressed.** Vibranium added 42 hard exercises across lookups, text, logic, and math. The difficulty curve is now balanced.
+3. **Course 2 is still Tesla-only.** The India wedge is the core positioning claim and the financial-statements course contradicts it. Course 1 is now heavily Indian — Course 2 has not caught up.
+4. **Financial functions now exist in the engine** (NPV, IRR, XNPV, XIRR, PMT, PV, FV, NPER, RATE, IPMT, PPMT, EOMONTH, SLN, DB) — but no financial exercises exist in the app yet. DCF and loan-schedule exercises can now be written.
 5. **No FP&A / analyst-craft course** — named in the pitch as a differentiator, not yet built.
 6. **Only 2 fill-down and 1 picklist exercise.** Now that `Ctrl+D`/`Ctrl+R`/`Ctrl+Enter` exist, fill-down exercises are much cheaper for a learner to complete and are under-used.
 
