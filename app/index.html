@@ -97,6 +97,32 @@ button{font-family:inherit;color:inherit}
 .nav-auth{display:flex;align-items:center;gap:10px}
 .nav-login{font-size:13.5px;color:var(--text-2)!important;cursor:pointer;font-weight:500}
 .nav-login:hover{color:var(--ink)!important}
+.nav-user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}
+.nav-user .user-email{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-logout{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.nav-logout:hover{color:var(--ink)}
+
+/* ---------- auth modal ---------- */
+.auth-overlay{position:fixed;inset:0;z-index:900;background:rgba(10,10,10,.45);display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.auth-overlay.on{display:flex}
+.auth-card{background:var(--paper);border-radius:var(--r-lg);padding:36px 32px 28px;width:100%;max-width:380px;box-shadow:0 24px 64px -16px rgba(10,10,10,.18);position:relative}
+.auth-card h2{font-size:22px;font-weight:600;letter-spacing:-.3px;margin:0 0 6px}
+.auth-card .auth-sub{font-size:14px;color:var(--text-3);margin:0 0 24px}
+.auth-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px 8px;line-height:1}
+.auth-close:hover{color:var(--ink)}
+.auth-field{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
+.auth-field label{font-size:12px;font-weight:500;color:var(--text-2);letter-spacing:.02em}
+.auth-field input{border:1px solid var(--line-4);border-radius:var(--r-sm);padding:9px 12px;font:400 14px var(--sans);color:var(--ink);outline:none;transition:border-color .15s}
+.auth-field input:focus{border-color:var(--brand)}
+.auth-submit{width:100%;padding:11px;border:none;border-radius:var(--r-pill);background:var(--brand);color:#fff;font:600 14px var(--sans);cursor:pointer;transition:background .15s}
+.auth-submit:hover{background:var(--brand-soft)}
+.auth-submit:disabled{opacity:.4;cursor:default}
+.auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--text-3)}
+.auth-toggle a{color:var(--ink);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.auth-msg{font-size:13px;padding:8px 12px;border-radius:var(--r-sm);margin-bottom:14px;display:none}
+.auth-msg.err{display:block;background:var(--red-tint);color:var(--red);border:1px solid var(--red-line)}
+.auth-msg.ok{display:block;background:var(--ok-tint);color:var(--ok);border:1px solid var(--ok-line)}
+.auth-saving{font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px}
 
 /* ---------- product showcase ---------- */
 .showcase{margin-top:48px;display:flex;justify-content:center}
@@ -536,10 +562,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
       <a href="#s-faq" class="nav-scroll">FAQ</a>
       <a data-go="courses">Courses</a>
     </nav>
-    <div class="nav-auth">
-      <a class="nav-login" href="#" onclick="event.preventDefault();alert('Log in is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Log in</a>
-      <button class="btn primary" onclick="alert('Sign up is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Sign up</button>
-    </div>
+    <div class="nav-auth" data-auth-slot></div>
   </div>
   <div class="pagescroll" id="landing-scroll">
     <div class="pagewrap">
@@ -710,10 +733,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
     <nav>
       <a data-go="courses">Courses</a>
     </nav>
-    <div class="nav-auth">
-      <a class="nav-login" href="#" onclick="event.preventDefault();alert('Log in is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Log in</a>
-      <button class="btn primary" onclick="alert('Sign up is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Sign up</button>
-    </div>
+    <div class="nav-auth" data-auth-slot></div>
   </div>
   <div class="pagescroll">
     <div class="pagewrap">
@@ -739,10 +759,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
     <nav>
       <a data-go="courses">Courses</a>
     </nav>
-    <div class="nav-auth">
-      <a class="nav-login" href="#" onclick="event.preventDefault();alert('Log in is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Log in</a>
-      <button class="btn primary" onclick="alert('Sign up is coming soon — we\'re adding Google sign-in so your progress saves automatically.')">Sign up</button>
-    </div>
+    <div class="nav-auth" data-auth-slot></div>
   </div>
   <div class="pagescroll"><div class="pagewrap" id="coursedetail"></div></div>
 </div>
@@ -844,6 +861,29 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
   </div>
 </div>
 
+<!-- ============ AUTH MODAL ============ -->
+<div class="auth-overlay" id="authOverlay" onclick="if(event.target===this)closeAuth()">
+  <div class="auth-card">
+    <button class="auth-close" onclick="closeAuth()">&times;</button>
+    <h2 id="authTitle">Sign up</h2>
+    <p class="auth-sub" id="authSub">Save your progress across devices.</p>
+    <div class="auth-msg" id="authMsg"></div>
+    <form id="authForm" onsubmit="return handleAuth(event)">
+      <div class="auth-field">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" required placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label for="authPass">Password</label>
+        <input type="password" id="authPass" required placeholder="Min 6 characters" minlength="6" autocomplete="current-password">
+      </div>
+      <button type="submit" class="auth-submit" id="authBtn">Sign up</button>
+    </form>
+    <div class="auth-toggle" id="authToggle">Already have an account? <a onclick="toggleAuthMode()">Log in</a></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>document.write('<scr'+'ipt src="'+location.pathname.replace(/\/[^\/]*\.[^\/]*$/,'/').replace(/\/?$/,'/')+'engine.js"><\/scr'+'ipt>')</script>
 <script>
 "use strict";
@@ -2980,6 +3020,7 @@ function checkEx(ex){
 }
 function pass(ex,msg){
   doneEx.add(currentExId);
+  saveProgress();
   showResult("ok","✓ Correct — "+msg);
   updateStreak(); renderOutline(); renderAll();
 }
@@ -3123,6 +3164,145 @@ const KEYDOCS=[
         '<kbd>Ctrl+Tab</kbd> <kbd>Ctrl+1-9</kbd> <kbd>F11</kbd> <kbd>F12</kbd> are reserved by the browser itself and '+
         'cannot be intercepted by any web page. Everything listed above is the real Excel binding.</div>';
   el.innerHTML=html;
+})();
+
+/* ================= SUPABASE AUTH & PROGRESS ================= */
+const SUPABASE_URL = "https://qkobiblthovnmhqrwaqk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_fsA8XyDcTDFt4t66kGNaMw_QYxT0UAm";
+let _sb = null;
+let _sbUser = null;
+let _authMode = "signup";
+
+function sbReady(){ return typeof supabase !== "undefined" && supabase.createClient; }
+
+function getSb(){
+  if(_sb) return _sb;
+  if(!sbReady()) return null;
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  return _sb;
+}
+
+function openAuth(mode){
+  _authMode = mode || "signup";
+  const isLogin = _authMode === "login";
+  document.getElementById("authTitle").textContent = isLogin ? "Log in" : "Sign up";
+  document.getElementById("authSub").textContent = isLogin ? "Welcome back." : "Save your progress across devices.";
+  document.getElementById("authBtn").textContent = isLogin ? "Log in" : "Sign up";
+  document.getElementById("authToggle").innerHTML = isLogin
+    ? 'Don\'t have an account? <a onclick="toggleAuthMode()">Sign up</a>'
+    : 'Already have an account? <a onclick="toggleAuthMode()">Log in</a>';
+  document.getElementById("authMsg").className = "auth-msg";
+  document.getElementById("authMsg").textContent = "";
+  document.getElementById("authForm").reset();
+  document.getElementById("authOverlay").classList.add("on");
+}
+function closeAuth(){ document.getElementById("authOverlay").classList.remove("on"); }
+function toggleAuthMode(){ openAuth(_authMode === "login" ? "signup" : "login"); }
+
+async function handleAuth(e){
+  e.preventDefault();
+  const sb = getSb();
+  if(!sb){ showAuthMsg("err","Service unavailable. Try again later."); return false; }
+  const email = document.getElementById("authEmail").value.trim();
+  const pass  = document.getElementById("authPass").value;
+  const btn   = document.getElementById("authBtn");
+  btn.disabled = true;
+  btn.textContent = "Please wait…";
+  try {
+    let res;
+    if(_authMode === "signup"){
+      res = await sb.auth.signUp({ email, password: pass });
+    } else {
+      res = await sb.auth.signInWithPassword({ email, password: pass });
+    }
+    if(res.error) throw res.error;
+    if(_authMode === "signup" && res.data?.user && !res.data.session){
+      showAuthMsg("ok","Check your email for a confirmation link, then log in.");
+      btn.disabled = false;
+      btn.textContent = "Sign up";
+      return false;
+    }
+    _sbUser = res.data.user;
+    closeAuth();
+    renderAuthUI();
+    await loadProgress();
+  } catch(err){
+    showAuthMsg("err", err.message || "Something went wrong.");
+  }
+  btn.disabled = false;
+  btn.textContent = _authMode === "login" ? "Log in" : "Sign up";
+  return false;
+}
+
+function showAuthMsg(type, msg){
+  const el = document.getElementById("authMsg");
+  el.className = "auth-msg " + type;
+  el.textContent = msg;
+}
+
+async function handleLogout(){
+  const sb = getSb();
+  if(sb) await sb.auth.signOut();
+  _sbUser = null;
+  renderAuthUI();
+}
+
+function renderAuthUI(){
+  document.querySelectorAll("[data-auth-slot]").forEach(slot => {
+    if(_sbUser){
+      const em = _sbUser.email || "";
+      slot.innerHTML =
+        '<span class="nav-user">'+
+          '<span class="user-email" title="'+em+'">'+em.split("@")[0]+'</span>'+
+          '<a class="nav-logout" onclick="handleLogout()">Log out</a>'+
+        '</span>';
+    } else {
+      slot.innerHTML =
+        '<a class="nav-login" href="#" onclick="event.preventDefault();openAuth(\'login\')">Log in</a>'+
+        '<button class="btn primary" onclick="openAuth(\'signup\')">Sign up</button>';
+    }
+  });
+}
+
+async function saveProgress(){
+  const sb = getSb();
+  if(!sb || !_sbUser) return;
+  try {
+    await sb.from("progress").upsert({
+      user_id: _sbUser.id,
+      done: [...doneEx],
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+  } catch(e){}
+}
+
+async function loadProgress(){
+  const sb = getSb();
+  if(!sb || !_sbUser) return;
+  try {
+    const { data } = await sb.from("progress").select("done").eq("user_id", _sbUser.id).single();
+    if(data && Array.isArray(data.done)){
+      data.done.filter(id => EX[id]).forEach(id => doneEx.add(id));
+      renderCourses(); updateStreak();
+    }
+  } catch(e){}
+}
+
+(async function initAuth(){
+  const sb = getSb();
+  if(!sb){ renderAuthUI(); return; }
+  try {
+    const { data } = await sb.auth.getSession();
+    if(data.session){
+      _sbUser = data.session.user;
+      renderAuthUI();
+      await loadProgress();
+    } else { renderAuthUI(); }
+  } catch(e){ renderAuthUI(); }
+  sb.auth.onAuthStateChange((event, session) => {
+    _sbUser = session?.user || null;
+    renderAuthUI();
+  });
 })();
 
 /* ================= TEST HOOKS =================
