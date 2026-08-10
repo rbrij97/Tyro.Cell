@@ -1,6 +1,8 @@
 {
+  "buildCommand": "",
+  "installCommand": "",
+  "outputDirectory": ".",
   "redirects": [
-    { "source": "/", "destination": "/app/" }
+    { "source": "/", "destination": "/app/index.html" }
   ]
 }
-
