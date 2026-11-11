@@ -220,6 +220,162 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
   });
 })();
 
+/* ================= LANDING: motion =================
+   1. hero sheet starts tilted in 3D, leans toward the mouse, straightens as you scroll
+   2. the statement's words darken one by one as it scrolls past
+   3. the story (Write it → Get it wrong → Get it right) plays on its own in a loop while on screen;
+      the dots jump to a step
+   4. the numbers count up as their row scrolls into view
+   5. the formula-family cards slide sideways endlessly (CSS); hover pauses them
+   With "reduce motion" everything shows its finished state. Pinning and the hero tilt
+   are wide-screen only; on narrow screens the numbers simply show their totals. */
+(function(){
+  const sc=document.getElementById("landing-scroll"); if(!sc) return;
+  const view=document.getElementById("view-landing");
+  const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wideMQ=window.matchMedia("(min-width: 900px)");
+  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+  let pinned=false;
+  view.classList.toggle("lp2-motion",!reduce);
+
+  // ---- gallery cards: one per formula family, built from the course; the set is
+  //      rendered twice so the endless slide can wrap without a gap ----
+  const track=document.getElementById("lpTrack");
+  const live=COURSES.find(c=>!c.upcoming)||COURSES[0];
+  const CAT_COPY={
+    "Aggregation":"Totals, averages, highs and lows — the first line of every model.",
+    "Conditional":"Sum, count and average only the rows that match.",
+    "Lookup":"Pull the right number from a master table, in any direction.",
+    "Text":"Clean, split and join messy exported text.",
+    "Maths":"Rounding, growth rates and the arithmetic behind them.",
+    "Dates":"Build dates, count days, and label fiscal periods.",
+    "Logic & checks":"Combine conditions and catch bad data before it spreads.",
+    "Sheet skills":"Write one formula, fill it down, keep references right."
+  };
+  const cards=Object.keys(FORMULA_CATS).map((k,i)=>{
+    const mods=live.modules.filter(m=>formulaMeta(m.title).cat===k); if(!mods.length) return "";
+    const f=FORMULA_CATS[k], ex=mods.reduce((n,m)=>n+m.ex.length,0);
+    return `<article class="lp2-card">
+      <div class="lp2-card-band" style="background:${f.fill};color:${f.ink}">
+        <span class="lp2-card-n">${String(i+1).padStart(2,"0")}</span>
+        <div class="ms ${f.anim} lp2-ms" style="--ms-ink:${f.ink}" aria-hidden="true"><div class="ms-g">${"<i></i>".repeat(12)}</div><span class="ms-s"></span><span class="ms-o"></span></div>
+      </div>
+      <div class="lp2-card-body">
+        <h3>${esc(k)}</h3>
+        <p>${esc(CAT_COPY[k]||"")}</p>
+        <div class="lp2-card-chips">${mods.slice(0,5).map(m=>`<span style="background:${f.fill};color:${f.ink}">${esc(m.title)}</span>`).join("")}${mods.length>5?`<span class="more">+${mods.length-5}</span>`:""}</div>
+        <span class="lp2-card-meta">${mods.length} formula${mods.length>1?"s":""} · ${ex} exercises</span>
+      </div></article>`;
+  }).join("");
+  track.innerHTML=`<div class="lp2-set">${cards}</div>`+(reduce?"":`<div class="lp2-set" aria-hidden="true">${cards}</div>`);
+
+  // ---- statement: wrap words so each can light up ----
+  const words=document.getElementById("lpWords");
+  words.innerHTML=words.textContent.trim().split(/\s+/).map(w=>`<span>${esc(w)}</span> `).join("");
+  const wordEls=[...words.children];
+
+  // ---- story: a timed loop ----
+  const storySec=document.getElementById("s-showcase"), story=document.getElementById("lpStory"),
+        fx=document.getElementById("lpStoryFx"), cell=document.getElementById("lpStoryCell"),
+        res=document.getElementById("lpStoryRes"),
+        steps=[...view.querySelectorAll(".lp2-step")], dots=[...view.querySelectorAll(".lp2-dots button")];
+  const WRONG='=SUM(C2:C9)', RIGHT='=SUMIFS(C2:C9,B2:B9,"West")';
+  const colour=s=>esc(s).replace(/C2:C9/g,'<span class="lp-ref-c">C2:C9</span>').replace(/B2:B9/g,'<span class="lp-ref-b">B2:B9</span>');
+  let lastStep=-1, lastFx="";
+  function setStory(step,typed){
+    const text=step===2?RIGHT.slice(0,typed):WRONG.slice(0,step===0?typed:WRONG.length);
+    if(text!==lastFx){ fx.innerHTML=colour(text); lastFx=text; }
+    const showResult=step===1||(step===2&&typed>=RIGHT.length);
+    story.dataset.step=String(step);
+    story.classList.toggle("refs-c",text.includes("C2:C9"));
+    story.classList.toggle("refs-b",text.includes("B2:B9"));
+    story.classList.toggle("res-bad",step===1);
+    story.classList.toggle("res-ok",step===2&&showResult);
+    cell.textContent=step===1?"7760":(step===2&&showResult)?"2850":"";
+    res.innerHTML=step===1?'<span class="lp-tick bad" aria-hidden="true">✕</span><span><b>Result is 7760, expected 2850.</b> SUM adds every region — this needs only West.</span>'
+                 :(step===2&&showResult)?'<span class="lp-tick" aria-hidden="true">✓</span><span><b>Correct.</b> SUMIFS adds only the West branches: 2850.</span>':"";
+    if(step!==lastStep){
+      steps.forEach((s,i)=>s.classList.toggle("on",i===step));
+      dots.forEach((d,i)=>{ d.classList.toggle("on",i===step); d.setAttribute("aria-pressed",String(i===step)); });
+      if(step===1){ cell.classList.remove("shake"); void cell.offsetWidth; cell.classList.add("shake"); }
+      lastStep=step;
+    }
+  }
+  // one cycle (ms): type the wrong formula, show the error, type the right one, show the pass
+  const T={type1:1400,hold1:900,wrong:2600,type2:1900,ok:2600};
+  const START=[0,T.type1+T.hold1,T.type1+T.hold1+T.wrong];   // when each step begins
+  const CYCLE=T.type1+T.hold1+T.wrong+T.type2+T.ok;
+  let t0=0, timer=null;
+  function tick(){
+    const t=(performance.now()-t0)%CYCLE;
+    if(t<START[1]) setStory(0,Math.round(clamp(t/T.type1)*WRONG.length));
+    else if(t<START[2]) setStory(1,WRONG.length);
+    else setStory(2,Math.round(clamp((t-START[2])/T.type2)*RIGHT.length));
+  }
+  const play=()=>{ if(timer||reduce) return; timer=setInterval(tick,70); };
+  const pause=()=>{ clearInterval(timer); timer=null; };
+  dots.forEach((d,i)=>d.addEventListener("click",()=>{ t0=performance.now()-START[i]-(i===0?0:i===2?T.type2:0); tick(); }));
+  if(reduce) setStory(2,RIGHT.length);
+  else{
+    t0=performance.now(); tick();
+    if("IntersectionObserver" in window){
+      new IntersectionObserver(es=>es.forEach(e=>{ e.isIntersecting?play():pause(); }),{root:sc,threshold:0.25}).observe(storySec);
+    } else play();
+  }
+
+  // ---- numbers: count up with the scroll ----
+  const numSec=document.getElementById("lpNumbers"), numItems=[...numSec.querySelectorAll(".lp2-num-item")];
+  const targets=numItems.map(it=>+it.querySelector(".lp2-big").textContent||0);
+  function setNumbers(p){
+    numItems.forEach((it,i)=>{
+      const q=clamp((p-i*.12)/.6), e=1-Math.pow(1-q,3);
+      it.querySelector(".lp2-big").textContent=String(Math.round(targets[i]*e));
+      it.style.setProperty("--q",e.toFixed(3));
+    });
+  }
+
+  // ---- hero tilt: mouse lean + scroll straighten ----
+  const tilt=document.getElementById("lpTilt");
+  let mx=0,my=0;
+  view.querySelector(".lp2-hero").addEventListener("mousemove",e=>{
+    if(!pinned) return;
+    const r=e.currentTarget.getBoundingClientRect();
+    mx=(e.clientX-r.left)/r.width-.5; my=(e.clientY-r.top)/r.height-.5; queue();
+  });
+
+  // progress through a pinned section: 0 when its top reaches the top of the scroller, 1 at its end
+  const pinProgress=el=>{ const top=el.getBoundingClientRect().top-sc.getBoundingClientRect().top, span=el.offsetHeight-sc.clientHeight; return span>0?clamp(-top/span):0; };
+
+  function layout(){
+    pinned=wideMQ.matches&&!reduce;
+    view.classList.toggle("lp2-pinned",pinned);
+    update();
+  }
+  function update(){
+    raf=0;
+    if(!pinned){
+      tilt.style.transform="";
+      wordEls.forEach(w=>w.classList.add("lit"));
+      setNumbers(1); return;
+    }
+    const t=clamp(sc.scrollTop/520);
+    tilt.style.transform=`perspective(1600px) rotateX(${(1-t)*9-my*4}deg) rotateY(${(1-t)*-16+mx*6}deg) scale(${.93+.07*t}) translateY(${t*-14}px)`;
+    const wr=words.getBoundingClientRect(), sr=sc.getBoundingClientRect();
+    const wp=clamp((sr.top+sc.clientHeight*.85-wr.top)/(wr.height+sc.clientHeight*.5));
+    const lit=Math.round(wp*wordEls.length);
+    wordEls.forEach((w,i)=>w.classList.toggle("lit",i<lit));
+    // numbers count up while the row travels from the bottom of the screen to the middle (no pinning, no extra scroll)
+    const nr=numSec.getBoundingClientRect();
+    setNumbers(clamp((sr.top+sc.clientHeight*.95-nr.top)/(sc.clientHeight*.5)));
+  }
+  let raf=0; const queue=()=>{ if(!raf) raf=requestAnimationFrame(update); };
+  sc.addEventListener("scroll",queue,{passive:true});
+  window.addEventListener("resize",layout);
+  wideMQ.addEventListener?wideMQ.addEventListener("change",layout):wideMQ.addListener(layout);
+  new MutationObserver(()=>{ if(view.classList.contains("on")) layout(); }).observe(view,{attributes:true,attributeFilter:["class"]});
+  layout();
+})();
+
 /* ================= PAGES ================= */
 /* Header progress shown on every "desk" screen: exercises done across live courses. */
 const liveCourses=()=>COURSES.filter(c=>!c.upcoming);

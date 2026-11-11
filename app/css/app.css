@@ -1149,3 +1149,146 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
   .hm .hm-continue h2{font-size:24px}
   .desk .dk-streak{padding:4px 8px}
 }
+
+/* =====================================================================
+   LANDING v2 — wide, scroll-driven (Apple-style). Motion in js/app.js
+   "LANDING: scroll-driven motion". Pinning only applies when #view-landing
+   has .lp2-pinned (wide screen, motion allowed); otherwise sections stack.
+   ===================================================================== */
+#view-landing .lp2-hero{max-width:1320px;margin:0 auto;padding:64px 40px 40px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:48px;align-items:center;min-height:calc(100vh - 70px)}
+#view-landing .lp2-hero-text{display:flex;flex-direction:column;gap:22px;align-items:flex-start}
+#view-landing .lp2-hero-text h1{margin:0;font-family:var(--lp-head);font-size:clamp(44px,5.4vw,80px);line-height:.98;letter-spacing:-.035em;font-weight:800;text-wrap:balance}
+#view-landing .lp2-hero-text .lp-lede{text-align:left}
+#view-landing .lp2-hero-text .lp-cta,#view-landing .lp2-hero-text .lp-proof{justify-content:flex-start}
+#view-landing .lp2-stage{position:relative;padding:30px 10px}
+#view-landing .lp2-tilt{transform-origin:50% 60%;will-change:transform;transition:transform .12s linear}
+#view-landing .lp2-tilt .lp-window{box-shadow:12px 14px 0 var(--lp-black)}
+#view-landing .lp2-float{position:absolute;font:700 13px var(--mono);padding:7px 12px;border-radius:9px;border:1.5px solid var(--lp-black);background:#fff;box-shadow:3px 3px 0 var(--lp-black);animation:lp2-bob 5s ease-in-out infinite;pointer-events:none;white-space:nowrap}
+#view-landing .lp2-float-a{top:0;left:-6px;background:#C8EEF0}
+#view-landing .lp2-float-b{bottom:4px;left:12%;background:#EADFFF;animation-delay:-1.6s}
+#view-landing .lp2-float-c{top:12%;right:-8px;background:#DDF4E6;color:#0F6B3E;animation-delay:-3.1s}
+@keyframes lp2-bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+
+/* statement */
+#view-landing .lp2-statement{max-width:1320px;margin:0 auto;padding:110px 40px}
+#view-landing .lp2-words{margin:0;font-family:var(--lp-head);font-size:clamp(34px,5.2vw,76px);line-height:1.04;letter-spacing:-.035em;font-weight:800}
+#view-landing .lp2-words span{color:#D9D2C3;transition:color .25s ease}
+#view-landing .lp2-words span.lit{color:var(--lp-ink)}
+
+/* pinned story */
+#view-landing .lp2-story{position:relative}
+#view-landing .lp2-sticky{max-width:1320px;margin:0 auto;padding:40px}
+#view-landing .lp2-story .lp2-sticky{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:56px;align-items:center}
+#view-landing .lp2-steps{position:relative;display:grid}
+#view-landing .lp2-step{grid-area:1/1;display:flex;flex-direction:column;gap:12px;opacity:1}
+#view-landing .lp2-num{font:700 14px var(--mono);color:var(--lp-text3)}
+#view-landing .lp2-step h2{margin:0;font-family:var(--lp-head);font-size:clamp(40px,5vw,72px);line-height:1;letter-spacing:-.035em;font-weight:800}
+#view-landing .lp2-step p{margin:0;font-size:19px;line-height:1.55;color:var(--lp-text2);max-width:34ch}
+#view-landing .lp2-step[data-i="1"] h2{color:#B42A20}
+#view-landing .lp2-step[data-i="2"] h2{color:#0F6B3E}
+#view-landing .lp2-dots{display:none;gap:8px;margin-top:28px}
+#view-landing .lp2-dots i{width:34px;height:6px;border-radius:3px;background:#E7E1D4;transition:background .3s ease,width .3s ease}
+#view-landing .lp2-dots i.on{background:var(--lp-black);width:54px}
+#view-landing .lp2-storysheet{box-shadow:10px 10px 0 var(--lp-black)}
+#view-landing .lp2-storysheet .lp-sheet td{transition:background .3s ease,box-shadow .3s ease,color .3s ease}
+#view-landing .lp2-storysheet.refs-c .sc{background:#E6F0FB}
+#view-landing .lp2-storysheet.refs-b .sb{background:#EADFFF}
+#view-landing .lp2-storysheet .st{position:relative;font-weight:700;background:#FFF5D6;box-shadow:inset 0 0 0 2px #E8B530}
+#view-landing .lp2-storysheet.res-bad .st{background:#FDE3E0;box-shadow:inset 0 0 0 2px #E2483D;color:#B42A20}
+#view-landing .lp2-storysheet.res-ok .st{background:#DDF4E6;box-shadow:inset 0 0 0 2px #1E9E5A;color:#0F6B3E}
+#view-landing .lp2-storysheet.res-ok .st::after{content:"✓";position:absolute;left:0;top:0;background:#1E9E5A;color:#fff;font:700 9px/1 var(--sans);padding:3px 4px;border-radius:0 0 5px 0;animation:lp2-stamp .5s cubic-bezier(.2,.9,.3,1.4) both}
+@keyframes lp2-stamp{0%{opacity:0;transform:scale(2.4) rotate(-14deg)}100%{opacity:1;transform:none}}
+#view-landing .lp2-storysheet .st.shake{animation:lp2-shake .45s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes lp2-shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+#view-landing .lp2-res{display:flex;align-items:center;gap:10px;min-height:48px;padding:12px 16px;border-top:1px solid #EEE8DB;font-size:14px;color:var(--lp-text3);background:#FBF9F4;transition:background .3s ease}
+#view-landing .lp2-res:empty::before{content:"Press Check answer when you're ready";font:12.5px var(--mono);color:var(--lp-text3)}
+#view-landing .lp2-storysheet.res-bad .lp2-res{background:#FDE3E0;color:#3A362F}
+#view-landing .lp2-storysheet.res-ok .lp2-res{background:#DDF4E6;color:#3A362F}
+#view-landing .lp2-res b{color:var(--lp-ink)}
+#view-landing .lp-tick.bad{background:#E2483D}
+
+/* sideways gallery */
+#view-landing .lp2-gallery{position:relative}
+#view-landing .lp2-gal-sticky{max-width:none;padding:40px 0;overflow:hidden}
+#view-landing .lp2-gal-head{max-width:1320px;margin:0 auto 28px;padding:0 40px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 40px}
+#view-landing .lp2-gal-head h2{margin:0;font-family:var(--lp-head);font-size:clamp(34px,4.6vw,60px);line-height:1;letter-spacing:-.035em;font-weight:800;flex:1 1 520px}
+#view-landing .lp2-gal-head p{margin:0;flex:1 1 300px;font-size:16.5px;line-height:1.55;color:var(--lp-text2);max-width:46ch}
+#view-landing .lp2-track{display:flex;gap:22px;padding:6px max(40px,calc((100vw - 1320px)/2 + 40px)) 18px;overflow-x:auto;scrollbar-width:none;will-change:transform}
+#view-landing .lp2-track::-webkit-scrollbar{display:none}
+#view-landing .lp2-card{flex:0 0 360px;background:#fff;border:1.5px solid var(--lp-black);border-radius:16px;overflow:hidden;box-shadow:6px 6px 0 var(--lp-black);display:flex;flex-direction:column}
+#view-landing .lp2-card-band{display:flex;align-items:center;justify-content:space-between;padding:22px 22px 22px 26px;border-bottom:1.5px solid var(--lp-black)}
+#view-landing .lp2-card-n{font-family:var(--lp-head);font-size:56px;font-weight:800;line-height:1;letter-spacing:-.04em}
+#view-landing .lp2-ms{transform:scale(1.35);transform-origin:right center}
+#view-landing .lp2-card-body{padding:22px 24px 24px;display:flex;flex-direction:column;gap:10px;flex:1}
+#view-landing .lp2-card-body h3{margin:0;font-family:var(--lp-head);font-size:28px;font-weight:800;letter-spacing:-.025em}
+#view-landing .lp2-card-body p{margin:0;font-size:15px;line-height:1.55;color:var(--lp-text2)}
+#view-landing .lp2-card-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+#view-landing .lp2-card-chips span{font:600 11.5px var(--mono);padding:3px 8px;border-radius:5px}
+#view-landing .lp2-card-chips .more{background:#F3EFE6;color:var(--lp-text2)}
+#view-landing .lp2-card-meta{margin-top:auto;padding-top:8px;font:12.5px var(--mono);color:var(--lp-text3)}
+
+/* full-bleed final call to action */
+#view-landing .lp2-finalwrap{max-width:none;padding:56px 0 0}
+#view-landing .lp2-finalwrap .lp-final{border-radius:0;padding:96px 40px}
+#view-landing .lp2-finalwrap .lp-footer{padding:22px 0 26px}
+
+/* wider page overall */
+#view-landing .lp-section{max-width:1320px;padding-left:40px;padding-right:40px}
+#view-landing .lp-stats{max-width:1320px}
+
+/* ---- pinned mode (wide screens, motion allowed) ---- */
+#view-landing.lp2-motion .lp2-step{opacity:0;transform:translateY(24px);transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+#view-landing.lp2-motion .lp2-step.on{opacity:1;transform:none;pointer-events:auto}
+#view-landing.lp2-motion .lp2-dots{display:flex}
+
+/* ---- narrow screens: stack everything ---- */
+@media(max-width:899px){
+  #view-landing .lp2-hero{grid-template-columns:1fr;min-height:0;padding:40px 16px 24px;gap:28px}
+  #view-landing .lp2-float{display:none}
+  #view-landing .lp2-statement{padding:56px 16px}
+  #view-landing .lp2-sticky{padding:24px 16px}
+  #view-landing .lp2-story .lp2-sticky{grid-template-columns:1fr;gap:28px}
+  #view-landing .lp2-step{grid-area:auto;margin-bottom:18px}
+  #view-landing .lp2-gal-head{padding:0 16px}
+  #view-landing .lp2-track{padding:6px 16px 18px;scroll-snap-type:x mandatory}
+  #view-landing .lp2-card{flex-basis:82vw;scroll-snap-align:start}
+  #view-landing .lp-section{padding-left:16px;padding-right:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  #view-landing .lp2-float{animation:none}
+  #view-landing .lp2-tilt{transition:none}
+}
+
+/* ---- landing v3: story loops on its own, numbers pin, gallery slides endlessly ---- */
+/* story step dots are buttons now */
+#view-landing .lp2-dots button{width:34px;height:6px;padding:0;border:none;border-radius:3px;background:#E7E1D4;cursor:pointer;transition:background .3s ease,width .3s ease}
+#view-landing .lp2-dots button.on{background:var(--lp-black);width:54px}
+#view-landing .lp2-dots button:focus-visible{outline:2px solid var(--lp-black);outline-offset:3px}
+#view-landing .lp2-dots{min-height:18px;align-items:center}
+/* steps stack in one cell only when they fade in turn; narrow screens without motion list them */
+@media(max-width:899px){ #view-landing.lp2-motion .lp2-step{grid-area:1/1;margin-bottom:0} }
+
+/* numbers: the earlier compact row — 74 · 158 · 40 in black, small labels; they count up as the row scrolls in */
+#view-landing .lp2-numbers{position:relative}
+#view-landing .lp2-num-sticky{max-width:1000px;margin:0 auto;padding:56px 40px 16px}
+#view-landing .lp2-num-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;text-align:center}
+#view-landing .lp2-num-item{--q:1;display:flex;flex-direction:column;gap:4px}
+#view-landing .lp2-big{font-family:var(--lp-head);font-size:72px;line-height:1;font-weight:800;letter-spacing:-.035em;color:var(--lp-ink);font-variant-numeric:tabular-nums;opacity:calc(.35 + var(--q) * .65)}
+#view-landing .lp2-numlabel{font:13px var(--mono);color:var(--lp-text2)}
+
+/* gallery: endless sideways slide (two identical sets, moved by exactly one set) */
+#view-landing .lp2-gal-sticky{padding:56px 0 64px}
+#view-landing .lp2-track{padding:6px 0 18px;gap:0;overflow:hidden}
+#view-landing .lp2-set{display:flex;flex:none}
+#view-landing .lp2-card{margin-right:22px}
+#view-landing.lp2-motion .lp2-track{width:max-content;overflow:visible;animation:lp2-marquee 70s linear infinite}
+#view-landing.lp2-motion .lp2-gal-sticky:hover .lp2-track{animation-play-state:paused}
+@keyframes lp2-marquee{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+#view-landing:not(.lp2-motion) .lp2-track{overflow-x:auto;padding-left:40px}
+
+@media(max-width:899px){
+  #view-landing .lp2-num-sticky{padding:40px 16px 8px}
+  #view-landing .lp2-big{font-size:56px}
+  #view-landing.lp2-motion .lp2-track{animation-duration:55s}
+  #view-landing .lp2-card{flex-basis:78vw}
+}
