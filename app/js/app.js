@@ -42,6 +42,18 @@ function saveSheetSoon(){
     if(s!==_sheetLast){ _sheetLast=s; lsSet(LS_SHEET+id, s); }
   },300);
 }
+/* Home dashboard data: the exercise you last opened, and the days you practised
+   (a day counts once you pass at least one exercise). Local dates, YYYY-MM-DD. */
+const LS_LAST="tyro_last_v1", LS_DAYS="tyro_days_v1";
+const dayKey=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function loadDays(){ try{ const a=JSON.parse(lsGet(LS_DAYS)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function recordPracticeDay(){ const d=loadDays(), k=dayKey(); if(!d.includes(k)){ d.push(k); lsSet(LS_DAYS, JSON.stringify(d.slice(-400))); } }
+function streakDays(){
+  const set=new Set(loadDays()); let n=0; const d=new Date();
+  if(!set.has(dayKey(d))) d.setDate(d.getDate()-1);   // today not done yet: the streak is still alive from yesterday
+  while(set.has(dayKey(d))){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
 function loadSheet(id){ try{ const s=lsGet(LS_SHEET+id); return s?JSON.parse(s):null; }catch(e){ return null; } }
 function clearSheet(id){ lsDel(LS_SHEET+id); _sheetLast=null; }
 
@@ -99,6 +111,7 @@ function routeTo(path){
   const p=path.split("/").filter(Boolean).map(decodeURIComponent);
   if(p.length===0) return showLanding();
   if(p[0]==="courses" && p.length===1) return showCourses();
+  if(p[0]==="home" && p.length===1) return showHome();
   if(p[0]==="sandbox" && p.length===1) return openSandbox();
   if(p[0]==="course" && p.length>=2 && p.length<=3){
     const c=COURSES.find(x=>x.id===p[1]);
@@ -121,6 +134,7 @@ document.querySelectorAll("[data-go]").forEach(el=>{
     const t=el.dataset.go;
     if(t==="landing")showLanding();
     else if(t==="courses")showCourses();
+    else if(t==="home")showHome();
     else if(t==="sandbox")openSandbox();
   });
 });
@@ -215,6 +229,8 @@ function updateHeaderProgress(){
   const pct=total?Math.round(done/total*100):0;
   document.querySelectorAll(".dk-progfill").forEach(el=>{ el.style.width=pct+"%"; });
   document.querySelectorAll(".dk-progtext").forEach(el=>{ el.innerHTML="<b>"+done+"</b> / "+total+" done"; });
+  const st=streakDays();
+  document.querySelectorAll(".dk-streak").forEach(el=>{ el.hidden=!st; el.textContent=st+"-day streak"; });
 }
 const nextExOf=list=>list.find(x=>!doneEx.has(x))||list[0];
 const courseNum=c=>"Course "+String(COURSES.indexOf(c)+1).padStart(2,"0");
@@ -376,6 +392,138 @@ function renderFormulaCards(c){
   }).join("");
 }
 
+/* ================= HOME DASHBOARD =================
+   "Pick up where you left off": the exercise you last opened (or the next
+   unsolved one), your streak and progress, three suggestions, and progress by
+   category. Everything is read from what this browser has saved. */
+function showHome(){
+  renderHome(); show("home");
+  document.querySelector("#view-home .pagescroll").scrollTop=0;
+  setRoute("/home","Home");
+}
+function homeCourse(){ return liveCourses()[0]||COURSES[0]; }
+// The exercise to resume: the one last opened if unfinished, else the next unsolved after it.
+function continueTarget(c){
+  const list=flatEx(c), last=lsGet(LS_LAST);
+  if(last&&list.includes(last)){
+    if(!doneEx.has(last)) return last;
+    const after=list.slice(list.indexOf(last)+1).concat(list).find(x=>!doneEx.has(x));
+    if(after) return after;
+  }
+  return nextExOf(list);
+}
+// A tiny read-only view of the exercise's sheet: first 5 rows × first 3 columns.
+function sheetPreview(ex,savedRaw){
+  const cols=["A","B","C"], rows=[1,2,3,4,5];
+  const cell=ref=>{ const v=ex.data[ref]; return v==null?"":String(v); };
+  const tgt=ex.target||"";
+  const isNum=v=>/^-?[\d.]+$/.test(v);
+  return `<div class="hm-sheet" aria-hidden="true">
+    <div class="hm-sheet-fx"><span>${esc(tgt||"A1")}</span><span>${esc(savedRaw||"=")}</span></div>
+    <div class="hm-sheet-grid">${rows.map(r=>`<span class="rh">${r}</span>`+cols.map(c=>{
+      const v=cell(c+r), cls=(r===1?"h ":"")+(isNum(v)?"n ":"")+(c+r===tgt?"t":"");
+      return `<span class="${cls.trim()}">${esc(v)}</span>`;}).join("")).join("")}</div>
+  </div>`;
+}
+function renderHome(){
+  updateHeaderProgress();
+  const c=homeCourse(), all=flatEx(c), total=all.length, done=courseDone(c);
+  const el=document.getElementById("homeMain");
+  const LV={easy:["Easy","#DDF4E6","#0F6B3E"],medium:["Medium","#FFEBC7","#8A4D00"],hard:["Hard","#FDE3E0","#B42A20"]};
+  const lvChip=l=>{ const x=LV[l]||LV.easy; return `<span class="hm-lvl" style="background:${x[1]};color:${x[2]}">${x[0]}</span>`; };
+
+  // ---- continue card ----
+  const allDone=done===total;
+  const exId=continueTarget(c), ex=EX[exId], mod=moduleForEx(c,exId)||c.modules[0];
+  const pos=mod.ex.indexOf(exId)+1;
+  const saved=loadSheet(exId), savedRaw=saved&&ex.target&&saved[ex.target]&&saved[ex.target].raw;
+  const firstPara=String(ex.desc||"").split(/\n\n+/)[0];
+  const blurb=firstPara.length>170?firstPara.slice(0,167).replace(/\s+\S*$/,"")+"…":firstPara;
+  const segs=mod.ex.map(x=>`<span class="${doneEx.has(x)?"d":x===exId?"c":""}"></span>`).join("");
+  const started=done>0;
+  const heading=allDone?`You've finished <span class="dk-hl">everything.</span>`
+               :started?`Pick up where you <span class="dk-hl">left off.</span>`
+               :`Start with your <span class="dk-hl">first formula.</span>`;
+  const cta=allDone?"Review it →":saved?"Resume exercise →":started?"Continue →":"Start exercise →";
+
+  // ---- progress tiles ----
+  const streak=streakDays(), days=new Set(loadDays());
+  const now=new Date(), monday=new Date(now); monday.setDate(now.getDate()-((now.getDay()+6)%7));
+  const week=["M","T","W","T","F","S","S"].map((lab,i)=>{
+    const d=new Date(monday); d.setDate(monday.getDate()+i);
+    const k=dayKey(d), today=k===dayKey(now), did=days.has(k), future=d>now&&!today;
+    return `<span class="hm-day"><span class="box ${did?"did":today?"today":future?"future":""}">${did?"✓":""}</span><span class="lab">${lab}</span></span>`;
+  }).join("");
+  const mods=c.modules.map(m=>({m,meta:formulaMeta(m.title),done:m.ex.filter(x=>doneEx.has(x)).length,total:m.ex.length}));
+  const mastered=mods.filter(x=>x.done===x.total), inprog=mods.filter(x=>x.done>0&&x.done<x.total);
+  const chip=(x,label)=>`<span class="hm-chip" style="background:${x.meta.fill};color:${x.meta.ink}">${esc(label)}</span>`;
+  const chipList=(arr,fmt)=>arr.slice(0,4).map(x=>chip(x,fmt(x))).join("")+(arr.length>4?`<span class="hm-more">+${arr.length-4} more</span>`:"");
+  const pct=Math.round(done/total*100);
+
+  // ---- up next: unfinished formulas you've started, then new ones, in course order ----
+  const pick=[...inprog,...mods.filter(x=>x.done===0)].filter(x=>x.m!==mod).slice(0,3);
+  const nextCards=pick.map(x=>{
+    const id=nextExOf(x.m.ex), e=EX[id], p=x.m.ex.indexOf(id)+1;
+    return `<a class="hm-next dk-lift" href="#/practice/${encodeURIComponent(id)}">
+      <div class="hm-band" style="background:${x.meta.fill};color:${x.meta.ink}">
+        <div class="col"><span class="nm">${esc(x.m.title)}</span><span class="cat">${esc(x.meta.cat)}</span></div>
+        ${miniSheet(x.meta)}
+      </div>
+      <div class="hm-next-body">
+        <span class="t">${esc(shortTitle(e.title))}</span>
+        <span class="foot">${lvChip(e.lvl)}<span class="dk-mono">${x.done?p+" of "+x.total:"New"}</span><span class="go">${x.done?"Continue →":"Start →"}</span></span>
+      </div></a>`;
+  }).join("");
+
+  // ---- by category ----
+  const cats=Object.keys(FORMULA_CATS).map(k=>{
+    const ms=mods.filter(x=>x.meta.cat===k); if(!ms.length) return "";
+    const d=ms.reduce((n,x)=>n+x.done,0), t=ms.reduce((n,x)=>n+x.total,0), f=FORMULA_CATS[k];
+    return `<a class="hm-cat dk-lift" href="#/course/${c.id}" data-cat="${esc(k)}">
+      <span class="top"><span class="hm-chip" style="background:${f.fill};color:${f.ink}">${esc(k)}</span><span class="dk-mono">${d} / ${t}</span></span>
+      <span class="hm-bar"><span class="dk-fill" style="width:${Math.round(d/t*100)}%;background:${f.ink}"></span></span></a>`;
+  }).join("");
+
+  el.innerHTML=`
+    <section class="hm-continue-wrap dk-enter">
+      <h1 class="dk-h1">${heading}</h1>
+      <div class="hm-continue">
+        <div class="hm-continue-main">
+          <div class="hm-meta"><span class="hm-fn">${esc(mod.title)}</span>${lvChip(ex.lvl)}<span class="dk-mono">Exercise ${pos} of ${mod.ex.length}</span></div>
+          <h2>${esc(shortTitle(ex.title))}</h2>
+          <p>${esc(blurb)}</p>
+          <div class="hm-segs" role="img" aria-label="${esc(mod.title)}: ${mods.find(x=>x.m===mod).done} of ${mod.ex.length} done">${segs}</div>
+          <div class="hm-cta"><a class="dk-btn" href="#/practice/${encodeURIComponent(exId)}">${cta}</a>${savedRaw?`<span class="hm-saved">Your half-written formula is saved</span>`:""}</div>
+        </div>
+        ${sheetPreview(ex,savedRaw)}
+      </div>
+    </section>
+    <section aria-labelledby="hm-prog">
+      <h2 class="hm-h2" id="hm-prog">Your progress</h2>
+      <div class="hm-tiles">
+        <div class="hm-tile"><span class="lbl">Practice streak</span><span class="big">${streak} <small>${streak===1?"day":"days"}</small></span>
+          <div class="hm-week" role="img" aria-label="This week: practised on ${[...days].filter(k=>k>=dayKey(monday)).length} days">${week}</div></div>
+        <div class="hm-tile"><span class="lbl">Exercises completed</span><span class="big">${done}<small> / ${total}</small></span>
+          <span class="hm-bar"><span class="dk-fill" style="width:${pct}%;background:#0A0A0A"></span></span></div>
+        <div class="hm-tile"><span class="lbl">Formulas mastered</span><span class="big">${mastered.length}<small> / ${mods.length}</small></span>
+          <span class="hm-chips">${mastered.length?chipList(mastered,x=>x.m.title):`<span class="hm-empty">Finish every exercise in a formula to master it.</span>`}</span></div>
+        <div class="hm-tile"><span class="lbl">In progress</span><span class="big">${inprog.length}</span>
+          <span class="hm-chips">${inprog.length?chipList(inprog,x=>x.m.title+" "+x.done+"/"+x.total):`<span class="hm-empty">Nothing half-done.</span>`}</span></div>
+      </div>
+    </section>
+    ${nextCards?`<section aria-labelledby="hm-next">
+      <div class="hm-h2row"><h2 class="hm-h2" id="hm-next">Up next</h2><a href="#/course/${c.id}" class="hm-all">All ${c.modules.length} formulas →</a></div>
+      <div class="hm-nexts">${nextCards}</div>
+    </section>`:""}
+    <section aria-labelledby="hm-cat">
+      <h2 class="hm-h2" id="hm-cat">By category</h2>
+      <div class="hm-cats">${cats}</div>
+    </section>
+    <footer class="dk-footer">Made with <span class="dk-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>`;
+  // a category tile opens the course page filtered to that category
+  el.querySelectorAll(".hm-cat").forEach(a=>a.addEventListener("click",()=>{ Object.assign(courseUI,{courseId:c.id,cat:a.dataset.cat,q:"",unsolved:false,sort:"course"}); }));
+}
+
 /* ================= WORKSPACE ================= */
 function openSandbox(){
   currentEx=null; currentExId=null; currentCourse=null;
@@ -401,15 +549,20 @@ function exPlace(exId){
           pos:mod?mod.ex.indexOf(exId)+1:1, of:mod?mod.ex.length:1,
           prev:i>0?list[i-1]:null, next:i>=0&&i<list.length-1?list[i+1]:null};
 }
-// "VLOOKUP — Pull CMP from ticker master" -> "Pull CMP from ticker master" (the module name is shown separately)
-const shortTitle=t=>String(t).replace(/^[A-Z][A-Z0-9 &+,()]*\s—\s/,"");
+// "VLOOKUP — Pull CMP from ticker master" -> "Pull CMP from ticker master" (the module name is shown
+// separately). Only a function-name prefix is dropped: "TCS — Weekly billing" keeps its company.
+const shortTitle=t=>{
+  const s=String(t), m=/^([A-Z][A-Z0-9 &+,()]*)\s—\s/.exec(s); if(!m) return s;
+  const words=m[1].split(/[^A-Z0-9]+/).filter(Boolean);
+  return words.length&&words.every(w=>FUNCS[w]) ? s.slice(m[0].length) : s;
+};
 
 /* Opens an exercise. Restores the learner's saved sheet for it if there is
    one; pass {fresh:true} to start from the original data (Reset, Repeat). */
 function openEx(exId, opts){
   const ex=EX[exId]; if(!ex) return showNotFound();
   if(!currentCourse || !flatEx(currentCourse).includes(exId)) currentCourse=courseOfEx(exId);
-  currentEx=ex; currentExId=exId;
+  currentEx=ex; currentExId=exId; lsSet(LS_LAST, exId);
   hintViewed = false; solutionClickCount = 0; briefResult = null;
   clearTimeout(_sheetTimer);
   if(opts&&opts.fresh) clearSheet(exId);
@@ -658,6 +811,7 @@ function pass(ex,msg){
   saveDone();
   const formulaDone=!!P.mod&&!modWasDone&&P.mod.ex.every(x=>doneEx.has(x));
   passedRefs=targetRefs.slice();
+  recordPracticeDay();
   // a bracket Excel-style auto-closed on Enter still passes, with a nudge to type it yourself
   const autoNote=targetRefs.some(r=>cells[r]&&cells[r].ac)
     ? '<div class="ws-note">Excel closed the bracket for you — get in the habit of typing <code>)</code> yourself.</div>' : "";
