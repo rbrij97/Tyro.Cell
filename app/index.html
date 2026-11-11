@@ -22,7 +22,6 @@
     <nav aria-label="Sections">
       <a href="#s-showcase" class="nav-scroll">Product</a>
       <a href="#s-personas" class="nav-scroll">Who it's for</a>
-      <a href="#s-compare" class="nav-scroll">Why us</a>
       <a href="#s-faq" class="nav-scroll">FAQ</a>
       <a data-go="courses">Courses</a>
     </nav>
@@ -75,11 +74,6 @@
       </div>
     </section>
 
-    <!-- 2 · statement: each word darkens as it scrolls past -->
-    <section class="lp2-statement" aria-label="Write formulas. Don't watch them.">
-      <p class="lp2-words" id="lpWords">Write formulas. Don't watch them. Every formula is written by you, checked in a second, and explained when it's wrong.</p>
-    </section>
-
     <!-- 3 · story: plays on its own in a loop while on screen — Write it → Get it wrong → Get it right -->
     <section class="lp2-story" id="s-showcase" aria-label="How practice works">
       <div class="lp2-sticky">
@@ -119,22 +113,11 @@
       </div>
     </section>
 
-    <!-- 4 · numbers: count up as the row scrolls into view -->
-    <section class="lp2-numbers" id="lpNumbers" aria-label="In numbers">
-      <div class="lp2-num-sticky">
-        <div class="lp2-num-grid">
-          <div class="lp2-num-item"><span class="lp2-big" data-count="functions">74</span><span class="lp2-numlabel">functions in the engine</span></div>
-          <div class="lp2-num-item"><span class="lp2-big" data-count="exercises">158</span><span class="lp2-numlabel">graded exercises</span></div>
-          <div class="lp2-num-item"><span class="lp2-big" data-count="formulas">40</span><span class="lp2-numlabel">formulas, SUM to XLOOKUP</span></div>
-        </div>
-      </div>
-    </section>
-
-        <!-- 5 · gallery: the 8 formula families slide sideways on their own, endlessly (hover pauses) -->
+    <!-- 5 · gallery: the 8 formula families slide sideways on their own, endlessly (hover pauses) -->
     <section class="lp2-gallery" id="lpGallery" aria-label="Formula families">
       <div class="lp2-sticky lp2-gal-sticky">
         <div class="lp2-gal-head">
-          <h2>Eight families. <span class="lp-hl-static"><span data-count="formulas">40</span> formulas.</span></h2>
+          <h2>Eight families. <span data-count="formulas">40</span> formulas. <span class="lp-hl-static"><span data-count="exercises">158</span> exercises.</span></h2>
           <p>From adding up a column to two-way lookups and date maths — the formulas analysts actually use, each with its own practice pack.</p>
         </div>
         <div class="lp2-track" id="lpTrack"></div>
@@ -150,29 +133,19 @@
       </div>
     </section>
 
-    <section class="lp-section lp-narrow lp-reveal" id="s-compare">
-      <h2>This is not another video course</h2>
-      <div class="lp-grid2">
-        <div class="lp-card lp-pad"><div class="lp-mono-label">VIDEO TUTORIALS</div><ul class="lp-list"><li>Watch someone else type</li><li>Pause, rewind, re-watch</li><li>Feel like you understood</li><li>Open Excel — forget everything</li></ul></div>
-        <div class="lp-card lp-pad lp-yellow lp-lift"><div class="lp-mono-label">TYRO.CELL</div><ul class="lp-list lp-list-strong"><li>You write the formula yourself</li><li>Real data, not dummy rows</li><li>Instant check on every attempt</li><li>Specific reasons, not just "wrong"</li></ul></div>
-      </div>
-    </section>
-
-        <section class="lp-section lp-faqwrap lp-reveal" id="s-faq">
+    <section class="lp-section lp-faqwrap lp-reveal" id="s-faq">
       <h2>Common questions</h2>
       <div class="lp-faq">
         <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>Is this free?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p>Yes, completely free right now. No credit card, no trial expiry.</p></div></div></div>
         <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>Do I need Excel installed?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p>No. Tyro.cell runs entirely in your browser on a laptop or desktop. Nothing to download.</p></div></div></div>
         <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>Will my progress be saved?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p>Yes — completed exercises and your work on each sheet are saved in this browser automatically. To move progress to another device, use Export progress on the Courses page and import it there.</p></div></div></div>
-        <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>How is this different from YouTube tutorials?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p>You write every formula yourself in a real grid. You either get it right, or you get a specific reason why not.</p></div></div></div>
-        <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>What formulas are covered?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p><span data-count="formulas">40</span> formulas across <span data-count="exercises">158</span> exercises — from SUM to XLOOKUP and INDEX + MATCH — all on real finance data.</p></div></div></div>
       </div>
     </section>
 
     <section class="lp-section lp2-finalwrap lp-reveal">
       <div class="lp-final">
-        <h2>Built for people who learn by <span class="lp-yellow-text">doing</span>.</h2>
-        <p>No videos to sit through. Open a real sheet, write the formula, and know straight away if you got it right.</p>
+        <h2>Start with SUM. Finish with <span class="lp-yellow-text">XLOOKUP</span>.</h2>
+        <p>Your first formula takes about a minute.</p>
         <button class="lp-btn lp-btn-yellow lp-btn-lg" data-go="home">Start practising →</button>
       </div>
       <footer class="lp-footer">Made with <span class="lp-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>

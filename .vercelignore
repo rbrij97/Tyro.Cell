@@ -1,0 +1,8 @@
+# Files kept in GitHub only, never served on the live site
+docs/
+pitch/
+.claude/
+README.md
+package.json
+package-lock.json
+.gitignore

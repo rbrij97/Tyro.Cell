@@ -181,20 +181,6 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
     const v=counts[el.dataset.count]; if(v!=null) el.textContent=String(v);
   });
 
-  function countUp(section){
-    if(reduce) return;
-    section.querySelectorAll(".lp-num[data-count]").forEach(el=>{
-      const target=counts[el.dataset.count]; if(target==null) return;
-      const start=performance.now(), dur=1300;
-      const step=now=>{
-        const p=Math.min(1,(now-start)/dur), e=1-Math.pow(1-p,3);
-        el.textContent=String(Math.round(target*e));
-        if(p<1) requestAnimationFrame(step);
-      };
-      el.textContent="0"; requestAnimationFrame(step);
-    });
-  }
-
   const sections=scroller.querySelectorAll(".lp-reveal");
   if(reduce||!("IntersectionObserver" in window)){
     sections.forEach(s=>s.classList.add("in"));
@@ -203,7 +189,6 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
       entries.forEach(e=>{
         if(!e.isIntersecting) return;
         e.target.classList.add("in");
-        if(e.target.classList.contains("lp-stats")) countUp(e.target);
         io.unobserve(e.target);
       });
     },{root:scroller,threshold:0.15});
@@ -222,13 +207,12 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
 
 /* ================= LANDING: motion =================
    1. hero sheet starts tilted in 3D, leans toward the mouse, straightens as you scroll
-   2. the statement's words darken one by one as it scrolls past
-   3. the story (Write it → Get it wrong → Get it right) plays on its own in a loop while on screen;
+   2. the story (Write it → Get it wrong → Get it right) plays on its own in a loop while on screen;
       the dots jump to a step
-   4. the numbers count up as their row scrolls into view
-   5. the formula-family cards slide sideways endlessly (CSS); hover pauses them
-   With "reduce motion" everything shows its finished state. Pinning and the hero tilt
-   are wide-screen only; on narrow screens the numbers simply show their totals. */
+   3. the formula-family cards slide sideways endlessly (CSS); hover pauses them
+   With "reduce motion" everything shows its finished state. The hero tilt is
+   wide-screen only. (The word-by-word statement and the numbers row were cut
+   on 2026-11-11 to shorten the page; the numbers now sit in the families heading.) */
 (function(){
   const sc=document.getElementById("landing-scroll"); if(!sc) return;
   const view=document.getElementById("view-landing");
@@ -268,11 +252,6 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
       </div></article>`;
   }).join("");
   track.innerHTML=`<div class="lp2-set">${cards}</div>`+(reduce?"":`<div class="lp2-set" aria-hidden="true">${cards}</div>`);
-
-  // ---- statement: wrap words so each can light up ----
-  const words=document.getElementById("lpWords");
-  words.innerHTML=words.textContent.trim().split(/\s+/).map(w=>`<span>${esc(w)}</span> `).join("");
-  const wordEls=[...words.children];
 
   // ---- story: a timed loop ----
   const storySec=document.getElementById("s-showcase"), story=document.getElementById("lpStory"),
@@ -323,17 +302,6 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
     } else play();
   }
 
-  // ---- numbers: count up with the scroll ----
-  const numSec=document.getElementById("lpNumbers"), numItems=[...numSec.querySelectorAll(".lp2-num-item")];
-  const targets=numItems.map(it=>+it.querySelector(".lp2-big").textContent||0);
-  function setNumbers(p){
-    numItems.forEach((it,i)=>{
-      const q=clamp((p-i*.12)/.6), e=1-Math.pow(1-q,3);
-      it.querySelector(".lp2-big").textContent=String(Math.round(targets[i]*e));
-      it.style.setProperty("--q",e.toFixed(3));
-    });
-  }
-
   // ---- hero tilt: mouse lean + scroll straighten ----
   const tilt=document.getElementById("lpTilt");
   let mx=0,my=0;
@@ -343,8 +311,6 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
     mx=(e.clientX-r.left)/r.width-.5; my=(e.clientY-r.top)/r.height-.5; queue();
   });
 
-  // progress through a pinned section: 0 when its top reaches the top of the scroller, 1 at its end
-  const pinProgress=el=>{ const top=el.getBoundingClientRect().top-sc.getBoundingClientRect().top, span=el.offsetHeight-sc.clientHeight; return span>0?clamp(-top/span):0; };
 
   function layout(){
     pinned=wideMQ.matches&&!reduce;
@@ -353,20 +319,9 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
   }
   function update(){
     raf=0;
-    if(!pinned){
-      tilt.style.transform="";
-      wordEls.forEach(w=>w.classList.add("lit"));
-      setNumbers(1); return;
-    }
+    if(!pinned){ tilt.style.transform=""; return; }
     const t=clamp(sc.scrollTop/520);
     tilt.style.transform=`perspective(1600px) rotateX(${(1-t)*9-my*4}deg) rotateY(${(1-t)*-16+mx*6}deg) scale(${.93+.07*t}) translateY(${t*-14}px)`;
-    const wr=words.getBoundingClientRect(), sr=sc.getBoundingClientRect();
-    const wp=clamp((sr.top+sc.clientHeight*.85-wr.top)/(wr.height+sc.clientHeight*.5));
-    const lit=Math.round(wp*wordEls.length);
-    wordEls.forEach((w,i)=>w.classList.toggle("lit",i<lit));
-    // numbers count up while the row travels from the bottom of the screen to the middle (no pinning, no extra scroll)
-    const nr=numSec.getBoundingClientRect();
-    setNumbers(clamp((sr.top+sc.clientHeight*.95-nr.top)/(sc.clientHeight*.5)));
   }
   let raf=0; const queue=()=>{ if(!raf) raf=requestAnimationFrame(update); };
   sc.addEventListener("scroll",queue,{passive:true});
