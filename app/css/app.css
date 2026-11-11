@@ -1296,3 +1296,82 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 /* final call to action: truly edge to edge (overrides the 1320px section width) */
 #view-landing .lp-section.lp2-finalwrap{max-width:none;padding-left:0;padding-right:0}
 #view-landing .lp-section.lp2-finalwrap .lp-final{width:100%;box-sizing:border-box}
+
+/* =====================================================================
+   PHONE (screens up to 700px) — 2026-11-11. Behaviour in js/phone.js.
+   Practice: task on top (foldable), sheet below, formula keys above the
+   keyboard while typing. Inputs use 16px text so iPhones don't zoom in.
+   ===================================================================== */
+#phoneKeys,#tyToast{--dk-ink:#171512;--dk-line2:#DDD5C5;--dk-yellow:#FFE680;--dk-black:#0A0A0A}
+.ws-brief-tg,.ws-laptop{display:none}
+#phoneKeys{display:none}
+#tyToast{position:fixed;left:50%;bottom:24px;z-index:90;max-width:calc(100vw - 32px);box-sizing:border-box;padding:12px 16px;border-radius:10px;background:var(--dk-black,#0A0A0A);color:#fff;font:600 14px var(--sans);text-align:center;opacity:0;transform:translate(-50%,12px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+#tyToast.on{opacity:1;transform:translate(-50%,0)}
+#view-app{position:relative}
+.ph-card-back{position:absolute;inset:0;z-index:40;background:rgba(23,21,18,.42);display:flex;align-items:flex-end;justify-content:center;animation:ph-fade .2s ease both}
+@keyframes ph-fade{from{opacity:0}to{opacity:1}}
+.ph-card{width:100%;max-width:520px;box-sizing:border-box;background:#fff;border-radius:18px 18px 0 0;border-top:1.5px solid var(--dk-black);padding:22px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:stretch;gap:12px;animation:ph-up .32s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ph-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.ph-card .ws-lvl{align-self:flex-start}
+.ph-card h2{margin:0;font-family:var(--dk-head);font-size:24px;line-height:1.1;letter-spacing:-.025em;font-weight:800;color:var(--dk-ink)}
+.ph-card p{margin:0;font-size:15px;line-height:1.55;color:#3A362F}
+.ph-card .ws-secondary{justify-content:center}
+.ph-emoji{font-size:30px;line-height:1}
+.ph-link{align-self:center;padding:6px;font:600 14px var(--sans);color:var(--dk-ink);text-decoration:underline;text-underline-offset:3px}
+
+@media(max-width:700px){
+  /* ---- landing: keep the main button, smaller hero heading ---- */
+  #view-landing .lp-nav{padding:10px 16px;gap:8px 14px}
+  #view-landing .lp-nav .lp-btn-sm{display:inline-flex;min-height:38px;padding:0 14px;font-size:14px}
+  #view-landing .lp2-hero-text h1{font-size:clamp(34px,10.4vw,44px)}
+  #view-landing .lp2-hero-text p{font-size:16px}
+  #view-landing .lp2-hero{padding-top:28px}
+
+  /* ---- practice screen ---- */
+  .ws #titlebar{padding:8px 12px;gap:6px 8px}
+  .ws #titlebar .brand{font-size:0;gap:0}               /* logo only */
+  .ws-fnchip{max-width:110px}
+  .ws-navbtn{min-width:40px;min-height:40px}
+  .ws-pos{padding:0 4px}
+  .ws #formulabar{flex-wrap:nowrap;padding:8px 10px;gap:6px}
+  .ws #namebox{width:48px;min-width:48px;padding:8px 4px;font-size:12px}
+  .ws #fx{display:none}
+  .ws #formulainput{flex:1 1 auto;font-size:16px;padding:9px 10px}
+  .ws #grid td input{font-size:16px}
+  .ws #concept.on{flex:none;min-width:0;max-width:none;max-height:44vh;border-right:none;border-bottom:1px solid var(--dk-line)}
+  .ws-brief-scroll{padding:14px 16px 12px;gap:10px}
+  .ws-title{font-size:20px}
+  .ws-task{font-size:14.5px}
+  .ws-brief-foot{padding:10px 16px 12px;gap:10px}
+  .ws-check,.ws-primary{min-height:48px}
+  .ws-brief-tg{display:inline-flex;align-items:center;margin-left:auto;min-height:32px;padding:0 10px;border-radius:7px;border:1px solid var(--dk-line2);background:#fff;font:600 12.5px var(--sans);color:var(--dk-ink);cursor:pointer}
+  /* folded task: just the level, position and title */
+  .ws #concept.mini .ws-brief-scroll>*:not(.ws-meta):not(.ws-title){display:none}
+  .ws #concept.mini .ws-title{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ws #concept.mini .ws-brief-scroll{padding-bottom:8px;gap:6px}
+  /* while typing, the sheet gets the room: the task steps aside until Enter */
+  body.ph-typing .ws #concept.on{display:none}
+  .ws #gridwrap{padding:8px}
+  .ws #fillhandle{display:none!important}
+  .ws #statusbar{padding:6px 12px}
+  .ws #statusbar .keys,.ws #btnKeys{display:none}
+  .ws-laptop{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;border-radius:7px;border:1px solid var(--dk-line2);background:#fff;font:600 12.5px var(--sans);color:var(--dk-ink);cursor:pointer}
+
+  /* formula keys: a strip that sits on top of the phone keyboard */
+  #phoneKeys.on{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;gap:6px;padding:6px 8px;background:#F3EEE3;border-top:1px solid var(--dk-line2);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  #phoneKeys::-webkit-scrollbar{display:none}
+  #phoneKeys .pk{flex:none;min-width:42px;height:42px;padding:0 10px;border-radius:8px;border:1px solid var(--dk-line2);background:#fff;font:700 17px var(--mono);color:var(--dk-ink);cursor:pointer;touch-action:manipulation}
+  #phoneKeys .pk:active{background:var(--dk-yellow)}
+  #phoneKeys .pk.fn{background:#FFF0A6;border-color:#E8B530;font-size:14px}
+  #phoneKeys .pk.enter{background:var(--dk-black);border-color:var(--dk-black);color:#fff;font:700 14px var(--sans)}
+  body.ph-typing .ws #gridwrap{padding-bottom:62px}
+  #fnSuggest .fs-key{display:none}            /* no Tab key on a phone: tap a suggestion */
+  #fnSuggest .fs-item{min-height:40px;display:flex;align-items:center}
+}
+@media(max-width:380px){
+  #view-landing .lp-nav nav a[data-go="courses"]{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .ph-card-back,.ph-card{animation:none}
+  #tyToast{transition:none}
+}

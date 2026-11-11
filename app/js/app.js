@@ -66,6 +66,7 @@ function clearSheet(id){ lsDel(LS_SHEET+id); _sheetLast=null; }
      #/course/<id>/<n>      course detail with formula n expanded
      #/practice/<exId>      exercise workspace
      #/sandbox              blank sheet
+     #/sync/v1/<ids>/<days>/<last>   progress link made on a phone (js/phone.js)
    Screen functions (openCourse, openEx …) render synchronously and then
    record their URL with setRoute(). A hashchange we caused ourselves is
    ignored; one caused by Back/Forward or a typed URL is routed. */
@@ -98,7 +99,7 @@ function showNotFound(){
   setRoute(location.hash.replace(/^#/,"")||"/","Page not found");
 }
 function courseOfEx(exId){ return COURSES.find(c=>flatEx(c).includes(exId))||null; }
-function closeOverlays(){ setPanel(); hideFnHelp(); }   // outline dropdown, shortcuts dialog, formula help
+function closeOverlays(){ setPanel(); hideFnHelp(); closePhoneCard(); }   // outline dropdown, shortcuts dialog, formula help
 function route(){
   const path=location.hash.replace(/^#/,"")||"/";
   if(path===_routeKey) return;
@@ -113,6 +114,7 @@ function routeTo(path){
   if(p[0]==="courses" && p.length===1) return showCourses();
   if(p[0]==="home" && p.length===1) return showHome();
   if(p[0]==="sandbox" && p.length===1) return openSandbox();
+  if(p[0]==="sync" && p.length===5) return applySync(p.slice(1));   // progress link from a phone (js/phone.js)
   if(p[0]==="course" && p.length>=2 && p.length<=3){
     const c=COURSES.find(x=>x.id===p[1]);
     if(c && c.upcoming) return showCourses();
@@ -174,7 +176,7 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
   const live=COURSES.find(c=>!c.upcoming)||COURSES[0];
   const counts={
     functions:Object.keys(FUNCS).length,
-    exercises:COURSES.reduce((n,c)=>n+flatEx(c).length,0),
+    exercises:flatEx(live).length,   // open exercises only (locked courses excluded)
     formulas:live.modules.length
   };
   scroller.querySelectorAll("[data-count]").forEach(el=>{
@@ -712,23 +714,26 @@ function openEx(exId, opts){
   show("app");
   positionSelBox(); positionFillHandle();
   setRoute("/practice/"+exId, (mod?mod.title+" — ":"")+shortTitle(ex.title));
-  try{if(!localStorage.getItem("tyro_onboard"))setTimeout(startOnboard,600);}catch(e){}
+  phoneAfterOpen(exId);   // phones: case studies first show the "bigger screen" card (js/phone.js)
+  // the guided tour points at desktop controls, so phones skip it
+  try{if(!isPhone()&&!localStorage.getItem("tyro_onboard"))setTimeout(startOnboard,600);}catch(e){}
 }
 
 /* ---- the brief: task, concept, hint/solution, and the answer check at its foot ---- */
 let conceptOpen = true;            // remembered while you move between exercises
+let briefMini = false;             // phones: task folded to its title line ("Hide task")
 let briefResult = null;            // {type:"ok"|"bad", msg, newlyDone, formulaDone}
 const LEVEL_LABEL={easy:"Easy",medium:"Medium",hard:"Hard"};
 function renderConcept(ex){
   const cp=document.getElementById("concept");
-  cp.classList.add("on");
+  cp.classList.add("on"); cp.classList.toggle("mini",briefMini);
   const P=exPlace(currentExId), mod=P.mod;
   const paras = String(ex.desc||"").split(/\n\n+/).map(p => `<p class="ws-task">${esc(p.trim())}</p>`).join("");
   const answer = ex.targetRange ? ex.targetRange : targetRefs.length>3 ? targetRefs[0]+" … "+targetRefs[targetRefs.length-1] : targetRefs.join(", ");
   const conceptName = mod ? mod.title : "this formula";
   cp.innerHTML=`
     <div class="ws-brief-scroll">
-      <div class="ws-meta"><span class="ws-lvl ${ex.lvl}">${LEVEL_LABEL[ex.lvl]||ex.lvl}</span><span class="dk-mono">Exercise ${P.pos} of ${P.of}</span></div>
+      <div class="ws-meta"><span class="ws-lvl ${ex.lvl}">${LEVEL_LABEL[ex.lvl]||ex.lvl}</span><span class="dk-mono">Exercise ${P.pos} of ${P.of}</span><button class="ws-brief-tg" data-act="brief" aria-expanded="${!briefMini}">${briefMini?"Show task":"Hide task"}</button></div>
       <h1 class="ws-title">${esc(shortTitle(ex.title))}</h1>
       ${paras}
       <div class="ws-answer">Answer${targetRefs.length>1?"s":""} in <span class="ws-answer-cell">${esc(answer)}</span></div>
@@ -825,6 +830,12 @@ document.getElementById("concept").addEventListener("click",e=>{
   const act=b.dataset.act;
   if(act==="check"){ if(currentEx) checkEx(currentEx); }
   else if(act==="reset"||act==="repeat"){ if(currentExId) openEx(currentExId,{fresh:true}); }
+  else if(act==="brief"){
+    briefMini=!briefMini;
+    document.getElementById("concept").classList.toggle("mini",briefMini);
+    b.textContent=briefMini?"Show task":"Hide task"; b.setAttribute("aria-expanded",String(!briefMini));
+    positionSelBox();
+  }
   else if(act==="concept"){
     conceptOpen=!conceptOpen;
     const box=b.closest(".ws-concept"); box.classList.toggle("open",conceptOpen);
@@ -928,6 +939,7 @@ function pass(ex,msg){
     ? '<div class="ws-note">Excel closed the bracket for you — get in the habit of typing <code>)</code> yourself.</div>' : "";
   showResult("ok",msg+autoNote,{newlyDone:!wasDone,formulaDone,autoNote});
   updateStreak(); renderOutline(); renderAll();
+  phoneAfterPass(!wasDone);
 }
 /* Feedback lives in the brief and on the sheet: no popup.
    Pass: the answer cells get a stamp and "+1" floats by the progress bar.

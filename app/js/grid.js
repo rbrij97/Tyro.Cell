@@ -438,6 +438,7 @@ grid.addEventListener("mousedown",e=>{
   document.addEventListener("mouseover",move); document.addEventListener("mouseup",up);
 });
 grid.addEventListener("dblclick",e=>{
+  if(typeof isPhone==="function"&&isPhone())return;   // phones: tap twice to type in the formula bar (js/phone.js)
   const td=e.target.closest("td"); if(!td)return;
   const p=parseRef(td.dataset.ref); select(p.r,p.c); startEdit(td.dataset.ref);
 });
