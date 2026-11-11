@@ -14,6 +14,7 @@ function moduleForEx(course,exId){
 function updateStreak(){
   const el=document.getElementById("ws-streak");
   if(el) el.textContent = String(doneEx.size);
+  if(typeof updateHeaderProgress==="function") updateHeaderProgress();
 }
 
 /* ================= PERSISTENCE (this browser only) =================
@@ -208,90 +209,173 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
 })();
 
 /* ================= PAGES ================= */
-function renderCourses(){
-  const el=document.getElementById("coursecards");
-  el.innerHTML=COURSES.map((c,ci)=>{
-    const total=flatEx(c).length, done=courseDone(c), pct=Math.round(done/total*100);
-    const num = "COURSE " + String(ci+1).padStart(2,"0");
-    const MAX_TAGS=8;
-    const allTags=c.modules.map(m=>m.title);
-    const shown=allTags.slice(0,MAX_TAGS).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
-    const more=allTags.length>MAX_TAGS?`<span class="tag tag-more">+${allTags.length-MAX_TAGS} more</span>`:"";
-    const cta = c.upcoming ? "" : done===0 ? "Start →" : done===total ? "Review →" : "Continue →";
-    return `<div class="ccard${c.upcoming?" upcoming":""}" data-course="${c.id}">
-      <div class="ccard-meta">${num} · ${esc(c.level)} · ${esc(c.hours)}</div>
-      <h3>${esc(c.title)}${c.upcoming?'<span class="soon">Coming soon</span>':''}</h3>
-      <div class="cdesc">${esc(c.desc)}</div>
-      <div class="tags">${shown}${more}</div>
-      <div class="ccard-foot">
-        <div class="ccard-pbar"><div style="width:${pct}%"></div></div>
-        <span class="ccard-pnote">${String(done).padStart(2,"0")} / ${String(total).padStart(2,"0")} done</span>
-        <span class="ccard-cta">${cta}</span>
-      </div>
-    </div>`;}).join("");
-  el.querySelectorAll(".ccard").forEach(cd=>cd.onclick=()=>openCourse(cd.dataset.course));
+/* Header progress shown on every "desk" screen: exercises done across live courses. */
+const liveCourses=()=>COURSES.filter(c=>!c.upcoming);
+function updateHeaderProgress(){
+  const total=liveCourses().reduce((n,c)=>n+flatEx(c).length,0);
+  const done=liveCourses().reduce((n,c)=>n+courseDone(c),0);
+  const pct=total?Math.round(done/total*100):0;
+  document.querySelectorAll(".dk-progfill").forEach(el=>{ el.style.width=pct+"%"; });
+  document.querySelectorAll(".dk-progtext").forEach(el=>{ el.innerHTML="<b>"+done+"</b> / "+total+" done"; });
 }
+const nextExOf=list=>list.find(x=>!doneEx.has(x))||list[0];
+const courseNum=c=>"Course "+String(COURSES.indexOf(c)+1).padStart(2,"0");
+// "Excel Formula Fundamentals" -> last word gets the highlighter stroke
+const hlLastWord=t=>{ const i=String(t).lastIndexOf(" "); return i<0?'<span class="dk-hl">'+esc(t)+'</span>':esc(t.slice(0,i+1))+'<span class="dk-hl">'+esc(t.slice(i+1))+'</span>'; };
+const miniSheet=meta=>'<div class="ms '+meta.anim+'" style="--ms-ink:'+meta.ink+'" aria-hidden="true"><div class="ms-g">'+"<i></i>".repeat(12)+'</div><span class="ms-s"></span><span class="ms-o"></span></div>';
+
+function renderCourses(){
+  updateHeaderProgress();
+  const el=document.getElementById("coursecards");
+  el.innerHTML=COURSES.map(c=>{
+    const total=flatEx(c).length, done=courseDone(c), pct=Math.round(done/total*100);
+    if(c.upcoming) return `<div class="dk-ccard soon">
+      <div class="dk-ccard-main">
+        <div class="dk-crumb"><span>${courseNum(c)} · ${esc(c.level)} · ${esc(c.hours)}</span></div>
+        <h2>${esc(c.title)}<span class="dk-soonchip">Coming soon</span></h2>
+        <p>${esc(c.desc)}</p>
+      </div></div>`;
+    const cats={}; c.modules.forEach(m=>{ const k=formulaMeta(m.title).cat; cats[k]=(cats[k]||0)+1; });
+    const chips=Object.keys(FORMULA_CATS).filter(k=>cats[k]).map(k=>`<span class="dk-catchip" style="background:${FORMULA_CATS[k].fill};color:${FORMULA_CATS[k].ink}">${esc(k)} · ${cats[k]}</span>`).join("");
+    const cta=done===0?"Start course →":done===total?"Review →":"Continue →";
+    return `<a class="dk-ccard dk-lift" href="#/course/${c.id}">
+      <div class="dk-ccard-main">
+        <div class="dk-crumb"><span class="dk-tag">${courseNum(c)}</span><span>${esc(c.level)} · ${esc(c.hours)} · ${c.modules.length} formulas · ${total} exercises</span></div>
+        <h2>${esc(c.title)}</h2>
+        <p>${esc(c.desc)}</p>
+        <div class="dk-catchips">${chips}</div>
+      </div>
+      <div class="dk-ccard-side">
+        <div class="dk-bigpct"><b>${pct}%</b><span class="dk-mono">${done} / ${total} exercises</span></div>
+        <div class="dk-bar"><div class="dk-fill" style="width:${pct}%"></div></div>
+        <span class="dk-cta">${cta}</span>
+      </div></a>`;
+  }).join("");
+}
+
+/* Course page: formula cards with search, "unsolved only", sort and category filters.
+   Filter state survives re-renders within a course and resets when you switch course. */
+const courseUI={courseId:null,cat:"All",q:"",unsolved:false,sort:"course",gen:0};
 function openCourse(id, soloMi){
-  currentCourse=COURSES.find(c=>c.id===id);
-  if(!currentCourse) return showNotFound();
-  const c=currentCourse, total=flatEx(c).length, done=courseDone(c), pct=Math.round(done/total*100);
-  const nextId=flatEx(c).find(x=>!doneEx.has(x))||flatEx(c)[0];
-  let runningIdx=0;
-  document.getElementById("coursedetail").innerHTML=`
-    <h2 class="pgtitle">${esc(c.title)}</h2>
-    <p class="pgsub">${esc(c.desc)}</p>
-    <div class="cstats">
-      <div class="cstat"><div class="k">Level</div><div class="v">${esc(c.level)}</div></div>
-      <div class="cstat"><div class="k">Time</div><div class="v">${esc(c.hours)}</div></div>
-      <div class="cstat"><div class="k">Exercises</div><div class="v">${total}</div></div>
-      <div class="cstat"><div class="k">Prerequisites</div><div class="v">${esc(c.prereq)}</div></div>
-    </div>
-    <div class="progress-row">
-      <div class="ccard-pbar" style="flex:1"><div style="width:${pct}%"></div></div>
-      <span class="ccard-pnote">${done} / ${total} done</span>
-      <button class="btn primary" id="courseStart">${done===0?"Start course":done===total?"Review":"Continue"}</button>
-    </div>
-    <button class="back-to-all" id="btnBackToAll">← All formulas</button>
-    ${c.modules.map((m,mi)=>{
-      const md=m.ex.filter(x=>doneEx.has(x)).length;
-      return `<div class="module collapsed" data-mi="${mi}">
-        <div class="mhead">
-          <span class="chev">▸</span>
-          <span class="mtag">M${String(mi+1).padStart(2,"0")}</span>
-          <span class="mtitle">${esc(m.title)}</span>
-          <span class="mprog">${md} / ${m.ex.length}</span>
-        </div>
-        ${m.ex.map(xid=>{
-          const x=EX[xid]; runningIdx++;
-          return `<div class="exrow ${doneEx.has(xid)?"done":""}" data-ex="${xid}">
-            <span class="tick">${doneEx.has(xid)?"✓":""}</span>
-            <span class="exnum">${String(runningIdx).padStart(2,"0")}</span>
-            <span class="exname">${esc(x.title)}</span>
-            <span class="badge ${x.lvl}">${x.lvl}</span>
-            <span class="exgo">${doneEx.has(xid)?'Redo →':'Practice →'}</span>
-          </div>`;}).join("")}
-      </div>`;}).join("")}`;
-  document.getElementById("courseStart").onclick=()=>openEx(nextId);
+  const c=COURSES.find(x=>x.id===id);
+  if(!c) return showNotFound();
+  if(courseUI.courseId!==id||soloMi!=null) Object.assign(courseUI,{courseId:id,cat:"All",q:"",unsolved:false,sort:"course"});
+  currentCourse=c;
+  updateHeaderProgress();
+  const all=flatEx(c), total=all.length, done=courseDone(c), pct=Math.round(done/total*100);
+  const nextId=nextExOf(all), nextMod=moduleForEx(c,nextId)||c.modules[0];
+  const cta=done===0?"Start: "+nextMod.title
+          :done===total?"Review the course"
+          :"Continue: "+nextMod.title+" "+(nextMod.ex.indexOf(nextId)+1)+" of "+nextMod.ex.length;
   const detail=document.getElementById("coursedetail");
-  detail.querySelectorAll(".exrow").forEach(r=>r.onclick=()=>openEx(r.dataset.ex));
-  // Only one module can be expanded at a time; expanding one is its own URL,
-  // so Back collapses it again.
-  detail.querySelectorAll(".mhead").forEach(h=>{
-    h.onclick=()=>{
-      const mi=+h.parentElement.dataset.mi;
-      openCourse(c.id, h.parentElement.classList.contains("collapsed") ? mi : null);
-    };
+  detail.innerHTML=`
+    <section class="dk-chead dk-enter">
+      <div class="dk-chead-main">
+        <div class="dk-crumb"><a href="#/courses">Courses</a><span aria-hidden="true">/</span><span class="dk-tag">${courseNum(c)}</span><span>${esc(c.level)} · ${esc(c.hours)}</span></div>
+        <h1 class="dk-h1">${hlLastWord(c.title)}</h1>
+        <p class="dk-sub">${esc(c.desc)}</p>
+      </div>
+      <div class="dk-chead-side">
+        <div class="dk-bigpct"><b>${pct}%</b><span class="dk-mono">${done} / ${total} exercises</span></div>
+        <div class="dk-bar"><div class="dk-fill" style="width:${pct}%"></div></div>
+        <a class="dk-btn" id="courseStart" href="#/practice/${encodeURIComponent(nextId)}">${esc(cta)} →</a>
+      </div>
+    </section>
+    <div class="dk-toolbar">
+      <label class="dk-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#57524A" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="fq" aria-label="Search formulas" placeholder="Search formulas — try “lookup” or “CAGR”" autocomplete="off">
+      </label>
+      <button class="dk-toggle" id="funsolved" aria-pressed="false"><span class="box" aria-hidden="true"></span>Unsolved only</button>
+      <label class="dk-sortlabel">Sort
+        <select id="fsort">
+          <option value="course">Course order</option>
+          <option value="easy">Easiest first</option>
+          <option value="hard">Hardest first</option>
+          <option value="progress">Most progress</option>
+        </select>
+      </label>
+    </div>
+    <div class="dk-filters" id="ffilters" role="group" aria-label="Filter by category"></div>
+    <div class="dk-mono" id="fcount" aria-live="polite"></div>
+    <div class="dk-empty" id="fempty" hidden><b>No formula matches that.</b>Try a function name like SUMIF, or a use like “dates”.</div>
+    <div class="dk-grid" id="fgrid"></div>
+    <div class="dk-legend"><span>Each square is one exercise:</span><span><i style="background:#2FB36B"></i>Easy</span><span><i style="background:#F2A516"></i>Medium</span><span><i style="background:#E2483D"></i>Hard</span></div>`;
+
+  const q=detail.querySelector("#fq"), un=detail.querySelector("#funsolved"), so=detail.querySelector("#fsort");
+  q.value=courseUI.q; so.value=courseUI.sort; un.setAttribute("aria-pressed",String(courseUI.unsolved));
+  un.querySelector(".box").textContent=courseUI.unsolved?"✓":"";
+  q.addEventListener("input",()=>{ courseUI.q=q.value; renderFormulaCards(c); });
+  so.addEventListener("change",()=>{ courseUI.sort=so.value; renderFormulaCards(c); });
+  un.addEventListener("click",()=>{
+    courseUI.unsolved=!courseUI.unsolved;
+    un.setAttribute("aria-pressed",String(courseUI.unsolved));
+    un.querySelector(".box").textContent=courseUI.unsolved?"✓":"";
+    renderFormulaCards(c);
   });
-  detail.querySelector("#btnBackToAll").onclick=()=>openCourse(c.id, null);
-  detail.classList.toggle("solo-mode", soloMi!=null);
-  if(soloMi!=null){
-    const mod=detail.querySelector('.module[data-mi="'+soloMi+'"]');
-    if(mod) mod.classList.remove("collapsed");
-  }
+  renderFormulaCards(c);
+
   show("course");
   detail.parentElement.scrollTop=0;
+  // #/course/<id>/<n> points at formula n: bring its card into view and flash it.
+  if(soloMi!=null){
+    const card=detail.querySelector('.dk-fcard[data-mi="'+soloMi+'"]');
+    if(card){ card.scrollIntoView({block:"center"}); card.classList.add("flash"); }
+  }
   setRoute("/course/"+c.id+(soloMi!=null?"/"+(soloMi+1):""),
            soloMi!=null ? c.modules[soloMi].title+" · "+c.title : c.title);
+}
+
+function renderFormulaCards(c){
+  const LV={easy:1,medium:2,hard:3};
+  const rows=c.modules.map((m,mi)=>{
+    const meta=formulaMeta(m.title), total=m.ex.length, done=m.ex.filter(x=>doneEx.has(x)).length;
+    const lv=m.ex.map(x=>EX[x].lvl);
+    return {m,mi,meta,total,done,lv,avg:lv.reduce((s,l)=>s+(LV[l]||2),0)/lv.length};
+  });
+  const q=courseUI.q.trim().toLowerCase();
+  const base=rows.filter(r=>(!q||(r.m.title+" "+r.meta.cat+" "+r.meta.purpose).toLowerCase().includes(q))
+                          &&(!courseUI.unsolved||r.done<r.total));
+  const cats=["All",...Object.keys(FORMULA_CATS).filter(k=>rows.some(r=>r.meta.cat===k))];
+  if(!cats.includes(courseUI.cat)) courseUI.cat="All";
+  const f=document.getElementById("ffilters");
+  f.innerHTML=cats.map(k=>{
+    const n=k==="All"?base.length:base.filter(r=>r.meta.cat===k).length;
+    const col=k==="All"?"background:#fff;color:#171512;border-color:#DDD5C5":`background:${FORMULA_CATS[k].fill};color:${FORMULA_CATS[k].ink}`;
+    return `<button class="dk-filter" data-cat="${esc(k)}" aria-pressed="${k===courseUI.cat}" style="${col}">${esc(k)}<span class="n">${n}</span></button>`;
+  }).join("");
+  f.querySelectorAll(".dk-filter").forEach(b=>b.onclick=()=>{ courseUI.cat=b.dataset.cat; renderFormulaCards(c); });
+
+  let list=base.filter(r=>courseUI.cat==="All"||r.meta.cat===courseUI.cat);
+  if(courseUI.sort==="easy") list=list.slice().sort((a,b)=>a.avg-b.avg);
+  if(courseUI.sort==="hard") list=list.slice().sort((a,b)=>b.avg-a.avg);
+  if(courseUI.sort==="progress") list=list.slice().sort((a,b)=>b.done/b.total-a.done/a.total);
+
+  document.getElementById("fcount").textContent="Showing "+list.length+" of "+rows.length+" formulas";
+  document.getElementById("fempty").hidden=list.length>0;
+  const g=document.getElementById("fgrid");
+  courseUI.gen++;
+  g.className="dk-grid "+(courseUI.gen%2?"ga":"gb");   // swapping restarts the card stagger
+  g.innerHTML=list.map(r=>{
+    const st=r.done===r.total?["done","Done"]:r.done>0?["prog","In progress"]:["new","New"];
+    const counts={easy:0,medium:0,hard:0}; r.lv.forEach(l=>counts[l]=(counts[l]||0)+1);
+    const mixLabel=r.total+" exercises: "+["easy","medium","hard"].filter(k=>counts[k]).map(k=>counts[k]+" "+k).join(", ");
+    const barCol=st[0]==="done"?"#0A0A0A":r.meta.ink;
+    return `<a class="dk-fcard dk-lift" data-mi="${r.mi}" href="#/practice/${encodeURIComponent(nextExOf(r.m.ex))}" aria-label="${esc(r.m.title)} — ${st[1]}, ${r.done} of ${r.total} done">
+      <div class="dk-band" style="background:${r.meta.fill};color:${r.meta.ink}">
+        <div class="col"><span class="nm">${esc(r.m.title)}</span><span class="dk-status ${st[0]}">${st[1]}</span></div>
+        ${miniSheet(r.meta)}
+      </div>
+      <div class="dk-fbody">
+        <span class="dk-fcat" style="color:${r.meta.ink}">${esc(r.meta.cat)}</span>
+        <span class="dk-fpurpose">${esc(r.meta.purpose)}</span>
+        <div class="dk-ffoot">
+          <span class="dk-mix" role="img" aria-label="${mixLabel}">${r.lv.map(l=>'<i class="'+l+'"></i>').join("")}</span>
+          <span class="dk-fcount">${r.done} / ${r.total}</span>
+        </div>
+        <div class="dk-fbar"><div class="dk-fill" style="width:${Math.round(r.done/r.total*100)}%;background:${barCol}"></div></div>
+      </div></a>`;
+  }).join("");
 }
 
 /* ================= WORKSPACE ================= */

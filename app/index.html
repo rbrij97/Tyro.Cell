@@ -139,40 +139,42 @@
 </div>
 
 <!-- ============ VIEW: COURSES ============ -->
-<div class="view" id="view-courses">
-  <div class="pagenav">
-    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="currentColor"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
+<!-- "study desk" design: styles in the DESK block of css/app.css, rendering in renderCourses() -->
+<div class="view desk" id="view-courses">
+  <div class="pagenav dk-nav">
+    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="#0A0A0A" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="#0A0A0A"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
+    <nav aria-label="Main"><a data-go="courses" class="dk-navlink on" aria-current="page">Courses</a></nav>
     <span class="spacer"></span>
-    <nav>
-      <a data-go="courses">Courses</a>
-    </nav>
+    <div class="dk-prog"><span class="dk-progbar"><span class="dk-progfill"></span></span><span class="dk-progtext"></span></div>
   </div>
   <div class="pagescroll">
-    <div class="pagewrap">
-      <h2 class="pgtitle">Courses</h2>
-      <p class="pgsub">Pick a course and start writing formulas. Each exercise uses real company data and checks your answer instantly.</p>
-      <div id="coursecards"></div>
-      <div class="progress-util">
-        <button class="btn-text" id="btnExportProg">Export progress</button>
-        <span class="util-sep">&middot;</span>
-        <button class="btn-text" id="btnImportProg">Import progress</button>
+    <main class="dk-wrap dk-enter">
+      <header class="dk-pagehead">
+        <h1 class="dk-h1"><span class="dk-hl">Courses</span></h1>
+        <p class="dk-sub">Pick a course and start writing formulas. Every exercise uses real company data and checks your answer instantly.</p>
+      </header>
+      <div id="coursecards" class="dk-courselist"></div>
+      <div class="dk-util">
+        <button class="dk-textbtn" id="btnExportProg">Export progress</button>
+        <span aria-hidden="true">·</span>
+        <button class="dk-textbtn" id="btnImportProg">Import progress</button>
         <input type="file" id="progFile" accept="application/json" style="display:none">
       </div>
-      <footer class="site-footer">Made with <span class="heart">&hearts;</span> in Amdavad &nbsp;&middot;&nbsp; <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>
-    </div>
+      <footer class="dk-footer">Made with <span class="dk-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>
+    </main>
   </div>
 </div>
 
 <!-- ============ VIEW: COURSE DETAIL ============ -->
-<div class="view" id="view-course">
-  <div class="pagenav">
-    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="currentColor"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
+<!-- Formula cards with search, filters and sort: rendered by openCourse() / renderFormulaCards() -->
+<div class="view desk" id="view-course">
+  <div class="pagenav dk-nav">
+    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="#0A0A0A" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="#0A0A0A"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
+    <nav aria-label="Main"><a data-go="courses" class="dk-navlink on">Courses</a></nav>
     <span class="spacer"></span>
-    <nav>
-      <a data-go="courses">Courses</a>
-    </nav>
+    <div class="dk-prog"><span class="dk-progbar"><span class="dk-progfill"></span></span><span class="dk-progtext"></span></div>
   </div>
-  <div class="pagescroll"><div class="pagewrap" id="coursedetail"></div></div>
+  <div class="pagescroll"><main class="dk-wrap" id="coursedetail"></main></div>
 </div>
 
 <!-- ============ VIEW: NOT FOUND ============ -->

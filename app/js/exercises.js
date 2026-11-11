@@ -1024,7 +1024,7 @@ const EX={
 };
 const COURSES=[
  {id:"excel",title:"Excel Formula Fundamentals",level:"Beginner / Intermediate",hours:"~5 hours",prereq:"None",
-  desc:"One row per formula, from SUM to XLOOKUP. Click a formula to open its practice cases — each runs on real Indian and US company data, from quick drills to multi-step case studies.",
+  desc:"Every formula from SUM to XLOOKUP, each a short pack of practice cases on real company data — quick drills first, then case studies.",
   modules:[
    {title:"SUM",ex:["sum","sum_quarterly","sum_weekly","sum_regions_blank","sum_per_month","sum_case_opex","sum_case_portfolio_div","sum_case_subtotal","sum_case_netcash","sum_case_sector"]},
    {title:"AVERAGE",ex:["avg","avg_us_pe","avg_nifty_pe","avg_ev_ebitda","avg_target_price","avg_jpm_eps","avg_reliance_growth","avg_sector_yield"]},
@@ -1072,3 +1072,63 @@ const COURSES=[
    {title:"Income statement",ex:["grossprofit","grossmargin","expenseclass","segmentgp"]},
    {title:"Balance sheet & liquidity",ex:["ncwc","currentratio"]}]},
 ];
+
+/* ================= FORMULA CATEGORIES & CARD COPY =================
+   Drives the course page's formula cards: each module (keyed by its exact
+   title in COURSES) belongs to one category and has a one-line purpose.
+   Category colours are the locked "study desk" highlighters: [fill, ink]. */
+const FORMULA_CATS={
+  "Aggregation":    {fill:"#D6ECFF",ink:"#0B4F8A",anim:"agg"},
+  "Conditional":    {fill:"#EADFFF",ink:"#5B2CA8",anim:"cond"},
+  "Lookup":         {fill:"#C8EEF0",ink:"#0B5F66",anim:"look"},
+  "Text":           {fill:"#FFD9E8",ink:"#A3134F",anim:"text"},
+  "Maths":          {fill:"#FFE0C2",ink:"#9A4300",anim:"math"},
+  "Dates":          {fill:"#FFF0A6",ink:"#6E5600",anim:"date"},
+  "Logic & checks": {fill:"#E3F5C4",ink:"#46690E",anim:"logic"},
+  "Sheet skills":   {fill:"#ECE8E0",ink:"#4A4438",anim:"sheet"}
+};
+const FORMULA_META={
+  "SUM":["Aggregation","Add up a range — totals, subtotals, net cash flow."],
+  "AVERAGE":["Aggregation","Mean of a range — comps P/E, consensus targets."],
+  "MIN & MAX":["Aggregation","Highs, lows and spreads — 52-week range, drawdown."],
+  "COUNT & COUNTA":["Aggregation","Count numbers vs anything filled — data coverage."],
+  "MEDIAN":["Aggregation","The middle value — comps without outlier noise."],
+  "PRODUCT":["Aggregation","Multiply a chain — compounding factors."],
+  "IF":["Conditional","Return one of two results — profit or loss, buy or sell."],
+  "COUNTIF":["Conditional","Count rows that meet one condition."],
+  "SUMIF & SUMIFS":["Conditional","Sum rows that meet one or more conditions."],
+  "COUNTIFS":["Conditional","Count rows that meet several conditions."],
+  "AVERAGEIF":["Conditional","Average rows that meet one condition."],
+  "AVERAGEIFS":["Conditional","Average rows that meet several conditions."],
+  "IFERROR":["Conditional","Catch #N/A and #DIV/0! with a clean fallback."],
+  "VLOOKUP":["Lookup","Pull a value from a table by its first column."],
+  "INDEX + MATCH":["Lookup","Look up in any direction, including leftwards."],
+  "XLOOKUP":["Lookup","The modern lookup, with a built-in not-found value."],
+  "HLOOKUP":["Lookup","Look up across a row — wide comps tables."],
+  "Text join (&, CONCAT)":["Text","Join text — labels and composite lookup keys."],
+  "TRIM":["Text","Strip stray spaces that break lookups."],
+  "LEFT, RIGHT & MID":["Text","Cut text apart — tickers, ISINs, GL codes."],
+  "LEN":["Text","Count characters — validate PAN and ISIN length."],
+  "FIND":["Text","Locate a delimiter inside text."],
+  "SUBSTITUTE":["Text","Replace text — strip commas and suffixes."],
+  "UPPER, LOWER & PROPER":["Text","Fix capitalisation in imported data."],
+  "TEXTJOIN":["Text","Join many cells with a delimiter."],
+  "ROUND":["Maths","Round to set decimals — EPS, margins."],
+  "ROUNDUP & ROUNDDOWN":["Maths","Always up or always down — lots, provisions."],
+  "POWER (CAGR)":["Maths","Exponents — CAGR and compounding."],
+  "ABS":["Maths","Size of a variance, ignoring its sign."],
+  "MOD":["Maths","Remainders — quarter-end months, cycles."],
+  "INT":["Maths","Whole numbers only — lots, completed years."],
+  "SQRT":["Maths","Square roots — annualising volatility."],
+  "Dates (DATE, DAYS)":["Dates","Build dates and count the days between them."],
+  "YEAR, MONTH & DAY":["Dates","Pull parts out of a date — fiscal years."],
+  "TEXT":["Dates","Format dates and numbers as labels."],
+  "AND & OR":["Logic & checks","Combine conditions inside an IF."],
+  "NOT":["Logic & checks","Flip a condition — exclusion screens."],
+  "ISNUMBER & ISBLANK":["Logic & checks","Check data before you trust it."],
+  "COUNTBLANK":["Logic & checks","Count the gaps in a dataset."],
+  "Fill handle & relative refs":["Sheet skills","One formula, dragged down with shifting references."],
+  "Income statement":["Sheet skills","Gross profit, margins and expense classification."],
+  "Balance sheet & liquidity":["Sheet skills","Working capital and the current ratio."]
+};
+const formulaMeta=title=>{ const m=FORMULA_META[title]||["Sheet skills",""]; return {cat:m[0],purpose:m[1],...FORMULA_CATS[m[0]]}; };
