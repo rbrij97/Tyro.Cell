@@ -86,9 +86,7 @@ function showNotFound(){
   setRoute(location.hash.replace(/^#/,"")||"/","Page not found");
 }
 function courseOfEx(exId){ return COURSES.find(c=>flatEx(c).includes(exId))||null; }
-function closeOverlays(){
-  document.getElementById("resultOverlay").classList.remove("on");
-}
+function closeOverlays(){ /* popups removed: feedback is inline in the brief */ }
 function route(){
   const path=location.hash.replace(/^#/,"")||"/";
   if(path===_routeKey) return;
@@ -381,28 +379,42 @@ function renderFormulaCards(c){
 /* ================= WORKSPACE ================= */
 function openSandbox(){
   currentEx=null; currentExId=null; currentCourse=null;
-  resetCells({}); targetRefs=[]; clearHistory();
-  document.getElementById("exbar").style.display="none";
+  resetCells({}); targetRefs=[]; passedRefs=[]; clearHistory();
   document.getElementById("concept").classList.remove("on");
   document.getElementById("ws-crumb").textContent="Sandbox";
+  document.getElementById("ws-crumb").removeAttribute("style");
   document.getElementById("ws-sep2").style.display="none";
   document.getElementById("ws-course").style.display="none";
   document.getElementById("ws-sep3").style.display="none";
+  document.getElementById("ws-pager").style.display="none";
   updateStreak();
-  renderOutline(); renderAll(); select(1,0); show("app");
+  renderOutline(); renderAll(); select(1,0); show("app"); positionSelBox();
   setRoute("/sandbox","Sandbox");
 }
+
+/* Where an exercise sits: its module, its position in that module, and the
+   next exercise in the whole course (Next crosses into the next formula). */
+function exPlace(exId){
+  const course=currentCourse, mod=course?moduleForEx(course,exId):null;
+  const list=course?flatEx(course):[exId], i=list.indexOf(exId);
+  return {course,mod,mi:course&&mod?course.modules.indexOf(mod):-1,
+          pos:mod?mod.ex.indexOf(exId)+1:1, of:mod?mod.ex.length:1,
+          prev:i>0?list[i-1]:null, next:i>=0&&i<list.length-1?list[i+1]:null};
+}
+// "VLOOKUP — Pull CMP from ticker master" -> "Pull CMP from ticker master" (the module name is shown separately)
+const shortTitle=t=>String(t).replace(/^[A-Z][A-Z0-9 &+,()]*\s—\s/,"");
+
 /* Opens an exercise. Restores the learner's saved sheet for it if there is
    one; pass {fresh:true} to start from the original data (Reset, Repeat). */
 function openEx(exId, opts){
   const ex=EX[exId]; if(!ex) return showNotFound();
   if(!currentCourse || !flatEx(currentCourse).includes(exId)) currentCourse=courseOfEx(exId);
   currentEx=ex; currentExId=exId;
-  hintViewed = false; solutionClickCount = 0;
+  hintViewed = false; solutionClickCount = 0; briefResult = null;
   clearTimeout(_sheetTimer);
   if(opts&&opts.fresh) clearSheet(exId);
   const saved = loadSheet(exId);
-  clearHistory();
+  clearHistory(); passedRefs=[];
   if(saved){ resetCells(saved); _sheetLast=JSON.stringify(saved); }
   else {
     resetCells({}); _sheetLast=null;
@@ -413,74 +425,104 @@ function openEx(exId, opts){
              : ex.targetRange ? rangeCells(...ex.targetRange.split(":")).flat()
              : [ex.target];
   const first=parseRef(targetRefs[0]); select(first.r,first.c);
-  document.getElementById("exbar").style.display="flex";
 
-  const badge = document.getElementById("ex-badge");
-  badge.textContent = ex.lvl;
-  badge.className = "badge " + ex.lvl;
-  const mod = moduleForEx(currentCourse, exId);
-  document.getElementById("ex-title").textContent = mod ? mod.title : ex.title;
-  document.getElementById("ex-mod").textContent = mod ? ex.title : "";
+  const P=exPlace(exId), mod=P.mod;
+  const crumb=document.getElementById("ws-crumb");
+  crumb.textContent = mod ? mod.title : shortTitle(ex.title);
+  if(mod){ const m=formulaMeta(mod.title); crumb.style.background=m.fill; crumb.style.color=m.ink; } else crumb.removeAttribute("style");
+  const showCourse=!!currentCourse;
+  document.getElementById("ws-sep2").style.display = showCourse?"":"none";
+  document.getElementById("ws-sep3").style.display = "";
+  const wc=document.getElementById("ws-course");
+  wc.style.display = showCourse?"":"none";
+  if(showCourse){ wc.textContent=currentCourse.title; wc.setAttribute("href","#/course/"+currentCourse.id); }
+  document.getElementById("ws-pager").style.display="";
+  document.getElementById("ws-pos").textContent = P.pos+" of "+P.of;
+  document.getElementById("btnPrev").disabled = !P.prev;
+  document.getElementById("btnNext").disabled = !P.next;
 
-  if(currentCourse){
-    document.getElementById("ws-sep2").style.display = "inline";
-    document.getElementById("ws-course").style.display = "inline";
-    document.getElementById("ws-course").textContent = currentCourse.title;
-    document.getElementById("ws-sep3").style.display = "inline";
-    document.getElementById("ws-crumb").textContent = ex.title;
-  } else {
-    document.getElementById("ws-sep2").style.display = "none";
-    document.getElementById("ws-course").style.display = "none";
-    document.getElementById("ws-sep3").style.display = "none";
-    document.getElementById("ws-crumb").textContent = ex.title;
-  }
-
-  const modOfEx = currentCourse ? currentCourse.modules.find(mm => mm.ex.includes(exId)) : null;
-  const list = modOfEx ? modOfEx.ex : [exId];
-  const idx=list.indexOf(exId);
-  document.getElementById("btnPrev").disabled = idx<=0;
-  document.getElementById("btnNext").disabled = idx>=list.length-1;
   updateStreak();
   renderConcept(ex);
   renderOutline();
   renderAll();
   show("app");
-  setRoute("/practice/"+exId, (mod?mod.title+" — ":"")+ex.title);
+  positionSelBox(); positionFillHandle();
+  setRoute("/practice/"+exId, (mod?mod.title+" — ":"")+shortTitle(ex.title));
   try{if(!localStorage.getItem("tyro_onboard"))setTimeout(startOnboard,600);}catch(e){}
 }
+
+/* ---- the brief: task, concept, hint/solution, and the answer check at its foot ---- */
+let conceptOpen = true;            // remembered while you move between exercises
+let briefResult = null;            // {type:"ok"|"bad", msg, newlyDone, formulaDone}
+const LEVEL_LABEL={easy:"Easy",medium:"Medium",hard:"Hard"};
 function renderConcept(ex){
   const cp=document.getElementById("concept");
   cp.classList.add("on");
-  const paras = String(ex.desc||"").split(/\n\n+/).map(p => `<p class="task">${esc(p.trim())}</p>`).join("");
+  const P=exPlace(currentExId), mod=P.mod;
+  const paras = String(ex.desc||"").split(/\n\n+/).map(p => `<p class="ws-task">${esc(p.trim())}</p>`).join("");
+  const answer = ex.targetRange ? ex.targetRange : targetRefs.length>3 ? targetRefs[0]+" … "+targetRefs[targetRefs.length-1] : targetRefs.join(", ");
+  const conceptName = mod ? mod.title : "this formula";
   cp.innerHTML=`
-    <div class="eyebrow">Concept</div>
-    <h2>${esc(ex.title)}</h2>
-    <div class="cbody">${ex.concept}</div>
-    <div class="eyebrow">Task</div>
-    ${paras}
-    <div class="task-meta">
-      <span class="lb">Answer${targetRefs.length>1?"s":""}:</span>
-      ${targetRefs.map(r=>`<span class="tcell">${r}</span>`).join(" ")}
+    <div class="ws-brief-scroll">
+      <div class="ws-meta"><span class="ws-lvl ${ex.lvl}">${LEVEL_LABEL[ex.lvl]||ex.lvl}</span><span class="dk-mono">Exercise ${P.pos} of ${P.of}</span></div>
+      <h1 class="ws-title">${esc(shortTitle(ex.title))}</h1>
+      ${paras}
+      <div class="ws-answer">Answer${targetRefs.length>1?"s":""} in <span class="ws-answer-cell">${esc(answer)}</span></div>
+      <div class="ws-concept ${conceptOpen?"open":""}">
+        <button class="ws-concept-head" data-act="concept" aria-expanded="${conceptOpen}"><span>How ${esc(conceptName)} works</span><span class="ws-chev" aria-hidden="true">${conceptOpen?"−":"+"}</span></button>
+        <div class="ws-concept-body"><div><div class="cbody">${ex.concept||""}</div></div></div>
+      </div>
+      <div class="ws-tools">
+        <button class="ws-tool hint" id="btnHint" data-act="hint">Hint</button>
+        <button class="ws-tool" id="btnSolution" data-act="solution">Solution</button>
+        <button class="ws-tool" id="btnResetEx" data-act="reset">Reset</button>
+      </div>
+      <div class="hintbox" id="hintBox"><b>Hint</b><p>${esc(ex.hint||"")}</p></div>
+      <div class="nudgebox" id="nudgeBox"><b>Try the hint first</b><p>Learning sticks when you struggle a little. Read the hint above, then take another swing at it. Click <b>Solution</b> again if you're still stuck.</p></div>
+      <div class="solutionbox" id="solutionBox"><b>Solution</b><p>${esc(ex.solution||"")}</p></div>
     </div>
-    <div class="hintbox" id="hintBox">
-      <div class="eyebrow">Hint</div>
-      <p>${esc(ex.hint||"")}</p>
-    </div>
-    <div class="nudgebox" id="nudgeBox">
-      <div class="eyebrow">Try the hint first</div>
-      <p>Learning sticks when you struggle a little. Read the hint above, then take another swing at it. Click <b>Solution</b> again if you're still stuck.</p>
-    </div>
-    <div class="solutionbox" id="solutionBox">
-      <div class="eyebrow">Solution</div>
-      <p>${esc(ex.solution||"")}</p>
-    </div>
-    `;
+    <div class="ws-brief-foot" id="briefFoot"></div>`;
+  renderBriefFoot();
 }
+function renderBriefFoot(){
+  const foot=document.getElementById("briefFoot"); if(!foot) return;
+  const R=briefResult, P=exPlace(currentExId);
+  let html="";
+  if(R&&R.type==="ok"&&R.formulaDone&&P.mod){
+    const m=formulaMeta(P.mod.title), lv={easy:0,medium:0,hard:0};
+    P.mod.ex.forEach(x=>{ lv[EX[x].lvl]=(lv[EX[x].lvl]||0)+1; });
+    const nextMod=P.course.modules[P.mi+1];
+    html+=`<div class="ws-cert" role="status">
+      <div class="ws-cert-top"><span class="ws-cert-cat" style="background:${m.fill};color:${m.ink}">${esc(m.cat)}</span><span class="dk-mono">Formula ${P.mi+1} of ${P.course.modules.length}</span></div>
+      <div class="ws-cert-title">${esc(P.mod.title)} <span class="ws-cert-hl">mastered</span></div>
+      <div class="ws-cert-ticks" role="img" aria-label="All ${P.mod.ex.length} exercises passed">${P.mod.ex.map(()=>"<i>✓</i>").join("")}</div>
+      <div class="ws-cert-sum">${P.mod.ex.length} exercises · ${["easy","medium","hard"].filter(k=>lv[k]).map(k=>lv[k]+" "+k).join(", ")}</div>
+      <span class="ws-cert-stamp" aria-hidden="true">TYRO<br>CELL<br>✓</span>
+    </div>
+    <div class="ws-actions">
+      ${nextMod?`<a class="ws-primary" href="#/practice/${encodeURIComponent(nextExOf(nextMod.ex))}">Next: ${esc(nextMod.title)} →</a>`:`<a class="ws-primary" href="#/course/${P.course.id}">Back to the course →</a>`}
+      <a class="ws-secondary" href="#/course/${P.course?P.course.id:""}">All formulas</a>
+    </div>`;
+  } else if(R&&R.type==="ok"){
+    html+=`<div id="resultCard" class="result-card ok ws-res" role="status"><span class="ws-res-icon" aria-hidden="true">✓</span><div><b>Correct — nicely done.</b><div class="ws-res-msg">${R.msg}</div></div></div>
+    <div class="ws-actions">
+      ${P.next?`<a class="ws-primary" href="#/practice/${encodeURIComponent(P.next)}">Next exercise →</a>`:P.course?`<a class="ws-primary" href="#/course/${P.course.id}">Back to the course →</a>`:""}
+      <button class="ws-secondary" data-act="repeat">Repeat</button>
+    </div>`;
+  } else {
+    if(R&&R.type==="bad") html+=`<div id="resultCard" class="result-card bad ws-res" role="status"><span class="ws-res-icon" aria-hidden="true">✕</span><div><b>Not quite.</b><div class="ws-res-msg">${R.msg}</div></div></div>`;
+    html+=`<button class="ws-check" id="btnCheck" data-act="check">${R&&R.type==="bad"?"Check again":"Check answer"}</button>`;
+  }
+  // when a formula is finished the certificate replaces the result card; keep #resultCard for the test harness
+  if(R&&R.type==="ok"&&R.formulaDone) html+=`<div id="resultCard" class="result-card ok ws-sr">${R.msg}</div>`;
+  foot.innerHTML=html;
+}
+
+/* Outline tab of the side panel: this formula's exercises, with ticks. */
 function renderOutline(){
   const el=document.getElementById("tab-outline");
   if(!currentCourse){
-    el.innerHTML=`<p style="font-size:13px;color:var(--muted)">No course active. <a href="#" id="ol-browse" style="color:var(--ink);text-decoration:underline">Browse courses</a> or use the sheet freely.</p>`;
-    const a=el.querySelector("#ol-browse"); if(a)a.onclick=e=>{e.preventDefault();showCourses();};
+    el.innerHTML=`<p style="font-size:13px;color:var(--muted)">No course active. <a href="#/courses" style="color:var(--ink);text-decoration:underline">Browse courses</a> or use the sheet freely.</p>`;
     return;
   }
   const modIdx = currentCourse.modules.findIndex(m => m.ex.includes(currentExId));
@@ -489,69 +531,58 @@ function renderOutline(){
   const modTotal = mod.ex.length;
   const isComplete = modDone === modTotal;
   const nextMod = modIdx >= 0 && modIdx < currentCourse.modules.length - 1 ? currentCourse.modules[modIdx + 1] : null;
-
   el.innerHTML = `
-    <div class="ol-back" id="ol-back-course">← All formulas</div>
+    <a class="ol-back" href="#/course/${currentCourse.id}">← All formulas</a>
     <div class="ol-modhead">
       <span class="omod">${esc(mod.title)}</span>
       <span class="ol-prog">${modDone} / ${modTotal}</span>
     </div>
-    ${mod.ex.map(xid => `<div class="oex ${doneEx.has(xid)?"done":""} ${xid===currentExId?"cur":""}" data-ex="${xid}">
-      <span class="tick"></span><span>${esc(EX[xid].title)}</span></div>`).join("")}
+    ${mod.ex.map(xid => `<a class="oex ${doneEx.has(xid)?"done":""} ${xid===currentExId?"cur":""}" href="#/practice/${encodeURIComponent(xid)}">
+      <span class="tick"></span><span>${esc(shortTitle(EX[xid].title))}</span></a>`).join("")}
     ${isComplete && nextMod ? `
-      <div class="ol-next" id="ol-next-mod">
-        <small>Next section</small>
+      <a class="ol-next" href="#/practice/${encodeURIComponent(nextExOf(nextMod.ex))}">
+        <small>Next formula</small>
         <span>${esc(nextMod.title)} →</span>
-      </div>` : ''}
+      </a>` : ''}
     ${isComplete && !nextMod ? `
-      <div class="ol-next" id="ol-back-course-done">
+      <a class="ol-next" href="#/course/${currentCourse.id}">
         <small>Course complete</small>
         <span>← All formulas</span>
-      </div>` : ''}
+      </a>` : ''}
   `;
-  el.querySelector("#ol-back-course").onclick = () => openCourse(currentCourse.id);
-  el.querySelectorAll(".oex").forEach(r => r.onclick = () => openEx(r.dataset.ex));
-  const nextBtn = el.querySelector("#ol-next-mod");
-  if (nextBtn && nextMod) nextBtn.onclick = () => openEx(nextMod.ex[0]);
-  const doneBtn = el.querySelector("#ol-back-course-done");
-  if (doneBtn) doneBtn.onclick = () => openCourse(currentCourse.id);
 }
 
-/* exercise bar */
+/* exercise brief: one delegated click handler (the brief is re-rendered per exercise) */
 let hintViewed = false;
 let solutionClickCount = 0;
-document.getElementById("btnResetEx").onclick=()=>{ if(currentExId) openEx(currentExId,{fresh:true}); };
-document.getElementById("btnHint").onclick=()=>{
-  hintViewed = true;
-  const h=document.getElementById("hintBox"); if(h) h.style.display="block";
-};
-document.getElementById("btnSolution").onclick=()=>{
-  const s=document.getElementById("solutionBox");
-  const n=document.getElementById("nudgeBox");
-  if(!s || !n) return;
-  if(!hintViewed && solutionClickCount === 0){
-    // Soft nudge: show the hint + a friendly message, defer the solution
-    hintViewed = true;
-    document.getElementById("hintBox").style.display = "block";
-    n.style.display = "block";
-    solutionClickCount = 1;
-    return;
+document.getElementById("concept").addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const act=b.dataset.act;
+  if(act==="check"){ if(currentEx) checkEx(currentEx); }
+  else if(act==="reset"||act==="repeat"){ if(currentExId) openEx(currentExId,{fresh:true}); }
+  else if(act==="concept"){
+    conceptOpen=!conceptOpen;
+    const box=b.closest(".ws-concept"); box.classList.toggle("open",conceptOpen);
+    b.setAttribute("aria-expanded",String(conceptOpen)); b.querySelector(".ws-chev").textContent=conceptOpen?"−":"+";
   }
-  n.style.display = "none";
-  s.style.display = "block";
-  solutionClickCount = 2;
-};
+  else if(act==="hint"){ hintViewed=true; document.getElementById("hintBox").style.display="block"; }
+  else if(act==="solution"){
+    const s=document.getElementById("solutionBox"), n=document.getElementById("nudgeBox");
+    if(!hintViewed && solutionClickCount===0){
+      // Soft nudge: show the hint + a friendly message, defer the solution
+      hintViewed=true; document.getElementById("hintBox").style.display="block";
+      n.style.display="block"; solutionClickCount=1; return;
+    }
+    n.style.display="none"; s.style.display="block"; solutionClickCount=2;
+  }
+});
 document.getElementById("btnPrev").onclick=()=>stepEx(-1);
 document.getElementById("btnNext").onclick=()=>stepEx(1);
 function stepEx(d){
-  if(!currentCourse||!currentExId)return;
-  const mod = currentCourse.modules.find(m => m.ex.includes(currentExId));
-  if(!mod) return;
-  const list = mod.ex; const i = list.indexOf(currentExId) + d;
+  if(!currentCourse||!currentExId) return;
+  const list=flatEx(currentCourse), i=list.indexOf(currentExId)+d;
   if(i>=0 && i<list.length) openEx(list[i]);
 }
-document.getElementById("btnCheck").onclick=()=>{ if(currentEx) checkEx(currentEx); };
-document.getElementById("ws-course").onclick=()=>{ if(currentCourse) openCourse(currentCourse.id); };
 /* checker */
 function expectedValue(ex){
   const saved=cells[ex.target]?{...cells[ex.target]}:null;
@@ -619,32 +650,34 @@ function checkEx(ex){
   pass(ex,"<code>"+esc(raw)+"</code> returns "+esc(toText(exp))+".");
 }
 function pass(ex,msg){
+  const wasDone=doneEx.has(currentExId);
+  const P=exPlace(currentExId);
+  const modWasDone=!!P.mod&&P.mod.ex.every(x=>doneEx.has(x));
   doneEx.add(currentExId);
   saveDone();
-  showResult("ok","✓ Correct — "+msg);
+  const formulaDone=!!P.mod&&!modWasDone&&P.mod.ex.every(x=>doneEx.has(x));
+  passedRefs=targetRefs.slice();
+  showResult("ok",msg,{newlyDone:!wasDone,formulaDone});
   updateStreak(); renderOutline(); renderAll();
 }
-function showResult(type,msg){
-  const ov=document.getElementById("resultOverlay");
-  const card=document.getElementById("resultCard");
-  const icon=document.getElementById("resultIcon");
-  const msgEl=document.getElementById("resultMsg");
-  const btns=document.getElementById("resultBtns");
-  card.className="result-card "+type;
-  icon.textContent=type==="ok"?"✓":"✗";
-  msgEl.innerHTML=msg;
-  const list=currentCourse?flatEx(currentCourse):[];
-  const i=list.indexOf(currentExId);
-  const hasNext=currentCourse&&i>=0&&i<list.length-1;
-  let b='<button class="btn" onclick="closeResult();openEx(currentExId,{fresh:true})">Repeat</button>';
-  if(type==="ok"&&hasNext) b+='<button class="btn primary" onclick="closeResult();stepEx(1)">Next →</button>';
-  else if(type==="bad") b='<button class="btn primary" onclick="closeResult()">Try again</button>';
-  btns.innerHTML=b;
-  ov.classList.add("on");
+/* Feedback lives in the brief and on the sheet: no popup.
+   Pass: the answer cells get a stamp and "+1" floats by the progress bar.
+   Fail: the reason shows in the brief and the offending cell shakes. */
+function showResult(type,msg,extra){
+  briefResult={type,msg,...(extra||{})};
+  renderBriefFoot();
+  if(type==="ok"&&extra&&extra.newlyDone){
+    const p=document.getElementById("wsPlus");
+    if(p){ p.classList.remove("go"); void p.offsetWidth; p.classList.add("go"); }
+  }
+  if(type==="bad"){
+    const m=/Cell ([A-Z]{1,2}\d{1,3})/.exec(String(msg));
+    const td=TD[m?m[1]:targetRefs[0]];
+    if(td){ td.classList.remove("shake"); void td.offsetWidth; td.classList.add("shake");
+      td.addEventListener("animationend",()=>td.classList.remove("shake"),{once:true}); }
+  }
 }
-function closeResult(){
-  document.getElementById("resultOverlay").classList.remove("on");
-}
+function closeResult(){ briefResult=null; renderBriefFoot(); }
 
 /* ================= PROGRESS EXPORT / IMPORT ================= */
 document.getElementById("btnExportProg").onclick=()=>{

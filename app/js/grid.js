@@ -8,6 +8,7 @@ let sel = {r:1,c:0};
 let selEnd = null;
 let editing = null;
 let targetRefs = [];
+let passedRefs = [];   // target cells that just passed: they show the green stamp until the sheet changes
 
 function resetCells(obj){cells=obj;Engine._cells=obj;}
 /* engine code now in engine.js */
@@ -43,9 +44,46 @@ function renderAll(){
     td.textContent=d.text;
     td.className=d.cls+(c&&c.b?" b":"")+(c&&c.i?" i":"")+(c&&c.u?" u":"");
     if(targetRefs.includes(ref)) td.classList.add("target");
+    if(passedRefs.includes(ref)) td.classList.add("passed");
   }
   paintSelection();
   saveSheetSoon();
+}
+
+/* Selection box: one element that glides between cells instead of a per-cell
+   outline. Positioned from the selected range's on-screen rectangles. */
+const selBox=document.getElementById("selbox");
+function positionSelBox(){
+  if(!selBox) return;
+  const {r1,r2,c1,c2}=selRange();
+  const a=TD[refOf(r1,c1)], b=TD[refOf(r2,c2)];
+  const wrap=a.closest("#gridwrap"); if(!wrap){selBox.style.display="none";return;}
+  const W=wrap.getBoundingClientRect(), A=a.getBoundingClientRect(), B=b.getBoundingClientRect();
+  if(!A.width){ selBox.style.display="none"; return; }   // view hidden — repainted when shown
+  selBox.style.display="block";
+  selBox.style.left=(A.left-W.left+wrap.scrollLeft)+"px";
+  selBox.style.top=(A.top-W.top+wrap.scrollTop)+"px";
+  selBox.style.width=(B.right-A.left)+"px";
+  selBox.style.height=(B.bottom-A.top)+"px";
+  selBox.classList.toggle("editing",!!editing);
+}
+window.addEventListener("resize",()=>{ positionSelBox(); positionFillHandle(); });
+
+/* Excel-style coloured references: while a formula is being typed, every
+   reference in it outlines its cells in its own colour (cycling through 6). */
+function clearRefs(){ document.querySelectorAll("#grid td[data-rf]").forEach(td=>td.removeAttribute("data-rf")); }
+function paintRefs(text){
+  clearRefs();
+  if(!text||text[0]!=="=") return;
+  const s=text.replace(/"[^"]*"?/g,m=>" ".repeat(m.length));   // ignore refs inside quoted text
+  const re=/(^|[^A-Za-z0-9_.$])(\$?[A-Za-z]{1,2}\$?\d{1,3})(?::(\$?[A-Za-z]{1,2}\$?\d{1,3}))?(?![A-Za-z0-9_(])/g;
+  let m,i=0;
+  while((m=re.exec(s))){
+    const a=parseRef(m[2]), b=m[3]?parseRef(m[3]):a; if(!a||!b) continue;
+    const k=String(i++%6);
+    for(let r=Math.min(a.r,b.r);r<=Math.max(a.r,b.r);r++)
+      for(let c=Math.min(a.c,b.c);c<=Math.max(a.c,b.c);c++) TD[refOf(r,c)].setAttribute("data-rf",k);
+  }
 }
 function selRange(){
   const a=sel, b=selEnd||sel;
@@ -62,7 +100,7 @@ function paintSelection(){
   for(let r=r1;r<=r2;r++) document.querySelector(`th[data-row="${r}"]`).classList.add("hl");
   nameBox.value=aref;
   const cc=getCell(aref); fInput.value=cc&&cc.raw!=null?cc.raw:"";
-  updateAgg(); updateToolbar(); positionFillHandle();
+  updateAgg(); updateToolbar(); positionFillHandle(); positionSelBox();
 }
 function updateAgg(){
   const {r1,r2,c1,c2}=selRange(); const el=document.getElementById("st-agg");
@@ -106,7 +144,7 @@ function applyPoint(){const el=point.inputEl;
   el.setSelectionRange(el.value.length,el.value.length);
   if(el!==fInput)fInput.value=el.value;
   TD[pointText().split(":").pop()]?.scrollIntoView({block:"nearest",inline:"nearest"});
-  paintPoint();}
+  paintPoint(); paintRefs(el.value);}
 function movePoint(dr,dc,extend){
   point.cur={r:Math.max(1,Math.min(ROWS,point.cur.r+dr)),c:Math.max(0,Math.min(COLS-1,point.cur.c+dc))};
   if(!extend)point.base={...point.cur};
@@ -279,7 +317,8 @@ function startEdit(ref, initial){
   if(initial!=null) inp.setSelectionRange(inp.value.length,inp.value.length); else inp.select();
   const home=parseRef(ref);
   const typedStart = initial!=null;
-  inp.addEventListener("input",()=>{fInput.value=inp.value; endPoint();});
+  inp.addEventListener("input",()=>{fInput.value=inp.value; endPoint(); paintRefs(inp.value);});
+  paintRefs(inp.value);
   inp.addEventListener("keydown",e=>{
     const arrows=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
     if(arrows.includes(e.key)){
@@ -309,6 +348,7 @@ function startEdit(ref, initial){
   });
   inp.addEventListener("blur",()=>{ if(editing===ref) commitEdit(true); });
   fillHandle.style.display="none";
+  positionSelBox();
   document.getElementById("st-mode").textContent="Edit";
 }
 function startPick(ref){
@@ -330,7 +370,7 @@ function startPick(ref){
 }
 function commitEdit(save){
   if(!editing) return;
-  endPoint();
+  endPoint(); clearRefs();
   const ref=editing; editing=null;
   const td=TD[ref]; const inp=td.querySelector("input,select");
   if(inp){
@@ -382,7 +422,7 @@ grid.addEventListener("dblclick",e=>{
    whole-sheet operations like Clear sheet, which a command log would not. */
 const UNDO=[], REDO=[], UNDO_LIMIT=80;
 const snap=()=>JSON.stringify(cells);
-function pushUndo(){ UNDO.push(snap()); if(UNDO.length>UNDO_LIMIT)UNDO.shift(); REDO.length=0; }
+function pushUndo(){ UNDO.push(snap()); if(UNDO.length>UNDO_LIMIT)UNDO.shift(); REDO.length=0; passedRefs=[]; }
 function clearHistory(){ UNDO.length=0; REDO.length=0; }
 function applySnap(s){ resetCells(JSON.parse(s)); renderAll(); }
 function flash(msg){ const el=document.getElementById("st-mode"); if(!el)return; el.textContent=msg;
@@ -539,10 +579,12 @@ fInput.addEventListener("keydown",e=>{
     pushUndo(); fillSelectionWith(refOf(sel.r,sel.c),fInput.value); renderAll(); flash("Filled selection");
     return;
   }
-  if(e.key==="Enter"){e.preventDefault();endPoint();pushUndo();setRaw(refOf(sel.r,sel.c),fInput.value);renderAll();select(sel.r+1,sel.c);grid.focus();}
-  if(e.key==="Escape"){e.preventDefault();endPoint();paintSelection();e.target.blur();}
+  if(e.key==="Enter"){e.preventDefault();endPoint();clearRefs();pushUndo();setRaw(refOf(sel.r,sel.c),fInput.value);renderAll();select(sel.r+1,sel.c);grid.focus();}
+  if(e.key==="Escape"){e.preventDefault();endPoint();clearRefs();paintSelection();e.target.blur();}
 });
-fInput.addEventListener("blur",()=>{ if(point&&point.inputEl===fInput)endPoint(); });
+fInput.addEventListener("input",()=>paintRefs(fInput.value));
+fInput.addEventListener("focus",()=>paintRefs(fInput.value));
+fInput.addEventListener("blur",()=>{ if(point&&point.inputEl===fInput)endPoint(); clearRefs(); });
 nameBox.addEventListener("keydown",e=>{
   if(e.key==="Enter"){e.preventDefault();const p=parseRef(nameBox.value);if(p)select(p.r,p.c);e.target.blur();}
 });
