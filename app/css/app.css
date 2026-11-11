@@ -1292,3 +1292,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
   #view-landing.lp2-motion .lp2-track{animation-duration:55s}
   #view-landing .lp2-card{flex-basis:78vw}
 }
+
+/* final call to action: truly edge to edge (overrides the 1320px section width) */
+#view-landing .lp-section.lp2-finalwrap{max-width:none;padding-left:0;padding-right:0}
+#view-landing .lp-section.lp2-finalwrap .lp-final{width:100%;box-sizing:border-box}
