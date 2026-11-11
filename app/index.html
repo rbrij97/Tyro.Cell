@@ -93,37 +93,6 @@ button{font-family:inherit;color:inherit}
 .site-footer a:hover{color:var(--ink)}
 .site-footer .heart{color:var(--red)}
 
-/* ---------- nav auth ---------- */
-.nav-auth{display:flex;align-items:center;gap:10px}
-.nav-login{font-size:13.5px;color:var(--text-2)!important;cursor:pointer;font-weight:500}
-.nav-login:hover{color:var(--ink)!important}
-.nav-user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}
-.nav-user .user-email{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nav-logout{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-.nav-logout:hover{color:var(--ink)}
-
-/* ---------- auth modal ---------- */
-.auth-overlay{position:fixed;inset:0;z-index:900;background:rgba(10,10,10,.45);display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.auth-overlay.on{display:flex}
-.auth-card{background:var(--paper);border-radius:var(--r-lg);padding:36px 32px 28px;width:100%;max-width:380px;box-shadow:0 24px 64px -16px rgba(10,10,10,.18);position:relative}
-.auth-card h2{font-size:22px;font-weight:600;letter-spacing:-.3px;margin:0 0 6px}
-.auth-card .auth-sub{font-size:14px;color:var(--text-3);margin:0 0 24px}
-.auth-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px 8px;line-height:1}
-.auth-close:hover{color:var(--ink)}
-.auth-field{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
-.auth-field label{font-size:12px;font-weight:500;color:var(--text-2);letter-spacing:.02em}
-.auth-field input{border:1px solid var(--line-4);border-radius:var(--r-sm);padding:9px 12px;font:400 14px var(--sans);color:var(--ink);outline:none;transition:border-color .15s}
-.auth-field input:focus{border-color:var(--brand)}
-.auth-submit{width:100%;padding:11px;border:none;border-radius:var(--r-pill);background:var(--brand);color:#fff;font:600 14px var(--sans);cursor:pointer;transition:background .15s}
-.auth-submit:hover{background:var(--brand-soft)}
-.auth-submit:disabled{opacity:.4;cursor:default}
-.auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--text-3)}
-.auth-toggle a{color:var(--ink);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-.auth-msg{font-size:13px;padding:8px 12px;border-radius:var(--r-sm);margin-bottom:14px;display:none}
-.auth-msg.err{display:block;background:var(--red-tint);color:var(--red);border:1px solid var(--red-line)}
-.auth-msg.ok{display:block;background:var(--ok-tint);color:var(--ok);border:1px solid var(--ok-line)}
-.auth-saving{font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px}
-
 /* ---------- product showcase ---------- */
 .showcase{margin-top:48px;display:flex;justify-content:center}
 .mock-window{width:100%;max-width:680px;border:1px solid var(--line-1);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 24px 64px -16px rgba(10,10,10,.10),0 4px 16px -6px rgba(10,10,10,.05);background:#fff}
@@ -234,6 +203,9 @@ button{font-family:inherit;color:inherit}
 .pgsub{color:var(--text-3);font-size:16px;margin:0 0 26px;max-width:60ch}
 .actionrow{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}
 
+.nf{padding-top:96px;text-align:center}
+.nf .eyebrow{color:var(--red);margin-bottom:14px}
+.nf .pgsub{margin:0 auto 26px}
 .progress-util{margin-top:32px;text-align:center;font-size:13px;color:var(--muted)}
 .btn-text{background:none;border:none;font:500 13px var(--mono);color:var(--muted);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
 .btn-text:hover{color:var(--ink)}
@@ -462,7 +434,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 }
 /* ---------- mobile ---------- */
 @media(max-width:600px){
-  /* nav: hide section links, keep brand + Courses + auth */
+  /* nav: hide section links, keep brand + Courses */
   .pagenav{padding:10px 16px;gap:8px 16px}
   .pagenav .nav-scroll{display:none}
   .pagenav nav{gap:14px}
@@ -562,7 +534,6 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
       <a href="#s-faq" class="nav-scroll">FAQ</a>
       <a data-go="courses">Courses</a>
     </nav>
-    <div class="nav-auth" data-auth-slot></div>
   </div>
   <div class="pagescroll" id="landing-scroll">
     <div class="pagewrap">
@@ -700,7 +671,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
           </div>
           <div class="faq-item">
             <p class="faq-q">Will my progress be saved?</p>
-            <p class="faq-a">Right now progress stays in your browser session. Google sign-in is coming soon so it persists across devices.</p>
+            <p class="faq-a">Yes — completed exercises and your work on each sheet are saved in this browser automatically. To move progress to another device, use Export progress on the Courses page and import it there.</p>
           </div>
           <div class="faq-item">
             <p class="faq-q">How is this different from YouTube tutorials?</p>
@@ -733,7 +704,6 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
     <nav>
       <a data-go="courses">Courses</a>
     </nav>
-    <div class="nav-auth" data-auth-slot></div>
   </div>
   <div class="pagescroll">
     <div class="pagewrap">
@@ -759,9 +729,27 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
     <nav>
       <a data-go="courses">Courses</a>
     </nav>
-    <div class="nav-auth" data-auth-slot></div>
   </div>
   <div class="pagescroll"><div class="pagewrap" id="coursedetail"></div></div>
+</div>
+
+<!-- ============ VIEW: NOT FOUND ============ -->
+<div class="view" id="view-404">
+  <div class="pagenav">
+    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="currentColor"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
+    <span class="spacer"></span>
+    <nav>
+      <a data-go="courses">Courses</a>
+    </nav>
+  </div>
+  <div class="pagescroll">
+    <div class="pagewrap nf">
+      <div class="eyebrow">#REF!</div>
+      <h2 class="pgtitle">This page doesn't exist.</h2>
+      <p class="pgsub">The link may be old, or the exercise may have moved. Everything you've completed is still saved.</p>
+      <button class="btn primary big" data-go="courses">Go to courses</button>
+    </div>
+  </div>
 </div>
 
 <!-- ============ VIEW: WORKSPACE ============ -->
@@ -775,7 +763,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
     <span class="sep" id="ws-sep3" style="display:none">/</span>
     <span class="crumb current" id="ws-crumb">Sandbox</span>
     <span class="spacer"></span>
-    <span class="streak">Streak · <b id="ws-streak">0</b></span>
+    <span class="streak">Completed · <b id="ws-streak">0</b></span>
   </div>
   <div id="exbar" style="display:none">
     <span class="badge" id="ex-badge">easy</span>
@@ -861,29 +849,6 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
   </div>
 </div>
 
-<!-- ============ AUTH MODAL ============ -->
-<div class="auth-overlay" id="authOverlay" onclick="if(event.target===this)closeAuth()">
-  <div class="auth-card">
-    <button class="auth-close" onclick="closeAuth()">&times;</button>
-    <h2 id="authTitle">Sign up</h2>
-    <p class="auth-sub" id="authSub">Save your progress across devices.</p>
-    <div class="auth-msg" id="authMsg"></div>
-    <form id="authForm" onsubmit="return handleAuth(event)">
-      <div class="auth-field">
-        <label for="authEmail">Email</label>
-        <input type="email" id="authEmail" required placeholder="you@example.com" autocomplete="email">
-      </div>
-      <div class="auth-field">
-        <label for="authPass">Password</label>
-        <input type="password" id="authPass" required placeholder="Min 6 characters" minlength="6" autocomplete="current-password">
-      </div>
-      <button type="submit" class="auth-submit" id="authBtn">Sign up</button>
-    </form>
-    <div class="auth-toggle" id="authToggle">Already have an account? <a onclick="toggleAuthMode()">Log in</a></div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>document.write('<scr'+'ipt src="'+location.pathname.replace(/\/[^\/]*\.[^\/]*$/,'/').replace(/\/?$/,'/')+'engine.js"><\/scr'+'ipt>')</script>
 <script>
 "use strict";
@@ -931,6 +896,7 @@ function renderAll(){
     if(targetRefs.includes(ref)) td.classList.add("target");
   }
   paintSelection();
+  saveSheetSoon();
 }
 function selRange(){
   const a=sel, b=selEnd||sel;
@@ -2474,7 +2440,7 @@ const EX={
 };
 const COURSES=[
  {id:"excel",title:"Excel Formula Fundamentals",level:"Beginner / Intermediate",hours:"~5 hours",prereq:"None",
-  desc:"One row per formula. Click a formula to open its practice cases — SUM has 8, others have 1–2 for now with more packs coming. Cases mix real Indian and US company data.",
+  desc:"One row per formula, from SUM to XLOOKUP. Click a formula to open its practice cases — each runs on real Indian and US company data, from quick drills to multi-step case studies.",
   modules:[
    {title:"SUM",ex:["sum","sum_quarterly","sum_weekly","sum_regions_blank","sum_per_month","sum_case_opex","sum_case_portfolio_div","sum_case_subtotal","sum_case_netcash","sum_case_sector"]},
    {title:"AVERAGE",ex:["avg","avg_us_pe","avg_nifty_pe","avg_ev_ebitda","avg_target_price","avg_jpm_eps","avg_reliance_growth","avg_sector_yield"]},
@@ -2538,16 +2504,114 @@ function updateStreak(){
   if(el) el.textContent = String(doneEx.size);
 }
 
-/* ================= ROUTER ================= */
+/* ================= PERSISTENCE (this browser only) =================
+   Completed exercises and each exercise's in-progress sheet are kept in
+   localStorage so a refresh never loses work. The test harness loads the
+   app with ?test, which turns persistence off so test runs never touch a
+   real user's saved progress. */
+const PERSIST = !/[?&]test\b/.test(location.search);
+const LS_DONE = "tyro_done_v1", LS_SHEET = "tyro_sheet_v1:";
+function lsGet(k){ if(!PERSIST) return null; try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ if(!PERSIST) return; try{ localStorage.setItem(k,v); }catch(e){} }
+function lsDel(k){ if(!PERSIST) return; try{ localStorage.removeItem(k); }catch(e){} }
+function saveDone(){ lsSet(LS_DONE, JSON.stringify([...doneEx])); }
+function loadDone(){
+  try{ const a=JSON.parse(lsGet(LS_DONE)||"[]"); if(Array.isArray(a)) a.filter(id=>EX[id]).forEach(id=>doneEx.add(id)); }catch(e){}
+}
+let _sheetTimer=null, _sheetLast=null;
+function saveSheetSoon(){
+  if(!PERSIST || !currentExId) return;
+  const id=currentExId;
+  clearTimeout(_sheetTimer);
+  _sheetTimer=setTimeout(()=>{
+    if(id!==currentExId) return;
+    const s=JSON.stringify(cells);
+    if(s!==_sheetLast){ _sheetLast=s; lsSet(LS_SHEET+id, s); }
+  },300);
+}
+function loadSheet(id){ try{ const s=lsGet(LS_SHEET+id); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function clearSheet(id){ lsDel(LS_SHEET+id); _sheetLast=null; }
+
+/* ================= ROUTER =================
+   Every screen has its own URL, so Back, Forward, Refresh, bookmarks and
+   shared links all work. Hash URLs need no server config on Vercel.
+     #/                     landing
+     #/courses              course list
+     #/course/<id>          course detail
+     #/course/<id>/<n>      course detail with formula n expanded
+     #/practice/<exId>      exercise workspace
+     #/sandbox              blank sheet
+   Screen functions (openCourse, openEx …) render synchronously and then
+   record their URL with setRoute(). A hashchange we caused ourselves is
+   ignored; one caused by Back/Forward or a typed URL is routed. */
+const APP_NAME="tyro.cell";
+let _routeKey=null;
 function show(view){
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
   document.getElementById("view-"+view).classList.add("on");
 }
+function setRoute(path,title){
+  _routeKey=path;
+  document.title = title ? title+" · "+APP_NAME : APP_NAME+" — Practice spreadsheet formulas";
+  const cur=location.hash.replace(/^#/,"")||"/";
+  if(cur===path) return;
+  // While handling a URL, a different destination is a redirect (locked
+  // course, bad link): replace the entry so Back doesn't bounce into it again.
+  if(_routing) location.replace("#"+path); else location.hash=path;
+}
+let _routing=false;
+function showLanding(){
+  show("landing");
+  setRoute("/",null);
+}
+function showCourses(){
+  renderCourses(); show("courses");
+  setRoute("/courses","Courses");
+}
+function showNotFound(){
+  show("404");
+  setRoute(location.hash.replace(/^#/,"")||"/","Page not found");
+}
+function courseOfEx(exId){ return COURSES.find(c=>flatEx(c).includes(exId))||null; }
+function closeOverlays(){
+  document.getElementById("learnOverlay").classList.remove("on");
+  document.getElementById("learnFrame").src="about:blank";
+  document.getElementById("resultOverlay").classList.remove("on");
+}
+function route(){
+  const path=location.hash.replace(/^#/,"")||"/";
+  if(path===_routeKey) return;
+  _routing=true;
+  try{ routeTo(path); } finally { _routing=false; }
+}
+function routeTo(path){
+  closeOverlays();
+  if(editing) commitEdit(true);
+  const p=path.split("/").filter(Boolean).map(decodeURIComponent);
+  if(p.length===0) return showLanding();
+  if(p[0]==="courses" && p.length===1) return showCourses();
+  if(p[0]==="sandbox" && p.length===1) return openSandbox();
+  if(p[0]==="course" && p.length>=2 && p.length<=3){
+    const c=COURSES.find(x=>x.id===p[1]);
+    if(c && c.upcoming) return showCourses();
+    if(c){
+      const mi = p[2]!=null ? parseInt(p[2],10)-1 : null;
+      if(mi==null || (mi>=0 && mi<c.modules.length)) return openCourse(c.id, mi);
+    }
+  }
+  if(p[0]==="practice" && p.length===2 && EX[p[1]]){
+    const c=courseOfEx(p[1]);
+    if(c && c.upcoming) return showCourses();
+    return openEx(p[1]);
+  }
+  showNotFound();
+}
+window.addEventListener("hashchange", route);
 document.querySelectorAll("[data-go]").forEach(el=>{
   el.addEventListener("click",()=>{
     const t=el.dataset.go;
-    if(t==="landing")show("landing");
-    else if(t==="courses"){renderCourses();show("courses");}
+    if(t==="landing")showLanding();
+    else if(t==="courses")showCourses();
     else if(t==="sandbox")openSandbox();
   });
 });
@@ -2705,8 +2769,9 @@ function renderCourses(){
     </div>`;}).join("");
   el.querySelectorAll(".ccard").forEach(cd=>cd.onclick=()=>openCourse(cd.dataset.course));
 }
-function openCourse(id){
+function openCourse(id, soloMi){
   currentCourse=COURSES.find(c=>c.id===id);
+  if(!currentCourse) return showNotFound();
   const c=currentCourse, total=flatEx(c).length, done=courseDone(c), pct=Math.round(done/total*100);
   const nextId=flatEx(c).find(x=>!doneEx.has(x))||flatEx(c)[0];
   let runningIdx=0;
@@ -2749,26 +2814,24 @@ function openCourse(id){
   document.getElementById("courseStart").onclick=()=>openEx(nextId);
   const detail=document.getElementById("coursedetail");
   detail.querySelectorAll(".exrow").forEach(r=>r.onclick=()=>openEx(r.dataset.ex));
+  // Only one module can be expanded at a time; expanding one is its own URL,
+  // so Back collapses it again.
   detail.querySelectorAll(".mhead").forEach(h=>{
     h.onclick=()=>{
-      const mod=h.parentElement;
-      // Only one module can be expanded at a time
-      if(mod.classList.contains("collapsed")){
-        detail.querySelectorAll(".module").forEach(m=>m.classList.add("collapsed"));
-        mod.classList.remove("collapsed");
-        detail.classList.add("solo-mode");
-        detail.scrollIntoView({block:"start",behavior:"smooth"});
-      } else {
-        mod.classList.add("collapsed");
-        detail.classList.remove("solo-mode");
-      }
+      const mi=+h.parentElement.dataset.mi;
+      openCourse(c.id, h.parentElement.classList.contains("collapsed") ? mi : null);
     };
   });
-  detail.querySelector("#btnBackToAll").onclick=()=>{
-    detail.querySelectorAll(".module").forEach(m=>m.classList.add("collapsed"));
-    detail.classList.remove("solo-mode");
-  };
+  detail.querySelector("#btnBackToAll").onclick=()=>openCourse(c.id, null);
+  detail.classList.toggle("solo-mode", soloMi!=null);
+  if(soloMi!=null){
+    const mod=detail.querySelector('.module[data-mi="'+soloMi+'"]');
+    if(mod) mod.classList.remove("collapsed");
+  }
   show("course");
+  detail.parentElement.scrollTop=0;
+  setRoute("/course/"+c.id+(soloMi!=null?"/"+(soloMi+1):""),
+           soloMi!=null ? c.modules[soloMi].title+" · "+c.title : c.title);
 }
 
 /* ================= WORKSPACE ================= */
@@ -2783,13 +2846,25 @@ function openSandbox(){
   document.getElementById("ws-sep3").style.display="none";
   updateStreak();
   renderOutline(); renderAll(); select(1,0); show("app");
+  setRoute("/sandbox","Sandbox");
 }
-function openEx(exId){
-  const ex=EX[exId]; currentEx=ex; currentExId=exId;
+/* Opens an exercise. Restores the learner's saved sheet for it if there is
+   one; pass {fresh:true} to start from the original data (Reset, Repeat). */
+function openEx(exId, opts){
+  const ex=EX[exId]; if(!ex) return showNotFound();
+  if(!currentCourse || !flatEx(currentCourse).includes(exId)) currentCourse=courseOfEx(exId);
+  currentEx=ex; currentExId=exId;
   hintViewed = false; solutionClickCount = 0;
-  resetCells({}); clearHistory();
-  for(const ref in ex.data) setRaw(ref,ex.data[ref]);
-  for(const ref in ex.data){const p=parseRef(ref);if(p&&(p.r===1))(cells[ref]=cells[ref]||{}).b=true;}
+  clearTimeout(_sheetTimer);
+  if(opts&&opts.fresh) clearSheet(exId);
+  const saved = loadSheet(exId);
+  clearHistory();
+  if(saved){ resetCells(saved); _sheetLast=JSON.stringify(saved); }
+  else {
+    resetCells({}); _sheetLast=null;
+    for(const ref in ex.data) setRaw(ref,ex.data[ref]);
+    for(const ref in ex.data){const p=parseRef(ref);if(p&&(p.r===1))(cells[ref]=cells[ref]||{}).b=true;}
+  }
   targetRefs = ex.pick ? Object.keys(ex.pick)
              : ex.targetRange ? rangeCells(...ex.targetRange.split(":")).flat()
              : [ex.target];
@@ -2830,6 +2905,7 @@ function openEx(exId){
   renderOutline();
   renderAll();
   show("app");
+  setRoute("/practice/"+exId, (mod?mod.title+" — ":"")+ex.title);
   try{if(!localStorage.getItem("tyro_onboard"))setTimeout(startOnboard,600);}catch(e){}
 }
 function renderConcept(ex){
@@ -2864,7 +2940,7 @@ function renderOutline(){
   const el=document.getElementById("tab-outline");
   if(!currentCourse){
     el.innerHTML=`<p style="font-size:13px;color:var(--muted)">No course active. <a href="#" id="ol-browse" style="color:var(--ink);text-decoration:underline">Browse courses</a> or use the sheet freely.</p>`;
-    const a=el.querySelector("#ol-browse"); if(a)a.onclick=e=>{e.preventDefault();renderCourses();show("courses");};
+    const a=el.querySelector("#ol-browse"); if(a)a.onclick=e=>{e.preventDefault();showCourses();};
     return;
   }
   const modIdx = currentCourse.modules.findIndex(m => m.ex.includes(currentExId));
@@ -2904,7 +2980,7 @@ function renderOutline(){
 /* exercise bar */
 let hintViewed = false;
 let solutionClickCount = 0;
-document.getElementById("btnResetEx").onclick=()=>{ if(currentExId) openEx(currentExId); };
+document.getElementById("btnResetEx").onclick=()=>{ if(currentExId) openEx(currentExId,{fresh:true}); };
 document.getElementById("btnHint").onclick=()=>{
   hintViewed = true;
   const h=document.getElementById("hintBox"); if(h) h.style.display="block";
@@ -2935,7 +3011,7 @@ function stepEx(d){
   if(i>=0 && i<list.length) openEx(list[i]);
 }
 document.getElementById("btnCheck").onclick=()=>{ if(currentEx) checkEx(currentEx); };
-document.getElementById("ws-course").onclick=()=>{ if(currentCourse){ openCourse(currentCourse.id); show("course"); }};
+document.getElementById("ws-course").onclick=()=>{ if(currentCourse) openCourse(currentCourse.id); };
 document.getElementById("btnLearn").onclick=()=>{
   const fn=document.getElementById("btnLearn").dataset.fn;
   const title=document.getElementById("btnLearn").dataset.title;
@@ -3020,7 +3096,7 @@ function checkEx(ex){
 }
 function pass(ex,msg){
   doneEx.add(currentExId);
-  saveProgress();
+  saveDone();
   showResult("ok","✓ Correct — "+msg);
   updateStreak(); renderOutline(); renderAll();
 }
@@ -3036,7 +3112,7 @@ function showResult(type,msg){
   const list=currentCourse?flatEx(currentCourse):[];
   const i=list.indexOf(currentExId);
   const hasNext=currentCourse&&i>=0&&i<list.length-1;
-  let b='<button class="btn" onclick="closeResult();openEx(currentExId)">Repeat</button>';
+  let b='<button class="btn" onclick="closeResult();openEx(currentExId,{fresh:true})">Repeat</button>';
   if(type==="ok"&&hasNext) b+='<button class="btn primary" onclick="closeResult();stepEx(1)">Next →</button>';
   else if(type==="bad") b='<button class="btn primary" onclick="closeResult()">Try again</button>';
   btns.innerHTML=b;
@@ -3050,7 +3126,7 @@ function closeResult(){
 document.getElementById("btnExportProg").onclick=()=>{
   const blob=new Blob([JSON.stringify({v:1,exported:new Date().toISOString(),done:[...doneEx]},null,1)],{type:"application/json"});
   const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob); a.download="formulalab-progress.json"; a.click();
+  a.href=URL.createObjectURL(blob); a.download="tyrocell-progress.json"; a.click();
   URL.revokeObjectURL(a.href);
 };
 document.getElementById("btnImportProg").onclick=()=>document.getElementById("progFile").click();
@@ -3062,7 +3138,7 @@ document.getElementById("progFile").addEventListener("change",e=>{
       const d=JSON.parse(rd.result);
       if(!Array.isArray(d.done))throw 0;
       d.done.filter(id=>EX[id]).forEach(id=>doneEx.add(id));
-      renderCourses(); updateStreak();
+      saveDone(); renderCourses(); updateStreak();
     }catch(err){ alert("Invalid progress file."); }
   };
   rd.readAsText(f); e.target.value="";
@@ -3166,145 +3242,6 @@ const KEYDOCS=[
   el.innerHTML=html;
 })();
 
-/* ================= SUPABASE AUTH & PROGRESS ================= */
-const SUPABASE_URL = "https://qkobiblthovnmhqrwaqk.supabase.co";
-const SUPABASE_KEY = "sb_publishable_fsA8XyDcTDFt4t66kGNaMw_QYxT0UAm";
-let _sb = null;
-let _sbUser = null;
-let _authMode = "signup";
-
-function sbReady(){ return typeof supabase !== "undefined" && supabase.createClient; }
-
-function getSb(){
-  if(_sb) return _sb;
-  if(!sbReady()) return null;
-  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  return _sb;
-}
-
-function openAuth(mode){
-  _authMode = mode || "signup";
-  const isLogin = _authMode === "login";
-  document.getElementById("authTitle").textContent = isLogin ? "Log in" : "Sign up";
-  document.getElementById("authSub").textContent = isLogin ? "Welcome back." : "Save your progress across devices.";
-  document.getElementById("authBtn").textContent = isLogin ? "Log in" : "Sign up";
-  document.getElementById("authToggle").innerHTML = isLogin
-    ? 'Don\'t have an account? <a onclick="toggleAuthMode()">Sign up</a>'
-    : 'Already have an account? <a onclick="toggleAuthMode()">Log in</a>';
-  document.getElementById("authMsg").className = "auth-msg";
-  document.getElementById("authMsg").textContent = "";
-  document.getElementById("authForm").reset();
-  document.getElementById("authOverlay").classList.add("on");
-}
-function closeAuth(){ document.getElementById("authOverlay").classList.remove("on"); }
-function toggleAuthMode(){ openAuth(_authMode === "login" ? "signup" : "login"); }
-
-async function handleAuth(e){
-  e.preventDefault();
-  const sb = getSb();
-  if(!sb){ showAuthMsg("err","Service unavailable. Try again later."); return false; }
-  const email = document.getElementById("authEmail").value.trim();
-  const pass  = document.getElementById("authPass").value;
-  const btn   = document.getElementById("authBtn");
-  btn.disabled = true;
-  btn.textContent = "Please wait…";
-  try {
-    let res;
-    if(_authMode === "signup"){
-      res = await sb.auth.signUp({ email, password: pass });
-    } else {
-      res = await sb.auth.signInWithPassword({ email, password: pass });
-    }
-    if(res.error) throw res.error;
-    if(_authMode === "signup" && res.data?.user && !res.data.session){
-      showAuthMsg("ok","Check your email for a confirmation link, then log in.");
-      btn.disabled = false;
-      btn.textContent = "Sign up";
-      return false;
-    }
-    _sbUser = res.data.user;
-    closeAuth();
-    renderAuthUI();
-    await loadProgress();
-  } catch(err){
-    showAuthMsg("err", err.message || "Something went wrong.");
-  }
-  btn.disabled = false;
-  btn.textContent = _authMode === "login" ? "Log in" : "Sign up";
-  return false;
-}
-
-function showAuthMsg(type, msg){
-  const el = document.getElementById("authMsg");
-  el.className = "auth-msg " + type;
-  el.textContent = msg;
-}
-
-async function handleLogout(){
-  const sb = getSb();
-  if(sb) await sb.auth.signOut();
-  _sbUser = null;
-  renderAuthUI();
-}
-
-function renderAuthUI(){
-  document.querySelectorAll("[data-auth-slot]").forEach(slot => {
-    if(_sbUser){
-      const em = _sbUser.email || "";
-      slot.innerHTML =
-        '<span class="nav-user">'+
-          '<span class="user-email" title="'+em+'">'+em.split("@")[0]+'</span>'+
-          '<a class="nav-logout" onclick="handleLogout()">Log out</a>'+
-        '</span>';
-    } else {
-      slot.innerHTML =
-        '<a class="nav-login" href="#" onclick="event.preventDefault();openAuth(\'login\')">Log in</a>'+
-        '<button class="btn primary" onclick="openAuth(\'signup\')">Sign up</button>';
-    }
-  });
-}
-
-async function saveProgress(){
-  const sb = getSb();
-  if(!sb || !_sbUser) return;
-  try {
-    await sb.from("progress").upsert({
-      user_id: _sbUser.id,
-      done: [...doneEx],
-      updated_at: new Date().toISOString()
-    }, { onConflict: "user_id" });
-  } catch(e){}
-}
-
-async function loadProgress(){
-  const sb = getSb();
-  if(!sb || !_sbUser) return;
-  try {
-    const { data } = await sb.from("progress").select("done").eq("user_id", _sbUser.id).single();
-    if(data && Array.isArray(data.done)){
-      data.done.filter(id => EX[id]).forEach(id => doneEx.add(id));
-      renderCourses(); updateStreak();
-    }
-  } catch(e){}
-}
-
-(async function initAuth(){
-  const sb = getSb();
-  if(!sb){ renderAuthUI(); return; }
-  try {
-    const { data } = await sb.auth.getSession();
-    if(data.session){
-      _sbUser = data.session.user;
-      renderAuthUI();
-      await loadProgress();
-    } else { renderAuthUI(); }
-  } catch(e){ renderAuthUI(); }
-  sb.auth.onAuthStateChange((event, session) => {
-    _sbUser = session?.user || null;
-    renderAuthUI();
-  });
-})();
-
 /* ================= TEST HOOKS =================
    Top-level `const`/`let` create global *lexical* bindings, which are NOT
    properties of `window` — so `app/test.html` could never see Engine/EX/doneEx
@@ -3343,9 +3280,10 @@ buildGrid();
 renderOutline();
 renderAll();
 select(1,0);
+loadDone();
 updateStreak();
 
-show("landing");
+route();   // open whatever screen the URL points at (landing if none)
 
 /* ================= ONBOARDING ================= */
 (function(){

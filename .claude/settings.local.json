@@ -55,7 +55,20 @@
       "Bash(node patch-decisions.js)",
       "Bash(node validate-exercises.js)",
       "Bash(python3 \"C:\\\\Users\\\\Brij\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Brij-OneDrive-Desktop-Project-Tyro-Cell\\\\5afcadd1-1abc-4af7-b06c-9f40bbd73635\\\\scratchpad\\\\insert_session4.py\")",
-      "Bash(node -e \"require\\('adm-zip'\\); console.log\\('adm-zip OK'\\)\")"
+      "Bash(node -e \"require\\('adm-zip'\\); console.log\\('adm-zip OK'\\)\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git add *)",
+      "Bash(unzip -l \"Tyro.cell Design System-handoff.zip\")",
+      "Bash(unzip -o \"Tyro.cell Design System-handoff.zip\" -d \"tyro-cell-design-system-extracted\")",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(timeout 45)",
+      "Bash(where vercel *)",
+      "Bash(npx vercel *)",
+      "Bash(git commit --allow-empty -m ' *)",
+      "Bash(npx --yes vercel --prod --yes)",
+      "Bash(npx --yes vercel --prod --yes --name tyrocell)",
+      "Bash(curl -s \"https://tyrocell.vercel.app/app/index.html\")"
     ]
   }
 }
