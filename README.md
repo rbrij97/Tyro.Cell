@@ -8,13 +8,14 @@ No build step, no dependencies, no backend. Every file below opens directly in a
 
 ```
 app/                 THE PRODUCT
-  index.html           the app — grid, 158 exercises, 2 courses, 42 modules
+  index.html           the app's markup (views + script/style loaders)
+  css/app.css          all styles
   engine.js            formula engine (shared by app and demo)
-  test.html            regression harness · 283 tests
-  learn/               interactive formula explainers (47 formulas)
-    index.html           learn page shell (hash routing: learn/#sum)
-    engine.js            explainer engine (animation, transport, TTS)
-    formulas/            47 formula config files (sum.js, vlookup.js, etc.)
+  js/grid.js           spreadsheet grid UI and keyboard layer
+  js/exercises.js      content: 158 exercises, 2 courses, 42 modules
+  js/app.js            app shell: router, saving, pages, workspace, checker
+  test.html            regression harness · 290 tests
+  learn/               animated formula explainers — not linked from the app any more
 
 demo/                PUBLIC DEMO — standalone, 3 exercises, Tyro.cell branded
   index.html           the demo

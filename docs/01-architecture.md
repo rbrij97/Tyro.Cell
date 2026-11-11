@@ -1,20 +1,24 @@
 # Architecture — `app/index.html`
 
-HTML/CSS/vanilla-JS application (no build step, no dependencies). Core app — engine, UI, content — split across two files. Learn explainers are separate files loaded via iframe.
+HTML/CSS/vanilla-JS application (no build step, no dependencies). Split into separate files (2026-11-11): markup, styles, engine, grid UI, exercise content and app shell.
 
 ## High-level structure
 
 ```
 app/
-├── index.html          The product (SPA: CSS, HTML views, UI/exercise/router JS)
+├── index.html          Markup only: the views and overlays, plus two tiny loaders
+├── css/app.css         All styles
 ├── engine.js           Formula engine (shared by app and demo)
-├── test.html           Regression harness (290 tests)
-└── learn/
-    ├── index.html      Learn page shell (loads formula configs via hash routing)
-    ├── engine.js       Explainer Engine (animation, transport, TTS)
-    ├── vlookup.html    Standalone VLOOKUP explainer (legacy)
-    └── formulas/       47 formula config files (sum.js, vlookup.js, etc.)
+├── js/grid.js          Grid UI: rendering, selection, editing, point mode, fill, clipboard, keyboard layer, side panel
+├── js/exercises.js     Content only: concept text, EX (158 exercises), COURSES. No DOM
+├── js/app.js           App shell: progress, persistence, router, pages, workspace, checker, onboarding, test hooks, init
+├── test.html           Regression harness (290 tests) — loads index.html?test
+└── learn/              Animated explainers — no longer linked from the app (Learn button removed 2026-11-11)
 ```
+
+**Load order matters.** The four scripts are *classic* scripts, not ES modules: their top-level `const`/`let`/`function` names share one global scope, exactly as when they were one `<script>`. They load in this order: `engine.js → js/grid.js → js/exercises.js → js/app.js`, and code that runs at load time may only use names from files above it (handlers that run later can use anything).
+
+**Why the loaders.** `index.html` writes its `<link>` and `<script>` tags with paths computed from `location.pathname`. Plain relative paths break when the page is opened as `/app` with no trailing slash (Vercel and `serve` both do this): `css/app.css` would resolve to `/css/app.css`.
 
 ### `app/engine.js` — formula engine module
 ```
@@ -33,20 +37,19 @@ Both `app/index.html` and `demo/index.html` load `engine.js` via `<script>` and 
 
 ### `app/index.html` views
 ```
-<style>            All CSS, scoped by view (landing/courses/course-detail/workspace)
-<body>
   #view-landing     Marketing/landing page (hero, showcase, personas, comparison, FAQ)
   #view-courses     Course catalog (cards, progress bars, export/import)
   #view-course      Course detail (modules -> exercises list)
-  #view-app         The spreadsheet workspace
-  .learn-overlay    Learn modal (iframe to app/learn/#formula)
+  #view-404         "This page doesn't exist"
+  #view-app         The spreadsheet workspace (right panel collapsed behind a rail)
   .result-overlay   Result popup (pass/fail with Next/Repeat)
-<script>            Grid UI, keyboard layer, exercise data, router, test hooks
 ```
 
-The floating AI assistant (`#aibtn` / `#aidrawer` / `askAI()`) **has been removed** — it required an API-proxied environment and never worked standalone.
+The floating AI assistant and the Learn popup **have been removed**.
 
-Only one `.view` has class `on` at a time; `show(view)` toggles between them — this is a simple client-side SPA router with no history/URL state. Two overlay modals (learn, result) float above all views via `position:fixed` with `z-index` stacking.
+Only one `.view` has class `on` at a time. **Every screen has a URL** (hash routing, in `js/app.js`): `#/`, `#/courses`, `#/course/<id>`, `#/course/<id>/<n>` (formula n expanded), `#/practice/<exId>`, `#/sandbox`. Back, Forward, Refresh and shared links all work. Screen functions (`openCourse`, `openEx`, …) render and then record their URL with `setRoute()`; a `hashchange` the app caused itself is ignored, and redirects (locked course, bad link) replace the history entry instead of adding one.
+
+**Persistence** (`localStorage`, this browser only): completed exercises (`tyro_done_v1`) and each exercise's in-progress sheet (`tyro_sheet_v1:<exId>`). Reset and Repeat start from the original data. The test harness loads `index.html?test`, which turns persistence off.
 
 ## Formula engine (`app/engine.js`)
 
@@ -75,7 +78,9 @@ Math (`SUM, AVERAGE, MIN, MAX, MEDIAN, PRODUCT, ROUND(UP/DOWN), ABS, SQRT, POWER
 
 ## Learn explainer system (`app/learn/`)
 
-Interactive formula explainers, loaded as an iframe modal inside the main app.
+> **Not linked from the app any more (2026-11-11).** The Learn button, the course-page "Learn" links and the iframe popup were removed because the animated explainers loaded too much. The files below remain in the repo, unused. The `openLearn`/`LEARN_MAP` integration described here no longer exists.
+
+Interactive formula explainers, previously loaded as an iframe modal inside the main app.
 
 - **Routing**: hash-based (`learn/#sum`). The learn shell (`learn/index.html`) reads `location.hash`, loads `formulas/{fn}.js`, and passes the config to `ExplainerEngine.init()`. Hash routing avoids query-param stripping by Vite's clean-URL redirects.
 - **Engine** (`learn/engine.js`): a data-driven animation player. Each formula config (`FORMULA_CONFIG`) defines a data table, column headers, formula text with syntax-colorable tokens, and a step array. Steps can highlight cells, move a cursor, type formula text character-by-character, float values, and display subtitles. Transport: play/pause, speed (1×/2×/3×), step scrubbing via progress bar.
@@ -86,7 +91,7 @@ Interactive formula explainers, loaded as an iframe modal inside the main app.
 
 - `EX` — a flat object of exercise definitions keyed by id (e.g. `sum`, `vlookup`, `grossprofit`). Each has: level (`basic|core|adv`), title, concept HTML, task description, seed `data` (cell → value), an answer spec (`target` single cell, `targetRange` for fill-down exercises, or `pick` for classification/dropdown exercises), required tokens/refs, `solution` formula, and a `hint`.
 - `COURSES` — ordered list of `{id, title, level, hours, prereq, desc, upcoming, modules: [{title, ex: [ids]}]}`. `upcoming:true` marks courses as locked/coming-soon in the UI. Currently two courses: **Excel Formula Fundamentals** (152 exercises, 40 modules) and **Financial Statements Fundamentals** (6 exercises, 2 modules, upcoming/locked). Full list: [03-exercise-catalog.md](03-exercise-catalog.md).
-- `doneEx` — a `Set` of completed exercise ids, held in memory only (no `localStorage`/backend) — hence the explicit **Export/Import progress** buttons that serialize `doneEx` to/from a downloaded JSON file.
+- `doneEx` — a `Set` of completed exercise ids, saved to `localStorage` on every pass and loaded at start-up. **Export/Import progress** still serialises it to a JSON file for moving progress to another device.
 - **Checker** (`checkEx`) — dispatches on answer type:
   - `pick` exercises: every dropdown must match the expected answer.
   - `targetRange` exercises: every cell in the range must be a formula (not a literal), reference the right cells, and evaluate to the value expected at that position (computed via `expectedAt`, which shifts the canonical `solution` formula to each cell's position rather than requiring an identical string).
@@ -124,10 +129,10 @@ A 3-step tooltip tour that fires on first exercise open (guarded by `localStorag
 
 ## Notable design choices / constraints
 
-- **No backend, no persistence layer** — everything is client-side and in-memory; progress survives only via manual export/import. A real "Phase 2" (per the pitch roadmap) needs accounts + server-side progress storage.
-- **No build tooling** — plain HTML/CSS/JS, easy to iterate on with Claude Code / any editor. The engine is extracted to `engine.js`; further module splitting (exercise data, UI) is possible but not yet needed.
-- **Content and UI are interleaved** in `index.html` — exercise data (`EX`, `COURSES`) is hard-coded JS, not loaded from a CMS/database.
-- **Shared engine** — `app/engine.js` is loaded by both `app/index.html` and `demo/index.html`. A dynamic `<base>` tag in `index.html` ensures the relative script `src` resolves correctly even under `serve`'s clean-URL redirects.
+- **No backend** — everything is client-side. Progress persists in this browser's `localStorage`; moving it between devices uses Export/Import. A Supabase login was built and then removed (2026-11-11) to get the MVP solid first.
+- **No build tooling** — plain HTML/CSS/JS split across files, loaded as classic scripts in a fixed order (see High-level structure). A bundler can come later if needed.
+- **Content is separate from UI** — exercise data (`EX`, `COURSES`) lives in `js/exercises.js` as hard-coded JS, not loaded from a CMS/database.
+- **Shared engine** — `app/engine.js` is loaded by both `app/index.html` and `demo/index.html`. The loaders in `index.html` compute its path so it resolves correctly even under clean-URL redirects.
 
 ## Testing
 
