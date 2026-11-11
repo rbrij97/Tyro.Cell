@@ -66,6 +66,11 @@ function positionSelBox(){
   selBox.style.width=(B.right-A.left)+"px";
   selBox.style.height=(B.bottom-A.top)+"px";
   selBox.classList.toggle("editing",!!editing);
+  // on a passed answer the box (and fill handle) turn green to match the cell
+  let allPassed=passedRefs.length>0;
+  for(let r=r1;r<=r2&&allPassed;r++)for(let c=c1;c<=c2;c++) if(!passedRefs.includes(refOf(r,c))){allPassed=false;break;}
+  selBox.classList.toggle("ok",allPassed);
+  fillHandle.classList.toggle("ok",allPassed);
 }
 window.addEventListener("resize",()=>{ positionSelBox(); positionFillHandle(); });
 
@@ -317,8 +322,12 @@ function startEdit(ref, initial){
   if(initial!=null) inp.setSelectionRange(inp.value.length,inp.value.length); else inp.select();
   const home=parseRef(ref);
   const typedStart = initial!=null;
-  inp.addEventListener("input",()=>{fInput.value=inp.value; endPoint(); paintRefs(inp.value);});
-  paintRefs(inp.value);
+  inp.addEventListener("input",()=>{fInput.value=inp.value; endPoint(); paintRefs(inp.value); updateSuggest(inp);});
+  // the suggestion list gets first go at ↑/↓/Tab/Esc (capture runs before the editor's own keys)
+  inp.addEventListener("keydown",e=>{ if(acKey(e)){ e.preventDefault(); e.stopImmediatePropagation(); } },true);
+  inp.addEventListener("keyup",e=>{ if(["ArrowLeft","ArrowRight","Home","End"].includes(e.key)) updateSuggest(inp); });
+  inp.addEventListener("click",()=>updateSuggest(inp));
+  paintRefs(inp.value); updateSuggest(inp);
   inp.addEventListener("keydown",e=>{
     const arrows=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
     if(arrows.includes(e.key)){
@@ -370,7 +379,7 @@ function startPick(ref){
 }
 function commitEdit(save){
   if(!editing) return;
-  endPoint(); clearRefs();
+  endPoint(); clearRefs(); hideFnHelp();
   const ref=editing; editing=null;
   const td=TD[ref]; const inp=td.querySelector("input,select");
   if(inp){
@@ -623,3 +632,176 @@ document.querySelectorAll("#rail button").forEach(b=>{
 });
 document.getElementById("panelClose").onclick=()=>setPanel(null);
 
+
+/* =========================================================================
+   FORMULA AUTOCOMPLETE — Excel-style. Typing "=aver" lists matching functions
+   under the cell; ↑/↓ choose, Tab inserts "AVERAGE(", Esc closes the list.
+   Inside a function's brackets a hint shows its arguments, current one bold.
+   ========================================================================= */
+const FN_SIGS={
+  SUM:["number1, [number2], …","Adds all the numbers."],
+  AVERAGE:["number1, [number2], …","Average (arithmetic mean) of the numbers."],
+  MIN:["number1, [number2], …","Smallest number."],
+  MAX:["number1, [number2], …","Largest number."],
+  MEDIAN:["number1, [number2], …","Middle value of the numbers."],
+  PRODUCT:["number1, [number2], …","Multiplies all the numbers."],
+  ABS:["number","Absolute value — drops the sign."],
+  SQRT:["number","Square root."],
+  POWER:["number, power","A number raised to a power."],
+  MOD:["number, divisor","Remainder after division."],
+  INT:["number","Rounds down to the nearest whole number."],
+  ROUND:["number, num_digits","Rounds to a number of digits."],
+  ROUNDUP:["number, num_digits","Rounds away from zero."],
+  ROUNDDOWN:["number, num_digits","Rounds toward zero."],
+  PI:["","The value of pi."],
+  RAND:["","Random number between 0 and 1."],
+  RANDBETWEEN:["bottom, top","Random whole number in a range."],
+  COUNT:["value1, [value2], …","Counts cells that contain numbers."],
+  COUNTA:["value1, [value2], …","Counts cells that are not empty."],
+  COUNTBLANK:["range","Counts empty cells."],
+  IF:["logical_test, [value_if_true], [value_if_false]","One value if a test is TRUE, another if FALSE."],
+  IFERROR:["value, value_if_error","A fallback when a formula errors."],
+  COUNTIF:["range, criteria","Counts cells that meet one condition."],
+  COUNTIFS:["criteria_range1, criteria1, [criteria_range2, criteria2], …","Counts cells that meet several conditions."],
+  SUMIF:["range, criteria, [sum_range]","Adds cells that meet one condition."],
+  SUMIFS:["sum_range, criteria_range1, criteria1, [criteria_range2, criteria2], …","Adds cells that meet several conditions."],
+  AVERAGEIF:["range, criteria, [average_range]","Averages cells that meet one condition."],
+  AVERAGEIFS:["average_range, criteria_range1, criteria1, [criteria_range2, criteria2], …","Averages cells that meet several conditions."],
+  AND:["logical1, [logical2], …","TRUE if all arguments are TRUE."],
+  OR:["logical1, [logical2], …","TRUE if any argument is TRUE."],
+  NOT:["logical","Reverses TRUE and FALSE."],
+  LEN:["text","Number of characters."],
+  UPPER:["text","Converts to UPPERCASE."],
+  LOWER:["text","Converts to lowercase."],
+  PROPER:["text","Capitalises Each Word."],
+  TRIM:["text","Removes extra spaces."],
+  LEFT:["text, [num_chars]","Characters from the start."],
+  RIGHT:["text, [num_chars]","Characters from the end."],
+  MID:["text, start_num, num_chars","Characters from the middle."],
+  CONCAT:["text1, [text2], …","Joins text."],
+  CONCATENATE:["text1, [text2], …","Joins text (older name for CONCAT)."],
+  TEXTJOIN:["delimiter, ignore_empty, text1, [text2], …","Joins text with a delimiter."],
+  FIND:["find_text, within_text, [start_num]","Position of text inside text (case-sensitive)."],
+  SUBSTITUTE:["text, old_text, new_text","Replaces text with new text."],
+  VLOOKUP:["lookup_value, table_array, col_index_num, [range_lookup]","Looks down the first column and returns a value from the same row."],
+  HLOOKUP:["lookup_value, table_array, row_index_num, [range_lookup]","Looks across the first row and returns a value from the same column."],
+  XLOOKUP:["lookup_value, lookup_array, return_array, [if_not_found]","Looks up a value and returns the matching item."],
+  INDEX:["array, row_num, [column_num]","The value at a row and column of a range."],
+  MATCH:["lookup_value, lookup_array, [match_type]","Position of a value in a range."],
+  TODAY:["","Today's date."],
+  NOW:["","Current date and time."],
+  DATE:["year, month, day","Builds a date."],
+  YEAR:["serial_number","Year of a date."],
+  MONTH:["serial_number","Month of a date."],
+  DAY:["serial_number","Day of a date."],
+  DAYS:["end_date, start_date","Days between two dates."],
+  TEXT:["value, format_text","Formats a number or date as text."],
+  EOMONTH:["start_date, months","Last day of the month, months away."],
+  NPV:["rate, value1, [value2], …","Net present value of future cash flows."],
+  IRR:["values, [guess]","Internal rate of return."],
+  XNPV:["rate, values, dates","Net present value with dated cash flows."],
+  XIRR:["values, dates, [guess]","Internal rate of return with dated cash flows."],
+  PMT:["rate, nper, pv, [fv], [type]","Payment for a loan."],
+  PV:["rate, nper, pmt, [fv], [type]","Present value."],
+  FV:["rate, nper, pmt, [pv], [type]","Future value."],
+  NPER:["rate, pmt, pv, [fv], [type]","Number of periods."],
+  RATE:["nper, pmt, pv, [fv], [type], [guess]","Interest rate per period."],
+  IPMT:["rate, per, nper, pv, [fv], [type]","Interest part of a payment."],
+  PPMT:["rate, per, nper, pv, [fv], [type]","Principal part of a payment."],
+  SLN:["cost, salvage, life","Straight-line depreciation."],
+  DB:["cost, salvage, life, period, [month]","Declining-balance depreciation."],
+  ISNUMBER:["value","TRUE if the value is a number."],
+  ISTEXT:["value","TRUE if the value is text."],
+  ISBLANK:["value","TRUE if the cell is empty."]
+};
+const acBox=document.createElement("div");
+acBox.id="fnSuggest"; acBox.setAttribute("role","listbox"); acBox.setAttribute("aria-label","Function suggestions"); acBox.hidden=true;
+const argTip=document.createElement("div");
+argTip.id="fnArgTip"; argTip.setAttribute("role","tooltip"); argTip.hidden=true;
+document.body.appendChild(acBox); document.body.appendChild(argTip);
+let ac=null;   // {input, start, end, word, items, idx}
+
+function placeUnder(el,input){
+  const r=input.getBoundingClientRect();
+  el.style.left=Math.max(8,Math.min(r.left,window.innerWidth-el.offsetWidth-8))+"px";
+  el.style.top=(r.bottom+4)+"px";
+}
+// The function name being typed at the caret, if any (not inside quotes, not part of a longer word).
+function fnTokenAt(input){
+  const v=input.value, pos=input.selectionStart==null?v.length:input.selectionStart;
+  if(v[0]!=="=") return null;
+  const before=v.slice(0,pos);
+  if(((before.match(/"/g)||[]).length)%2) return null;
+  const m=/([A-Za-z][A-Za-z0-9.]*)$/.exec(before); if(!m) return null;
+  const start=pos-m[1].length;
+  if(/[A-Za-z0-9_$.]/.test(v[start-1]||"")) return null;
+  if(v[pos]==="(") return null;
+  return {start,end:pos,word:m[1].toUpperCase()};
+}
+function hideSuggest(){ if(ac&&ac.input) ac.input.removeAttribute("aria-activedescendant"); ac=null; acBox.hidden=true; }
+function hideArgTip(){ argTip.hidden=true; }
+function hideFnHelp(){ hideSuggest(); hideArgTip(); }
+function renderSuggest(){
+  acBox.innerHTML=ac.items.map((n,i)=>'<div class="fs-item'+(i===ac.idx?" on":"")+'" role="option" id="fs-'+i+'" aria-selected="'+(i===ac.idx)+'" data-i="'+i+'"><span class="fs-name">'+n+'</span></div>').join("")
+    +'<div class="fs-foot"><span class="fs-desc">'+((FN_SIGS[ac.items[ac.idx]]||["",""])[1])+'</span><span class="fs-key">Tab ↹ to insert</span></div>';
+  ac.input.setAttribute("aria-activedescendant","fs-"+ac.idx);
+  acBox.hidden=false; placeUnder(acBox,ac.input);
+}
+function updateSuggest(input){
+  const t=fnTokenAt(input);
+  if(t){
+    const items=Object.keys(FUNCS).filter(n=>n.startsWith(t.word)).sort();
+    if(items.length){
+      const keep=ac&&ac.input===input&&ac.word===t.word;
+      ac={input,...t,items:items.slice(0,8),idx:keep?Math.min(ac.idx,Math.min(items.length,8)-1):0};
+      hideArgTip(); renderSuggest(); return;
+    }
+  }
+  hideSuggest(); updateArgTip(input);
+}
+function acceptSuggest(i){
+  if(!ac) return;
+  const input=ac.input, name=ac.items[i==null?ac.idx:i], v=input.value;
+  input.value=v.slice(0,ac.start)+name+"("+v.slice(ac.end);
+  const caret=ac.start+name.length+1;
+  input.setSelectionRange(caret,caret);
+  if(input!==fInput) fInput.value=input.value;
+  hideSuggest(); paintRefs(input.value); updateArgTip(input);
+  input.focus();
+}
+// Keys while the list is open. Returns true when it handled the key.
+function acKey(e){
+  if(!ac||acBox.hidden) return false;
+  if(e.key==="ArrowDown"){ ac.idx=(ac.idx+1)%ac.items.length; renderSuggest(); return true; }
+  if(e.key==="ArrowUp"){ ac.idx=(ac.idx-1+ac.items.length)%ac.items.length; renderSuggest(); return true; }
+  if(e.key==="Tab"){ acceptSuggest(); return true; }
+  if(e.key==="Escape"){ const inp=ac.input; hideSuggest(); updateArgTip(inp); return true; }
+  return false;
+}
+acBox.addEventListener("mousedown",e=>{ e.preventDefault(); const it=e.target.closest(".fs-item"); if(it) acceptSuggest(+it.dataset.i); });
+// Argument hint: the innermost unclosed function call before the caret.
+function updateArgTip(input){
+  const v=input.value, pos=input.selectionStart==null?v.length:input.selectionStart;
+  if(v[0]!=="="){ hideArgTip(); return; }
+  const stack=[]; let inStr=false;
+  for(let i=1;i<pos;i++){
+    const ch=v[i];
+    if(ch==='"'){ inStr=!inStr; continue; }
+    if(inStr) continue;
+    if(ch==="("){ const m=/([A-Za-z][A-Za-z0-9.]*)$/.exec(v.slice(0,i)); stack.push({name:m?m[1].toUpperCase():"",arg:0}); }
+    else if(ch===")") stack.pop();
+    else if(ch===","&&stack.length) stack[stack.length-1].arg++;
+  }
+  const top=stack[stack.length-1];
+  if(!top||!FN_SIGS[top.name]||!FN_SIGS[top.name][0]){ hideArgTip(); return; }
+  const parts=FN_SIGS[top.name][0].split(", ");
+  const cur=Math.min(top.arg,parts.length-1);
+  argTip.innerHTML='<span class="fn">'+top.name+'</span>('+parts.map((p,i)=>i===cur?'<b>'+p+'</b>':p).join(", ")+')';
+  argTip.hidden=false; placeUnder(argTip,input);
+}
+fInput.addEventListener("input",()=>updateSuggest(fInput));
+fInput.addEventListener("keyup",e=>{ if(["ArrowLeft","ArrowRight","Home","End"].includes(e.key)) updateSuggest(fInput); });
+fInput.addEventListener("click",()=>updateSuggest(fInput));
+fInput.addEventListener("keydown",e=>{ if(acKey(e)){ e.preventDefault(); e.stopImmediatePropagation(); } },true);
+fInput.addEventListener("blur",hideFnHelp);
+window.addEventListener("resize",hideFnHelp);
