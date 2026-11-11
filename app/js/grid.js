@@ -345,7 +345,7 @@ function startEdit(ref, initial){
     if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
       /* Ctrl+Enter: commit this entry to the whole selection */
       e.preventDefault(); e.stopPropagation();
-      const raw=inp.value; const anchor=ref;
+      const raw=closeParens(inp.value).raw; const anchor=ref;
       editing=null; inp.remove();
       pushUndo(); fillSelectionWith(anchor,raw); renderAll(); flash("Filled selection");
       return;
@@ -377,21 +377,43 @@ function startPick(ref){
   selEl.addEventListener("keydown",e=>{ if(e.key==="Escape"){e.preventDefault();done(false);} e.stopPropagation(); });
   document.getElementById("st-mode").textContent="Pick";
 }
+/* Excel closes unbalanced brackets when you press Enter: "=SUM(B2:B5" becomes
+   "=SUM(B2:B5)". We do the same, say so in the status bar, and mark the cell
+   (cell.ac) so the answer check can remind you to type the ")" yourself. */
+function closeParens(v){
+  v=String(v); if(v[0]!=="=") return {raw:v,added:0};
+  let depth=0, inStr=false;
+  for(const ch of v.slice(1)){
+    if(ch==='"'){ inStr=!inStr; continue; }
+    if(inStr) continue;
+    if(ch==="(") depth++; else if(ch===")") depth--;
+  }
+  if(depth<=0||inStr) return {raw:v,added:0};
+  return {raw:v+")".repeat(depth),added:depth};
+}
+function commitRaw(ref,v){
+  const f=closeParens(v); setRaw(ref,f.raw);
+  const c=cells[ref]; if(c){ if(f.added) c.ac=1; else delete c.ac; }
+  return f.added;
+}
+function noteAutoClose(n){ if(n) flash("Added the missing "+")".repeat(n)); }
 function commitEdit(save){
   if(!editing) return;
   endPoint(); clearRefs(); hideFnHelp();
   const ref=editing; editing=null;
   const td=TD[ref]; const inp=td.querySelector("input,select");
+  let added=0;
   if(inp){
     if(save){
       const prev=(getCell(ref)||{}).raw||"";
       if(String(inp.value)!==String(prev)) pushUndo();
-      setRaw(ref,inp.value);
+      added=commitRaw(ref,inp.value);
     }
     inp.remove();
   }
   document.getElementById("st-mode").textContent="Ready";
   renderAll();
+  noteAutoClose(added);
 }
 
 /* events */
@@ -536,6 +558,7 @@ function todaySerial(){ const d=new Date(); return Math.floor(Date.UTC(d.getFull
 document.addEventListener("keydown",e=>{
   if(!document.getElementById("view-app").classList.contains("on"))return;
   if(editing||document.activeElement===fInput||document.activeElement===nameBox)return;
+  if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#tab-outline,#ws-pager"))return;
   const k=e.key, mod=e.ctrlKey||e.metaKey;
 
   if(k==="ArrowUp"||k==="ArrowDown"||k==="ArrowLeft"||k==="ArrowRight"){
@@ -585,10 +608,10 @@ fInput.addEventListener("keydown",e=>{
   if(point&&point.inputEl===fInput&&e.key!=="Shift")endPoint();
   if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
     e.preventDefault(); endPoint();
-    pushUndo(); fillSelectionWith(refOf(sel.r,sel.c),fInput.value); renderAll(); flash("Filled selection");
+    pushUndo(); fillSelectionWith(refOf(sel.r,sel.c),closeParens(fInput.value).raw); renderAll(); flash("Filled selection");
     return;
   }
-  if(e.key==="Enter"){e.preventDefault();endPoint();clearRefs();pushUndo();setRaw(refOf(sel.r,sel.c),fInput.value);renderAll();select(sel.r+1,sel.c);grid.focus();}
+  if(e.key==="Enter"){e.preventDefault();endPoint();clearRefs();hideFnHelp();pushUndo();const n=commitRaw(refOf(sel.r,sel.c),fInput.value);renderAll();select(sel.r+1,sel.c);noteAutoClose(n);grid.focus();}
   if(e.key==="Escape"){e.preventDefault();endPoint();clearRefs();paintSelection();e.target.blur();}
 });
 fInput.addEventListener("input",()=>paintRefs(fInput.value));
@@ -610,27 +633,51 @@ document.getElementById("btnUnder").onclick=()=>toggleStyle("u");
 document.getElementById("btnClear").onclick=()=>{pushUndo();const {r1,r2,c1,c2}=selRange();for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)delete cells[refOf(r,c)];renderAll();};
 document.getElementById("btnClearAll").onclick=()=>{pushUndo();resetCells({});if(!currentEx)targetRefs=[];renderAll();};
 
-/* panel tabs */
-/* Right panel is closed by default so the grid gets the room. A rail on the
-   right edge opens it on a tab; clicking the open tab again (or ×) closes it.
-   The last choice is remembered in this browser (applied at INIT). */
-const PANEL_TITLES={outline:"Outline",funcs:"Functions",keys:"Keys"};
-let panelTab=null;
-function setPanel(tab){
-  if(!PANEL_TITLES[tab]) tab=null;
-  panelTab=tab;
-  document.getElementById("panel").classList.toggle("closed",!tab);
-  document.querySelectorAll("#rail button").forEach(b=>{
-    b.classList.toggle("on",b.dataset.tab===tab); b.setAttribute("aria-selected",String(b.dataset.tab===tab)); });
-  document.querySelectorAll(".pbody").forEach(x=>x.classList.toggle("on",x.id==="tab-"+tab));
-  if(tab) document.getElementById("panelTitle").textContent=PANEL_TITLES[tab];
-  lsSet("tyro_panel",tab||"");
-  paintSelection();   // grid width changed: re-place the fill handle
+/* Outline and shortcuts. There is no side panel: the grid gets the full width.
+   - Outline (this formula's exercises) drops down from "2 of 7" in the top bar.
+   - Keyboard shortcuts open as a dialog from the status bar, or with Ctrl+/
+     (the Google Sheets binding; "?" would stop you typing a question mark). */
+const outlinePop=document.getElementById("tab-outline");
+const posBtn=document.getElementById("ws-pos");
+const keysDialog=document.getElementById("keysDialog");
+let keysReturnFocus=null;
+function setOutline(open){
+  outlinePop.hidden=!open;
+  posBtn.setAttribute("aria-expanded",String(open));
+  if(open){ const cur=outlinePop.querySelector(".oex.cur")||outlinePop.querySelector("a"); if(cur) cur.focus(); }
 }
-document.querySelectorAll("#rail button").forEach(b=>{
-  b.onclick=()=>setPanel(panelTab===b.dataset.tab?null:b.dataset.tab);
-});
-document.getElementById("panelClose").onclick=()=>setPanel(null);
+function setKeys(open){
+  if(!open&&keysDialog.hidden) return;
+  if(open){ keysReturnFocus=document.activeElement; setOutline(false); hideFnHelp(); }
+  keysDialog.hidden=!open;
+  if(open) document.getElementById("keysClose").focus();
+  else if(keysReturnFocus&&keysReturnFocus.focus) keysReturnFocus.focus();
+}
+// kept for older callers: closes both
+function setPanel(){ setOutline(false); setKeys(false); }
+posBtn.addEventListener("click",e=>{ e.stopPropagation(); setOutline(outlinePop.hidden); });
+outlinePop.addEventListener("click",e=>{ if(e.target.closest("a")) setOutline(false); });
+document.addEventListener("click",e=>{ if(!outlinePop.hidden&&!e.target.closest("#ws-pager")) setOutline(false); });
+document.getElementById("btnKeys").addEventListener("click",()=>setKeys(true));
+document.getElementById("keysClose").addEventListener("click",()=>setKeys(false));
+keysDialog.addEventListener("mousedown",e=>{ if(e.target===keysDialog) setKeys(false); });
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("view-app").classList.contains("on")) return;
+  if(!keysDialog.hidden){
+    if(e.key==="Escape"||((e.ctrlKey||e.metaKey)&&e.key==="/")){ e.preventDefault(); setKeys(false); }
+    if(e.key==="Tab"){ e.preventDefault(); document.getElementById("keysClose").focus(); }   // single control: keep focus in the dialog
+    e.stopImmediatePropagation(); return;
+  }
+  if(!outlinePop.hidden){
+    if(e.key==="Escape"){ e.preventDefault(); setOutline(false); posBtn.focus(); e.stopImmediatePropagation(); return; }
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+      const links=[...outlinePop.querySelectorAll("a")], i=links.indexOf(document.activeElement);
+      const n=links[(i+(e.key==="ArrowDown"?1:-1)+links.length)%links.length]; if(n) n.focus();
+      e.preventDefault(); e.stopImmediatePropagation(); return;
+    }
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key==="/"&&!editing){ e.preventDefault(); setKeys(true); e.stopImmediatePropagation(); }
+},true);
 
 
 /* =========================================================================

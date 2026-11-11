@@ -213,8 +213,10 @@
     <span class="spacer"></span>
     <div class="ws-pager" id="ws-pager">
       <button class="ws-navbtn" id="btnPrev" aria-label="Previous exercise" title="Previous exercise">←</button>
-      <span class="ws-pos" id="ws-pos"></span>
+      <button class="ws-pos" id="ws-pos" aria-haspopup="true" aria-expanded="false" aria-controls="tab-outline" title="Exercises in this formula"></button>
       <button class="ws-navbtn" id="btnNext" aria-label="Next exercise" title="Next exercise">→</button>
+      <!-- Outline: this formula's exercises, opened from "2 of 7" -->
+      <div class="ws-pop" id="tab-outline" hidden></div>
     </div>
     <div class="dk-prog ws-progwrap"><span class="dk-progbar"><span class="dk-progfill"></span></span><span class="dk-progtext"></span><span class="ws-plus1" id="wsPlus" aria-hidden="true">+1</span></div>
     <span class="ws-sr" id="ws-streak">0</span>
@@ -234,26 +236,20 @@
   <div id="main">
     <aside id="concept" class="ws-brief" aria-label="Exercise brief"></aside>
     <div id="gridwrap"><table id="grid" aria-label="Spreadsheet grid"></table><div id="selbox" aria-hidden="true"></div><div id="fillhandle" title="Fill handle — drag to copy with relative references"></div></div>
-    <div id="panel" class="closed">
-      <div id="panelhead">
-        <span id="panelTitle">Outline</span>
-        <button id="panelClose" title="Close panel" aria-label="Close panel">&times;</button>
-      </div>
-      <div class="pbody outline" id="tab-outline"></div>
-      <div class="pbody fnref" id="tab-funcs"></div>
-      <div class="pbody keyref" id="tab-keys"></div>
-    </div>
-    <div id="rail" role="tablist" aria-label="Side panel">
-      <button data-tab="outline" title="Exercises in this formula">Outline</button>
-      <button data-tab="funcs" title="Function reference">Functions</button>
-      <button data-tab="keys" title="Keyboard shortcuts">Keys</button>
-    </div>
   </div>
   <div id="statusbar">
     <span id="st-mode">Ready</span>
     <span id="st-agg"></span>
     <span class="spacer"></span>
     <span class="keys">F2 edit · F4 $ · Alt+= autosum · Ctrl+D fill · Ctrl+Z undo</span>
+    <button class="ws-keysbtn" id="btnKeys" aria-haspopup="dialog" title="Keyboard shortcuts (Ctrl+/)"><span aria-hidden="true">⌨</span> Shortcuts</button>
+  </div>
+  <!-- Keyboard shortcuts: opened from the status bar or Ctrl+/ -->
+  <div class="ws-dialog-back" id="keysDialog" hidden>
+    <div class="ws-dialog" role="dialog" aria-modal="true" aria-labelledby="keysTitle">
+      <div class="ws-dialog-head"><h2 id="keysTitle">Keyboard shortcuts</h2><button class="ws-dialog-x" id="keysClose" aria-label="Close">&times;</button></div>
+      <div class="keyref ws-dialog-body" id="tab-keys"></div>
+    </div>
   </div>
 </div>
 

@@ -1019,3 +1019,47 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 #fnArgTip .fn{font-weight:700;color:#171512}
 #fnArgTip b{color:#171512;background:#FFE680;border-radius:3px;padding:0 3px}
 @media (prefers-reduced-motion:reduce){#fnSuggest{animation:none}}
+
+/* No side panel any more: Outline drops down from "2 of 7", shortcuts open from the status bar */
+.ws .ws-pager{position:relative}
+.ws button.ws-pos{min-height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:none;cursor:pointer;font:12px var(--mono);color:var(--dk-t2);white-space:nowrap;transition:background .12s ease,border-color .12s ease}
+.ws button.ws-pos:hover,.ws button.ws-pos[aria-expanded="true"]{background:#FFF9DB;border-color:#E8B530;color:var(--dk-ink)}
+.ws button.ws-pos:focus-visible{outline:2px solid var(--dk-black);outline-offset:2px}
+.ws .ws-caret{font-size:10px;margin-left:2px}
+.ws .ws-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:60;width:320px;max-height:min(70vh,460px);overflow-y:auto;padding:10px;background:#fff;border:1.5px solid var(--dk-black);border-radius:10px;box-shadow:5px 5px 0 var(--dk-black);animation:ws-drop .16s cubic-bezier(.2,.8,.2,1) both}
+.ws .ws-pop[hidden]{display:none}
+@keyframes ws-drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.ws .ws-pop .ol-back{display:inline-block;margin:2px 0 10px;padding:5px 10px;border:1px solid var(--dk-line);border-radius:999px;font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dk-ink)}
+.ws .ws-pop .ol-back:hover{background:#F3EFE6}
+.ws .ws-pop .ol-modhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 8px}
+.ws .ws-pop .omod{font-family:var(--dk-head);font-size:16px;font-weight:800;letter-spacing:-.2px;color:var(--dk-ink);text-transform:none}
+.ws .ws-pop .ol-prog{font:12px var(--mono);color:var(--dk-t2)}
+.ws .ws-pop .oex{display:flex;gap:10px;align-items:center;padding:8px 10px;margin-bottom:4px;border:1px solid var(--dk-line);border-radius:8px;font-size:13px;color:var(--dk-ink)}
+.ws .ws-pop .oex:hover,.ws .ws-pop .oex:focus-visible{background:#FFF9DB;border-color:#E8B530;outline:none}
+.ws .ws-pop .oex.cur{border-color:var(--dk-black);background:#FFF9DB;font-weight:600}
+.ws .ws-pop .oex .tick{width:14px;height:14px;border-radius:50%;border:1.5px solid #C9C0AE;flex:none}
+.ws .ws-pop .oex.done .tick{background:#1E9E5A;border-color:#1E9E5A}
+.ws .ws-pop .ol-next{display:flex;margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--dk-black);color:#fff;font-size:13px;font-weight:600;align-items:center;justify-content:center;gap:8px}
+.ws .ws-pop .ol-next small{font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;opacity:.8}
+
+.ws .ws-keysbtn{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border:1px solid var(--dk-line2);border-radius:7px;background:#fff;cursor:pointer;font:600 12px var(--sans);color:var(--dk-ink)}
+.ws .ws-keysbtn:hover{background:var(--dk-yellow);border-color:var(--dk-black)}
+.ws .ws-keysbtn:focus-visible{outline:2px solid var(--dk-black);outline-offset:2px}
+
+.ws .ws-dialog-back{position:fixed;inset:0;z-index:700;background:rgba(23,21,18,.35);display:grid;place-items:center;padding:16px}
+.ws .ws-dialog-back[hidden]{display:none}
+.ws .ws-dialog{width:min(560px,100%);max-height:min(80vh,640px);display:flex;flex-direction:column;background:#fff;border:1.5px solid var(--dk-black);border-radius:14px;box-shadow:8px 8px 0 var(--dk-black);animation:ws-rise .25s cubic-bezier(.2,.8,.2,1) both}
+.ws .ws-dialog-head{display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid var(--dk-line)}
+.ws .ws-dialog-head h2{flex:1;margin:0;font-family:var(--dk-head);font-size:22px;font-weight:800;letter-spacing:-.4px}
+.ws .ws-dialog-x{width:34px;height:34px;border:none;border-radius:8px;background:#F3EFE6;cursor:pointer;font-size:20px;line-height:1;color:var(--dk-ink)}
+.ws .ws-dialog-x:hover{background:var(--dk-yellow)}
+.ws .ws-dialog-x:focus-visible{outline:2px solid var(--dk-black);outline-offset:2px}
+.ws .ws-dialog-body{overflow-y:auto;padding:6px 18px 18px;display:block}
+.ws .ws-dialog-body .fncat{font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dk-t2);margin:16px 0 6px}
+.ws .ws-dialog-body kbd{background:#FBF9F4;border-color:var(--dk-line2)}
+@media (prefers-reduced-motion:reduce){.ws .ws-pop,.ws .ws-dialog{animation:none}}
+
+/* note under a pass when Excel-style auto-close fixed a missing bracket */
+.ws .ws-note{margin-top:6px;padding:6px 9px;border-radius:7px;background:#FFF8D1;color:#5E4700;font-size:12.5px;line-height:1.45}
+.ws .ws-brief-foot>.ws-note{margin-top:0}
+.ws .ws-note code{font:12px var(--mono);background:#fff;border-radius:3px;padding:0 4px}

@@ -86,7 +86,7 @@ function showNotFound(){
   setRoute(location.hash.replace(/^#/,"")||"/","Page not found");
 }
 function courseOfEx(exId){ return COURSES.find(c=>flatEx(c).includes(exId))||null; }
-function closeOverlays(){ /* popups removed: feedback is inline in the brief */ }
+function closeOverlays(){ setPanel(); hideFnHelp(); }   // outline dropdown, shortcuts dialog, formula help
 function route(){
   const path=location.hash.replace(/^#/,"")||"/";
   if(path===_routeKey) return;
@@ -437,7 +437,7 @@ function openEx(exId, opts){
   wc.style.display = showCourse?"":"none";
   if(showCourse){ wc.textContent=currentCourse.title; wc.setAttribute("href","#/course/"+currentCourse.id); }
   document.getElementById("ws-pager").style.display="";
-  document.getElementById("ws-pos").textContent = P.pos+" of "+P.of;
+  document.getElementById("ws-pos").innerHTML = P.pos+" of "+P.of+" <span class=\"ws-caret\" aria-hidden=\"true\">▾</span>";
   document.getElementById("btnPrev").disabled = !P.prev;
   document.getElementById("btnNext").disabled = !P.next;
 
@@ -499,6 +499,7 @@ function renderBriefFoot(){
       <div class="ws-cert-sum">${P.mod.ex.length} exercises · ${["easy","medium","hard"].filter(k=>lv[k]).map(k=>lv[k]+" "+k).join(", ")}</div>
       <span class="ws-cert-stamp" aria-hidden="true">TYRO<br>CELL<br>✓</span>
     </div>
+    ${R.autoNote||""}
     <div class="ws-actions">
       ${nextMod?`<a class="ws-primary" href="#/practice/${encodeURIComponent(nextExOf(nextMod.ex))}">Next: ${esc(nextMod.title)} →</a>`:`<a class="ws-primary" href="#/course/${P.course.id}">Back to the course →</a>`}
       <a class="ws-secondary" href="#/course/${P.course?P.course.id:""}">All formulas</a>
@@ -518,7 +519,7 @@ function renderBriefFoot(){
   foot.innerHTML=html;
 }
 
-/* Outline tab of the side panel: this formula's exercises, with ticks. */
+/* Outline dropdown (opened from "2 of 7"): this formula's exercises, with ticks. */
 function renderOutline(){
   const el=document.getElementById("tab-outline");
   if(!currentCourse){
@@ -657,7 +658,10 @@ function pass(ex,msg){
   saveDone();
   const formulaDone=!!P.mod&&!modWasDone&&P.mod.ex.every(x=>doneEx.has(x));
   passedRefs=targetRefs.slice();
-  showResult("ok",msg,{newlyDone:!wasDone,formulaDone});
+  // a bracket Excel-style auto-closed on Enter still passes, with a nudge to type it yourself
+  const autoNote=targetRefs.some(r=>cells[r]&&cells[r].ac)
+    ? '<div class="ws-note">Excel closed the bracket for you — get in the habit of typing <code>)</code> yourself.</div>' : "";
+  showResult("ok",msg+autoNote,{newlyDone:!wasDone,formulaDone,autoNote});
   updateStreak(); renderOutline(); renderAll();
 }
 /* Feedback lives in the brief and on the sheet: no popup.
@@ -701,55 +705,6 @@ document.getElementById("progFile").addEventListener("change",e=>{
   rd.readAsText(f); e.target.value="";
 });
 
-/* ================= FUNCTION REFERENCE ================= */
-const FNDOCS=[
- ["Math","SUM(range, …)","Adds all numbers.","=SUM(A1:A10)"],
- ["Math","AVERAGE(range)","Arithmetic mean of numbers.","=AVERAGE(B2:B20)"],
- ["Math","MIN(range) / MAX(range)","Smallest / largest number.","=MAX(C1:C9)-MIN(C1:C9)"],
- ["Math","MEDIAN(range)","Middle value.","=MEDIAN(A1:A7)"],
- ["Math","ROUND(n, digits)","Round to given decimals. Also ROUNDUP / ROUNDDOWN.","=ROUND(B2/C2,2)"],
- ["Math","ABS · SQRT · POWER · MOD · INT","Absolute value, square root, exponent, remainder, floor.","=MOD(10,3) → 1"],
- ["Math","RANDBETWEEN(lo, hi)","Random integer in range (recalculates on edit).","=RANDBETWEEN(1,6)"],
- ["Counting","COUNT(range)","Counts numeric cells only.","=COUNT(B2:B9)"],
- ["Counting","COUNTA(range)","Counts non-empty cells.","=COUNTA(A1:A60)"],
- ["Counting","COUNTBLANK(range)","Counts empty cells.","=COUNTBLANK(B2:B9)"],
- ["Conditional","IF(test, if_true, if_false)","Branching logic; nest for tiers.","=IF(B2>=40,\"Pass\",\"Fail\")"],
- ["Conditional","IFERROR(value, fallback)","Fallback if the value errors.","=IFERROR(A1/B1,0)"],
- ["Conditional","COUNTIF(range, criteria)","Count matching cells.","=COUNTIF(B2:B9,\">=50\")"],
- ["Conditional","SUMIF(range, criteria, [sum_range])","Sum where criteria matches.","=SUMIF(B2:B7,\"East\",C2:C7)"],
- ["Conditional","SUMIFS(sum_range, cr1, c1, …)","Multi-criteria sum — sum range FIRST.","=SUMIFS(C2:C7,B2:B7,\"East\",C2:C7,\">100\")"],
- ["Conditional","COUNTIFS(cr1, c1, …)","Multi-criteria count.","=COUNTIFS(B2:B7,\"East\",C2:C7,\">100\")"],
- ["Conditional","AVERAGEIFS(avg_range, cr1, c1, …)","Multi-criteria average.","=AVERAGEIFS(C2:C7,B2:B7,\"East\")"],
- ["Conditional","AVERAGEIF(range, criteria, [avg_range])","Average where criteria matches.","=AVERAGEIF(B2:B7,\">100\")"],
- ["Logical","AND / OR / NOT","Combine boolean tests.","=IF(AND(B2>=40,C2>=40),\"Pass\",\"Fail\")"],
- ["Text","& operator / CONCAT(…)","Join text pieces.","=A2&\" \"&B2"],
- ["Text","LEFT / RIGHT / MID","Extract substrings.","=LEFT(A1,3)"],
- ["Text","LEN · UPPER · LOWER · PROPER · TRIM","Length and case/space cleanup.","=TRIM(A1)"],
- ["Text","FIND(find, within, [start])","Position of text (case-sensitive).","=FIND(\"@\",A2)"],
- ["Text","SUBSTITUTE(text, old, new)","Replace all occurrences.","=SUBSTITUTE(A1,\"-\",\"/\")"],
- ["Text","TEXTJOIN(delim, ignore_empty, …)","Join with a delimiter.","=TEXTJOIN(\", \",TRUE,A1:A5)"],
- ["Lookup","XLOOKUP(value, lookup_rng, return_rng, [if_not_found])","Modern exact-match lookup with fallback.","=XLOOKUP(E2,A2:A6,B2:B6,\"Missing\")"],
- ["Lookup","VLOOKUP(value, table, col, FALSE)","Find in first column, return column col.","=VLOOKUP(E2,A2:B6,2,FALSE)"],
- ["Lookup","HLOOKUP(value, table, row, FALSE)","Horizontal variant.","=HLOOKUP(\"Q2\",A1:E3,2,FALSE)"],
- ["Lookup","INDEX(range, row, [col])","Value at a position.","=INDEX(B2:B6,3)"],
- ["Lookup","MATCH(value, range, 0)","Position of value (0 = exact).","=MATCH(\"Cherry\",A2:A6,0)"],
- ["Info","ISNUMBER / ISTEXT / ISBLANK","Type tests for IF.","=IF(ISBLANK(A1),\"missing\",A1)"],
- ["Date","DATE(y, m, d)","Builds a date serial number (days since 1900). Dates subtract like numbers.","=DATE(2026,4,30)-DATE(2026,1,15)"],
- ["Date","TODAY() / NOW()","Current date / date-time as a serial number.","=TODAY()"],
- ["Date","YEAR / MONTH / DAY(serial)","Extract parts from a date serial.","=YEAR(TODAY())"],
- ["Date","DAYS(end, start)","Whole days between two dates.","=DAYS(DATE(2026,3,31),DATE(2026,1,1))"],
- ["Date","TEXT(serial, \"yyyy-mm-dd\")","Format a date serial as text (yyyy, mm, dd tokens).","=TEXT(TODAY(),\"dd/mm/yyyy\")"],
-];
-(function renderFns(){
-  const el=document.getElementById("tab-funcs"); let cat=""; let html="";
-  html+=`<p style="font-size:12px;color:var(--muted);margin-bottom:10px">Cell refs (A1), ranges (A1:B5), $-absolute refs, operators <code>+ - * / ^ &amp; %</code> and comparisons <code>= &lt;&gt; &lt; &gt; &lt;= &gt;=</code> are supported.</p>`;
-  for(const [c,syn,desc,ex] of FNDOCS){
-    if(c!==cat){ html+=`<div class="fncat">${c}</div>`; cat=c; }
-    html+=`<details><summary>${esc(syn.split("(")[0])}</summary><div class="fd"><span class="syn">${esc(syn)}</span>${esc(desc)}<br>Example: <code>${esc(ex)}</code></div></details>`;
-  }
-  el.innerHTML=html;
-})();
-
 /* ================= KEYBOARD REFERENCE PANEL ================= */
 const KEYDOCS=[
  ["Moving",[
@@ -781,7 +736,9 @@ const KEYDOCS=[
   [["Ctrl","Z"],"Undo · Ctrl+Y or Ctrl+Shift+Z redoes"],
   [["Ctrl","B"],"Bold · Ctrl+I italic · Ctrl+U underline"],
   [["Ctrl",";"],"Insert today's date"],
-  [["Delete"],"Clear the selected cells"]]]
+  [["Delete"],"Clear the selected cells"]]],
+ ["Help",[
+  [["Ctrl","/"],"Show these shortcuts"]]]
 ];
 (function renderKeys(){
   const el=document.getElementById("tab-keys"); if(!el)return;
@@ -839,7 +796,7 @@ renderAll();
 select(1,0);
 loadDone();
 updateStreak();
-setPanel(lsGet("tyro_panel"));
+
 
 route();   // open whatever screen the URL points at (landing if none)
 
