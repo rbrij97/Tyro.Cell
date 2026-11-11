@@ -148,111 +148,63 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
   });
 });
 
-/* ================= SHOWCASE ANIMATION ================= */
-(function(){
-  const fw=document.getElementById("mock-formula");
-  const cell=document.getElementById("mock-cell");
-  const res=document.getElementById("mock-result");
-  if(!fw||!cell||!res)return;
-
-  const STEPS=[
-    {phase:"empty",  delay:800},
-    {phase:"typing", text:"=SUM(C2:C9)",          delay:1800},
-    {phase:"wrong",  formula:"=SUM(C2:C9)", val:"7760", msg:"Result is 7,760 — that sums all regions, not just West. Use SUMIFS to filter by criteria.", delay:2500},
-    {phase:"clear",  delay:600},
-    {phase:"typing", text:'=SUMIFS(C2:C9,B2:B9,"West")', delay:2200},
-    {phase:"correct",formula:'=SUMIFS(C2:C9,B2:B9,"West")', val:"3,850", msg:'<span class="checkmark">&#10003;</span> Correct — SUMIFS with the right criteria. Nice work!', delay:3000},
-    {phase:"hold",   delay:2000}
-  ];
-
-  let running=false, timer=null;
-
-  function typeText(el,text,cb){
-    el.textContent="";
-    el.classList.add("mock-typing");
-    let i=0;
-    const speed=Math.max(30,Math.min(60,1200/text.length));
-    function tick(){
-      if(i<text.length){el.textContent=text.slice(0,++i);timer=setTimeout(tick,speed);}
-      else{el.classList.remove("mock-typing");cb();}
-    }
-    tick();
-  }
-
-  function runStep(idx){
-    if(!running)return;
-    const s=STEPS[idx%STEPS.length];
-    const next=()=>{timer=setTimeout(()=>runStep(idx+1),s.delay);};
-
-    if(s.phase==="empty"){
-      fw.textContent="";
-      cell.textContent="";
-      cell.classList.add("mock-cell-empty");
-      res.style.display="none";
-      res.className="mock-result";
-      next();
-    }else if(s.phase==="typing"){
-      cell.classList.add("mock-cell-empty");
-      cell.textContent="";
-      res.style.display="none";
-      typeText(fw,s.text,next);
-    }else if(s.phase==="wrong"){
-      fw.textContent=s.formula;
-      cell.classList.remove("mock-cell-empty");
-      cell.textContent=s.val;
-      res.className="mock-result bad";
-      res.innerHTML=s.msg;
-      res.style.display="flex";
-      next();
-    }else if(s.phase==="clear"){
-      res.style.display="none";
-      res.className="mock-result";
-      fw.textContent="";
-      cell.textContent="";
-      cell.classList.add("mock-cell-empty");
-      next();
-    }else if(s.phase==="correct"){
-      fw.textContent=s.formula;
-      cell.classList.remove("mock-cell-empty");
-      cell.textContent=s.val;
-      res.className="mock-result";
-      res.innerHTML=s.msg;
-      res.style.display="flex";
-      next();
-    }else if(s.phase==="hold"){
-      next();
-    }
-  }
-
-  function startAnim(){
-    if(running)return;
-    running=true;
-    runStep(0);
-  }
-  function stopAnim(){
-    running=false;
-    if(timer){clearTimeout(timer);timer=null;}
-  }
-
-  const obs=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting)startAnim(); else stopAnim();
-    });
-  },{threshold:0.3});
-  obs.observe(document.getElementById("mock-anim"));
-})();
-
-/* ================= SCROLL REVEAL ================= */
+/* ================= LANDING: real numbers, scroll reveal, FAQ =================
+   The demo window and highlighter animate in pure CSS (css/app.css, LANDING).
+   This block only does what CSS can't: fill in live counts, reveal sections
+   as they scroll into view (count the numbers up once), and open FAQ answers. */
 (function(){
   const scroller=document.getElementById("landing-scroll");
   if(!scroller)return;
-  const targets=scroller.querySelectorAll(".reveal,.reveal-scale,.reveal-children");
-  const revealObs=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting)e.target.classList.add("visible");
+  const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Read the numbers from the app itself so the landing page never goes stale.
+  const live=COURSES.find(c=>!c.upcoming)||COURSES[0];
+  const counts={
+    functions:Object.keys(FUNCS).length,
+    exercises:COURSES.reduce((n,c)=>n+flatEx(c).length,0),
+    formulas:live.modules.length
+  };
+  scroller.querySelectorAll("[data-count]").forEach(el=>{
+    const v=counts[el.dataset.count]; if(v!=null) el.textContent=String(v);
+  });
+
+  function countUp(section){
+    if(reduce) return;
+    section.querySelectorAll(".lp-num[data-count]").forEach(el=>{
+      const target=counts[el.dataset.count]; if(target==null) return;
+      const start=performance.now(), dur=1300;
+      const step=now=>{
+        const p=Math.min(1,(now-start)/dur), e=1-Math.pow(1-p,3);
+        el.textContent=String(Math.round(target*e));
+        if(p<1) requestAnimationFrame(step);
+      };
+      el.textContent="0"; requestAnimationFrame(step);
     });
-  },{root:scroller,threshold:0.15});
-  targets.forEach(t=>revealObs.observe(t));
+  }
+
+  const sections=scroller.querySelectorAll(".lp-reveal");
+  if(reduce||!("IntersectionObserver" in window)){
+    sections.forEach(s=>s.classList.add("in"));
+  } else {
+    const io=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        if(!e.isIntersecting) return;
+        e.target.classList.add("in");
+        if(e.target.classList.contains("lp-stats")) countUp(e.target);
+        io.unobserve(e.target);
+      });
+    },{root:scroller,threshold:0.15});
+    sections.forEach(s=>io.observe(s));
+  }
+
+  scroller.querySelectorAll(".lp-faq-q").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const item=btn.closest(".lp-faq-item");
+      const open=!item.classList.contains("open");
+      item.classList.toggle("open",open);
+      btn.setAttribute("aria-expanded",String(open));
+    });
+  });
 })();
 
 /* ================= PAGES ================= */

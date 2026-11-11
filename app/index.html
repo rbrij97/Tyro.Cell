@@ -7,182 +7,134 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='124 136 366 280' fill='none' stroke='%230A0A0A' stroke-width='18' stroke-linecap='round'><rect x='202' y='216' width='270' height='182'/><path d='M193 145V216'/><path d='M133 216H202'/><g stroke='none' fill='%230A0A0A'><rect x='250' y='277' width='88' height='22'/><rect x='250' y='320' width='88' height='22'/></g></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..600;1,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:ital,wght@0,400..600;1,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script>document.write('<link rel="stylesheet" href="'+location.pathname.replace(/\/[^\/]*\.[^\/]*$/,'/').replace(/\/?$/,'/')+'css/app.css">')</script>
 </head>
 <body>
 
 <!-- ============ VIEW: LANDING ============ -->
+<!-- Locked "study desk" design (2026-11-11): warm paper, black ink, highlighter accents.
+     Styles: the LANDING block in css/app.css (all scoped to #view-landing). Motion: landing section in js/app.js. -->
 <div class="view on" id="view-landing">
-  <div class="pagenav">
-    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="currentColor"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
+  <div class="pagenav lp-nav">
+    <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="20" width="26" fill="none" stroke="#0A0A0A" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="#0A0A0A"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
     <span class="spacer"></span>
-    <nav>
+    <nav aria-label="Sections">
       <a href="#s-showcase" class="nav-scroll">Product</a>
       <a href="#s-personas" class="nav-scroll">Who it's for</a>
       <a href="#s-compare" class="nav-scroll">Why us</a>
       <a href="#s-faq" class="nav-scroll">FAQ</a>
       <a data-go="courses">Courses</a>
     </nav>
+    <button class="lp-btn lp-btn-dark lp-btn-sm" data-go="courses">Start practising</button>
   </div>
   <div class="pagescroll" id="landing-scroll">
-    <div class="pagewrap">
 
-      <!-- hero -->
-      <section class="hero">
-        <h1>Learn spreadsheet formulas by <em>writing them</em>, not watching them.</h1>
-        <p class="lede">A working spreadsheet grid with real Indian company data, structured courses, and instant answer checking.</p>
-        <div class="cta-row">
-          <button class="btn primary big" data-go="courses">Start practising</button>
-        </div>
-        <div class="proof">
-          <span>No install</span>
-          <span class="dot"></span>
-          <span>No licence</span>
-          <span class="dot"></span>
-          <span>No video queue</span>
-        </div>
-      </section>
+    <section class="lp-hero">
+      <h1 class="lp-in lp-d1">Learn spreadsheet formulas by <span class="lp-hl">writing them</span>, not watching them.</h1>
+      <p class="lp-lede lp-in lp-d2">A real spreadsheet grid, real company data, and an answer check that tells you exactly why you're wrong.</p>
+      <div class="lp-cta lp-in lp-d3">
+        <button class="lp-btn lp-btn-dark lp-btn-lg" data-go="courses">Start practising →</button>
+        <button class="lp-btn lp-btn-light lp-btn-lg lp-lift" data-go="courses"><span>Browse <span data-count="formulas">40</span> formulas</span></button>
+      </div>
+      <div class="lp-proof lp-in lp-d4"><span>No install</span><span aria-hidden="true">·</span><span>No licence</span><span aria-hidden="true">·</span><span>No video queue</span></div>
+    </section>
 
-      <!-- product showcase -->
-      <section class="showcase reveal-scale" id="s-showcase">
-        <div class="mock-window" id="mock-anim">
-          <div class="mock-topbar">
-            <div class="dots"><span></span><span></span><span></span></div>
-            <span class="mock-brand">tyro.cell</span>
-          </div>
-          <div class="mock-fx">
-            <span class="cell-ref">C11</span>
-            <span class="formula" id="mock-formula"></span>
-          </div>
-          <table class="mock-grid">
-            <tr><th></th><th>A</th><th>B</th><th>C</th></tr>
-            <tr class="hdr"><td>1</td><td>Branch</td><td>Region</td><td class="num">Sales (&#8377;L)</td></tr>
-            <tr><td>2</td><td>Mumbai HQ</td><td>West</td><td class="num">1,200</td></tr>
-            <tr><td>3</td><td>Delhi NCR</td><td>North</td><td class="num">980</td></tr>
-            <tr><td>4</td><td>Pune</td><td>West</td><td class="num">870</td></tr>
-            <tr><td>5</td><td>Chennai</td><td>South</td><td class="num">1,340</td></tr>
-            <tr><td>6</td><td>Kolkata</td><td>East</td><td class="num">610</td></tr>
-            <tr><td>7</td><td>Ahmedabad</td><td>West</td><td class="num">780</td></tr>
-            <tr><td>8</td><td>Bangalore</td><td>South</td><td class="num">1,460</td></tr>
-            <tr><td>9</td><td>Jaipur</td><td>North</td><td class="num">520</td></tr>
-            <tr><td>10</td><td></td><td></td><td></td></tr>
-            <tr><td>11</td><td>Total West</td><td></td><td class="num target sel" id="mock-cell"></td></tr>
+    <section class="lp-demo lp-in lp-d4" id="s-showcase" aria-label="Product demo">
+      <div class="lp-window">
+        <div class="lp-fx">
+          <span class="lp-namebox">C11</span>
+          <span class="lp-fxlabel" aria-hidden="true">fx</span>
+          <span class="lp-fxtext"><span class="lp-type">=SUMIFS(<span class="lp-ref-c">C2:C9</span>,<span class="lp-ref-b">B2:B9</span>,"West")</span><span class="lp-caret" aria-hidden="true"></span></span>
+        </div>
+        <div class="lp-tablewrap">
+          <table class="lp-sheet" aria-label="Branch sales by region">
+            <thead><tr><th></th><th>A</th><th>B</th><th class="num">C</th></tr></thead>
+            <tbody>
+              <tr class="hdr"><th>1</th><td>Branch</td><td>Region</td><td class="num">Sales (₹ L)</td></tr>
+              <tr><th>2</th><td>Mumbai HQ</td><td class="lp-rb">West</td><td class="num lp-rc">1200</td></tr>
+              <tr><th>3</th><td>Delhi NCR</td><td class="lp-rb">North</td><td class="num lp-rc">980</td></tr>
+              <tr><th>4</th><td>Pune</td><td class="lp-rb">West</td><td class="num lp-rc">870</td></tr>
+              <tr><th>5</th><td>Chennai</td><td class="lp-rb">South</td><td class="num lp-rc">1340</td></tr>
+              <tr><th>6</th><td>Kolkata</td><td class="lp-rb">East</td><td class="num lp-rc">610</td></tr>
+              <tr><th>7</th><td>Ahmedabad</td><td class="lp-rb">West</td><td class="num lp-rc">780</td></tr>
+              <tr><th>8</th><td>Bangalore</td><td class="lp-rb">South</td><td class="num lp-rc">1460</td></tr>
+              <tr><th>9</th><td>Jaipur</td><td class="lp-rb">North</td><td class="num lp-rc">520</td></tr>
+              <tr class="hdr"><th>11</th><td>Total West</td><td></td><td class="num lp-target">3850<span class="lp-stamp" aria-hidden="true">✓</span></td></tr>
+            </tbody>
           </table>
-          <div class="mock-result" id="mock-result" style="display:none"></div>
         </div>
-      </section>
+        <div class="lp-pass" role="status"><span class="lp-tick" aria-hidden="true">✓</span>Correct — SUMIFS adds only the West branches: 3850.</div>
+      </div>
+    </section>
 
-      <!-- who is this for -->
-      <section class="personas reveal" id="s-personas">
-        <h2>Who is this for?</h2>
-        <p class="sec-sub">If you learn better by doing than by watching, this is your kind of tool.</p>
-        <div class="persona-grid reveal-children">
-          <div class="persona">
-            <span class="p-tag">CA &amp; CMA Students</span>
-            <p>Preparing for articleship at a Big 4 or mid-tier firm. You'll live in Excel from day one — reconciliations, schedules, audit workpapers. Start building muscle memory now.</p>
-          </div>
-          <div class="persona">
-            <span class="p-tag">MBA &amp; B.Com Graduates</span>
-            <p>Entering FP&amp;A, investment banking, or equity research. Interviewers test VLOOKUP, INDEX+MATCH, and SUMIFS — not theory, but whether you can actually write them.</p>
-          </div>
-          <div class="persona">
-            <span class="p-tag">Working Analysts</span>
-            <p>Already on the job but still Googling XLOOKUP every time. Fifteen minutes a day here beats a four-hour course you'll never finish.</p>
-          </div>
-        </div>
-      </section>
+    <section class="lp-stats lp-reveal lp-stagger" aria-label="In numbers">
+      <div><span class="lp-num" data-count="functions">74</span><span class="lp-numlabel">functions in the engine</span></div>
+      <div><span class="lp-num" data-count="exercises">158</span><span class="lp-numlabel">graded exercises</span></div>
+      <div><span class="lp-num" data-count="formulas">40</span><span class="lp-numlabel">formulas, SUM to XLOOKUP</span></div>
+    </section>
 
-      <!-- stats -->
-      <section class="stats-bar reveal-children">
-        <div class="stat"><span class="num">74</span><span class="label">Functions</span></div>
-        <div class="stat"><span class="num">158</span><span class="label">Exercises</span></div>
-        <div class="stat"><span class="num">2</span><span class="label">Courses</span></div>
-      </section>
+    <section class="lp-features lp-reveal lp-stagger" aria-label="Features">
+      <article class="lp-card lp-lift">
+        <div class="lp-band lp-cat-look"><span>Lookup</span><span class="lp-spacer"></span><div class="lp-ms lp-a-look" aria-hidden="true"><div class="lp-ms-g"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="lp-ms-s"></span><span class="lp-ms-o"></span></div></div>
+        <div class="lp-cardbody"><h3>A real spreadsheet</h3><p>Arrow-key references, F4 for $-locks, Ctrl+D to fill down — the keys you will use at work.</p></div>
+      </article>
+      <article class="lp-card lp-lift">
+        <div class="lp-band lp-cat-cond"><span>Conditional</span><span class="lp-spacer"></span><div class="lp-ms lp-a-cond" aria-hidden="true"><div class="lp-ms-g"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="lp-ms-s"></span><span class="lp-ms-o"></span></div></div>
+        <div class="lp-cardbody"><h3>Feedback that explains</h3><p>Not just "wrong". You see the cell, what it returned, what was expected — and why.</p></div>
+      </article>
+      <article class="lp-card lp-lift">
+        <div class="lp-band lp-cat-agg"><span>Aggregation</span><span class="lp-spacer"></span><div class="lp-ms lp-a-agg" aria-hidden="true"><div class="lp-ms-g"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="lp-ms-s"></span><span class="lp-ms-o"></span></div></div>
+        <div class="lp-cardbody"><h3>Real company data</h3><p>TCS, Reliance, HDFC Bank, Zomato — real figures and the questions analysts actually get asked.</p></div>
+      </article>
+    </section>
 
-      <!-- comparison -->
-      <section class="compare reveal" id="s-compare">
-        <h2>This is not another video course</h2>
-        <div class="compare-grid reveal-children">
-          <div class="compare-col old">
-            <span class="c-tag">Video tutorials</span>
-            <ul>
-              <li>Watch someone else type</li>
-              <li>Pause, rewind, re-watch</li>
-              <li>Feel like you understood</li>
-              <li>Open Excel — forget everything</li>
-            </ul>
-          </div>
-          <div class="compare-col new">
-            <span class="c-tag">tyro.cell</span>
-            <ul>
-              <li>You write the formula yourself</li>
-              <li>Real data, not dummy rows</li>
-              <li>Instant feedback on every attempt</li>
-              <li>Specific diagnostics, not just "wrong"</li>
-            </ul>
-          </div>
-        </div>
-      </section>
+    <section class="lp-section lp-reveal" id="s-personas">
+      <h2>Who is this <span class="lp-hl-static">for?</span></h2>
+      <div class="lp-grid3 lp-stagger">
+        <article class="lp-card lp-pad lp-lift"><span class="lp-chip lp-cat-agg">CA &amp; CMA students</span><p>Heading into articleship at a Big 4 or mid-tier firm. You'll live in Excel from day one — reconciliations, schedules, audit workpapers. Build the muscle memory now.</p></article>
+        <article class="lp-card lp-pad lp-lift"><span class="lp-chip lp-cat-cond">MBA &amp; B.Com graduates</span><p>Going into FP&amp;A, investment banking or equity research. Interviews test whether you can actually write VLOOKUP, INDEX + MATCH and SUMIFS — not whether you've heard of them.</p></article>
+        <article class="lp-card lp-pad lp-lift"><span class="lp-chip lp-cat-look">Working analysts</span><p>Already on the job but still searching for XLOOKUP every time. Fifteen minutes a day here beats a four-hour course you'll never finish.</p></article>
+      </div>
+    </section>
 
-      <!-- how it works -->
-      <section class="how-section reveal">
-        <h2>How it works</h2>
-        <div class="how-steps reveal-children">
-          <div class="how-step">
-            <span class="step-num">01</span>
-            <h3>Pick an exercise</h3>
-            <p>Structured courses take you from SUM to XLOOKUP. Each exercise mirrors a real job scenario.</p>
-          </div>
-          <div class="how-step">
-            <span class="step-num">02</span>
-            <h3>Write the formula</h3>
-            <p>Same keys as Excel — arrow-key references, F4 for $-locks, Tab to confirm, Ctrl+D to fill down.</p>
-          </div>
-          <div class="how-step">
-            <span class="step-num">03</span>
-            <h3>Get instant feedback</h3>
-            <p>Right or wrong in one click. When you're off, the diagnostic tells you exactly why — not just "incorrect."</p>
-          </div>
-        </div>
-      </section>
+    <section class="lp-section lp-narrow lp-reveal" id="s-compare">
+      <h2>This is not another video course</h2>
+      <div class="lp-grid2">
+        <div class="lp-card lp-pad"><div class="lp-mono-label">VIDEO TUTORIALS</div><ul class="lp-list"><li>Watch someone else type</li><li>Pause, rewind, re-watch</li><li>Feel like you understood</li><li>Open Excel — forget everything</li></ul></div>
+        <div class="lp-card lp-pad lp-yellow lp-lift"><div class="lp-mono-label">TYRO.CELL</div><ul class="lp-list lp-list-strong"><li>You write the formula yourself</li><li>Real data, not dummy rows</li><li>Instant check on every attempt</li><li>Specific reasons, not just "wrong"</li></ul></div>
+      </div>
+    </section>
 
-      <!-- faq -->
-      <section class="faq reveal" id="s-faq">
-        <h2>Common questions</h2>
-        <div class="faq-list">
-          <div class="faq-item">
-            <p class="faq-q">Is this free?</p>
-            <p class="faq-a">Yes, completely free right now. No credit card, no trial expiry.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Do I need Excel installed?</p>
-            <p class="faq-a">No. Tyro.cell runs entirely in your browser — desktop, laptop, or tablet. Nothing to download.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Will my progress be saved?</p>
-            <p class="faq-a">Yes — completed exercises and your work on each sheet are saved in this browser automatically. To move progress to another device, use Export progress on the Courses page and import it there.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">How is this different from YouTube tutorials?</p>
-            <p class="faq-a">You write every formula yourself in a real spreadsheet grid. No watching, no pausing, no "I'll try it later." You either get it right or you get a specific diagnostic telling you why not.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">What formulas are covered?</p>
-            <p class="faq-a">74 functions from SUM to XLOOKUP to INDEX+MATCH, across 158 exercises. All with Indian finance context — rupee figures, real company names, actual business scenarios.</p>
-          </div>
-        </div>
-      </section>
+    <section class="lp-section lp-reveal">
+      <h2>How it works</h2>
+      <div class="lp-grid3 lp-stagger">
+        <div class="lp-step"><span class="lp-stepnum" style="color:#0B4F8A">01</span><h3>Pick a formula</h3><p><span data-count="formulas">40</span> formulas from SUM to XLOOKUP, each with short drills and real job scenarios.</p></div>
+        <div class="lp-step"><span class="lp-stepnum" style="color:#5B2CA8">02</span><h3>Write it, Excel-style</h3><p>Arrow keys pick references, F4 locks with $, Tab confirms, Ctrl+D fills down.</p></div>
+        <div class="lp-step"><span class="lp-stepnum" style="color:#0F6B3E">03</span><h3>Get checked instantly</h3><p>Right or wrong in one click — and when you're off, you see exactly why.</p></div>
+      </div>
+    </section>
 
-      <!-- built for -->
-      <section class="built-for reveal-scale">
-        <h2>Built for people who learn by doing</h2>
-        <p>No videos to sit through. No slides to memorise. Open a real spreadsheet, write the formula yourself, and know instantly if you got it right.</p>
-        <button class="btn-inv" data-go="courses">Start practising</button>
-      </section>
+    <section class="lp-section lp-faqwrap lp-reveal" id="s-faq">
+      <h2>Common questions</h2>
+      <div class="lp-faq">
+        <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>Is this free?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p>Yes, completely free right now. No credit card, no trial expiry.</p></div></div></div>
+        <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>Do I need Excel installed?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p>No. Tyro.cell runs entirely in your browser on a laptop or desktop. Nothing to download.</p></div></div></div>
+        <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>Will my progress be saved?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p>Yes — completed exercises and your work on each sheet are saved in this browser automatically. To move progress to another device, use Export progress on the Courses page and import it there.</p></div></div></div>
+        <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>How is this different from YouTube tutorials?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p>You write every formula yourself in a real grid. You either get it right, or you get a specific reason why not.</p></div></div></div>
+        <div class="lp-faq-item"><button class="lp-faq-q" aria-expanded="false"><span>What formulas are covered?</span><span class="lp-faq-icon" aria-hidden="true">+</span></button><div class="lp-faq-a"><div><p><span data-count="formulas">40</span> formulas across <span data-count="exercises">158</span> exercises — from SUM to XLOOKUP and INDEX + MATCH — all on real finance data.</p></div></div></div>
+      </div>
+    </section>
 
-      <footer class="site-footer">Made with <span class="heart">&hearts;</span> in Amdavad &nbsp;&middot;&nbsp; <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>
-    </div>
+    <section class="lp-section lp-reveal">
+      <div class="lp-final">
+        <h2>Built for people who learn by <span class="lp-yellow-text">doing</span>.</h2>
+        <p>No videos to sit through. Open a real sheet, write the formula, and know straight away if you got it right.</p>
+        <button class="lp-btn lp-btn-yellow lp-btn-lg" data-go="courses">Start practising →</button>
+      </div>
+      <footer class="lp-footer">Made with <span class="lp-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>
+    </section>
+
   </div>
 </div>
 
