@@ -23,7 +23,13 @@ function updateStreak(){
    localStorage so a refresh never loses work. The test harness loads the
    app with ?test, which turns persistence off so test runs never touch a
    real user's saved progress. */
-const PERSIST = !/[?&]test\b/.test(location.search);
+// No saving (and no account sync) under the test harness: ?test, or running inside a frame —
+// only test.html frames the app (headers block other sites), and some local servers drop ?test on redirect.
+const PERSIST = !/[?&]test\b/.test(location.search) && window.top===window;
+/* Google's full-page sign-in returns to /app/#state=…&id_token=… (finished in js/account.js).
+   Lift that out of the address before the router reads it, and drop it from history. */
+const AUTH_RETURN = /(^#|&)(id_token|error)=/.test(location.hash) ? location.hash.slice(1) : null;
+if(AUTH_RETURN) history.replaceState(null,"",location.pathname+location.search+"#/home");
 const LS_DONE = "tyro_done_v1", LS_SHEET = "tyro_sheet_v1:";
 function lsGet(k){ if(!PERSIST) return null; try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ if(!PERSIST) return; try{ localStorage.setItem(k,v); }catch(e){} }

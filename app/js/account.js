@@ -47,6 +47,19 @@ async function armGis(){
     ux_mode:"popup", auto_select:false, itp_support:true});   // classic popup: FedCM fails in some browsers (seen in embedded Chromium)
   renderAcct(true);
 }
+/* Google's button opens a popup. When a browser blocks it (popup blockers,
+   automated or embedded browsers), nothing visible happens. A popup that opens
+   takes focus from this page; if the page keeps focus for 1.2s after the click,
+   fall back to the full-page Google sign-in, which can't be blocked. */
+function watchPopup(){
+  // (a click inside Google's button frame keeps document.hasFocus() true; an opened popup window makes it false)
+  setTimeout(()=>{
+    if(!acctUser&&document.hasFocus()){
+      toast("Opening Google sign-in…");
+      acctSignIn();
+    }
+  },1200);
+}
 async function onGoogleCredential(resp){
   if(!sb||!resp||!resp.credential||!gisNonce) return;
   const {error}=await sb.auth.signInWithIdToken({provider:"google", token:resp.credential, nonce:gisNonce.raw});
@@ -79,8 +92,9 @@ async function acctInit(){
     renderAcct(changed);
     if(changed&&document.getElementById("view-home").classList.contains("on")) renderHome();   // refresh the save-status line
   });
-  await sb.auth.getSession();   // finishes a Google return (?code=…) before anything else
+  await sb.auth.getSession();   // restores a saved session before anything else
   cleanAuthUrl();
+  if(AUTH_RETURN) await finishGoogleRedirect();
   try{ await loadGis(); gisReady=true; armGis(); }
   catch(e){ gisFailed=true; renderAcct(true); }
 }
@@ -93,11 +107,29 @@ function backAfterLogin(){
   if(to&&to!==location.hash) location.hash=to;
 }
 
+/* Full-page sign-in, straight to Google (no Supabase hop, so Google's screen names
+   this site). Used when the popup is blocked or Google's button script didn't load.
+   Google returns an ID token in the address fragment; finishGoogleRedirect() checks
+   the state value and hands the token + nonce to Supabase. */
 async function acctSignIn(){
   if(!sb){ toast("Sign-in is still loading. Try again in a moment."); return; }
-  try{ sessionStorage.setItem("tyro_after_login", location.hash||"#/home"); }catch(e){}
-  const {error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+"/app/"}});
-  if(error) toast("Could not start Google sign-in. Please try again.");
+  const n=await newNonce(), state=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,"0")).join("");
+  try{
+    sessionStorage.setItem("tyro_after_login", location.hash||"#/home");
+    sessionStorage.setItem("tyro_g_state", state); sessionStorage.setItem("tyro_g_nonce", n.raw);
+  }catch(e){ toast("Sign-in needs this browser's storage. Please allow it and try again."); return; }
+  location.href="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({
+    client_id:GOOGLE_CLIENT_ID, redirect_uri:location.origin+"/app/", response_type:"id_token",
+    scope:"openid email profile", nonce:n.hashed, state, prompt:"select_account" });
+}
+async function finishGoogleRedirect(){
+  const p=new URLSearchParams(AUTH_RETURN); let st=null, nonce=null;
+  try{ st=sessionStorage.getItem("tyro_g_state"); nonce=sessionStorage.getItem("tyro_g_nonce");
+       sessionStorage.removeItem("tyro_g_state"); sessionStorage.removeItem("tyro_g_nonce"); }catch(e){}
+  if(p.get("error")){ if(p.get("error")!=="access_denied") toast("Google sign-in didn't complete. Please try again."); backAfterLogin(); return; }
+  if(!p.get("id_token")||!st||p.get("state")!==st||!nonce){ toast("That sign-in link has expired. Please try again."); return; }
+  const {error}=await sb.auth.signInWithIdToken({provider:"google", token:p.get("id_token"), nonce});
+  if(error){ toast("Google sign-in didn't complete. Please try again."); backAfterLogin(); }
 }
 async function acctSignOut(){
   if(!sb) return;
@@ -152,7 +184,7 @@ function showSigninPrompt(){
     <div class="acct-card-row"><div class="acct-card-g"></div><button class="acct-card-no" type="button">No thanks, continue as guest</button></div>`;
   foot.appendChild(card);
   const g=card.querySelector(".acct-card-g");
-  if(gisReady) google.accounts.id.renderButton(g,{type:"standard",theme:"filled_black",size:"large",text:"signin_with",shape:"pill"});
+  if(gisReady) google.accounts.id.renderButton(g,{type:"standard",theme:"filled_black",size:"large",text:"signin_with",shape:"pill",click_listener:watchPopup});
   else g.innerHTML=`<button class="acct-in" type="button">${G_ICON}<span>Sign in with Google</span></button>`, g.firstChild.onclick=acctSignIn;
   card.querySelector(".acct-card-no").onclick=()=>card.remove();
 }
@@ -204,7 +236,7 @@ function renderAcct(force){
       if(want==="gis"){
         slot.innerHTML=note+'<div class="acct-g"></div>';
         google.accounts.id.renderButton(slot.querySelector(".acct-g"),{type:isPhone()?"icon":"standard",theme:"outline",size:"medium",
-          text:"signin",shape:"pill",logo_alignment:"left"});
+          text:"signin",shape:"pill",logo_alignment:"left",click_listener:watchPopup});
       } else if(want==="fallback"){
         slot.innerHTML=note+`<button class="acct-in" data-acct-act="in" title="Save your progress to your Google account">${G_ICON}<span>Sign in</span></button>`;
       } else slot.innerHTML="";
