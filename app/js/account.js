@@ -231,8 +231,7 @@ function renderAcct(force){
       const want=gisReady?"gis":gisFailed?"fallback":"loading";
       if(!force&&slot.dataset.state===want) return;
       slot.dataset.state=want;
-      // signing in is optional: say what it's for, next to the button (hidden on phones)
-      const note='<span class="acct-note">Optional · saves progress<br>across devices</span>';
+      const note="";
       if(want==="gis"){
         slot.innerHTML=note+'<div class="acct-g"></div>';
         google.accounts.id.renderButton(slot.querySelector(".acct-g"),{type:isPhone()?"icon":"standard",theme:"outline",size:"medium",
