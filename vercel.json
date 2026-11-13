@@ -3,7 +3,8 @@
   "installCommand": "",
   "outputDirectory": ".",
   "redirects": [
-    { "source": "/", "destination": "/app/index.html" }
+    { "source": "/", "destination": "/app/index.html" },
+    { "source": "/favicon.ico", "destination": "/app/icon.svg" }
   ],
   "headers": [
     {

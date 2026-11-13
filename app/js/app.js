@@ -3,6 +3,7 @@
    Classic script (not a module): its top-level const/let/function names are shared with the other app scripts. Load order is set in index.html. */
 let currentCourse=null, currentEx=null, currentExId=null;
 const doneEx=new Set();
+const assistedEx=new Set();   // passed with the solution open (spec P0-14); a clean pass removes it
 
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 const flatEx=course=>course.modules.flatMap(m=>m.ex);
@@ -28,7 +29,10 @@ function lsGet(k){ if(!PERSIST) return null; try{ return localStorage.getItem(k)
 function lsSet(k,v){ if(!PERSIST) return; try{ localStorage.setItem(k,v); }catch(e){} }
 function lsDel(k){ if(!PERSIST) return; try{ localStorage.removeItem(k); }catch(e){} }
 function saveDone(){ lsSet(LS_DONE, JSON.stringify([...doneEx])); }
+const LS_ASSIST="tyro_assist_v1";
+function saveAssisted(){ lsSet(LS_ASSIST, JSON.stringify([...assistedEx])); }
 function loadDone(){
+  try{ const a=JSON.parse(lsGet(LS_ASSIST)||"[]"); if(Array.isArray(a)) a.filter(id=>EX[id]).forEach(id=>assistedEx.add(id)); }catch(e){}
   try{ const a=JSON.parse(lsGet(LS_DONE)||"[]"); if(Array.isArray(a)) a.filter(id=>EX[id]).forEach(id=>doneEx.add(id)); }catch(e){}
 }
 let _sheetTimer=null, _sheetLast=null;
@@ -273,8 +277,8 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
     story.classList.toggle("res-bad",step===1);
     story.classList.toggle("res-ok",step===2&&showResult);
     cell.textContent=step===1?"7760":(step===2&&showResult)?"2850":"";
-    res.innerHTML=step===1?'<span class="lp-tick bad" aria-hidden="true">✕</span><span><b>Result is 7760, expected 2850.</b> SUM adds every region — this needs only West.</span>'
-                 :(step===2&&showResult)?'<span class="lp-tick" aria-hidden="true">✓</span><span><b>Correct.</b> SUMIFS adds only the West branches: 2850.</span>':"";
+    res.innerHTML=step===1?'<span class="lp-tick bad" aria-hidden="true">✕</span><span><b>Not quite.</b> Result is 7760, expected 2850.</span>'
+                 :(step===2&&showResult)?'<span class="lp-tick" aria-hidden="true">✓</span><span><b>Correct.</b> =SUMIFS(C2:C9,B2:B9,"West") returns 2850.</span>':"";
     if(step!==lastStep){
       steps.forEach((s,i)=>s.classList.toggle("on",i===step));
       dots.forEach((d,i)=>{ d.classList.toggle("on",i===step); d.setAttribute("aria-pressed",String(i===step)); });
@@ -484,7 +488,7 @@ function renderFormulaCards(c){
   courseUI.gen++;
   g.className="dk-grid "+(courseUI.gen%2?"ga":"gb");   // swapping restarts the card stagger
   g.innerHTML=list.map(r=>{
-    const st=r.done===r.total?["done","Done"]:r.done>0?["prog","In progress"]:["new","New"];
+    const st=r.done===r.total?["done","Done"]:r.done>0?["prog","In progress"]:["new","Not started"];
     const counts={easy:0,medium:0,hard:0}; r.lv.forEach(l=>counts[l]=(counts[l]||0)+1);
     const mixLabel=r.total+" exercises: "+["easy","medium","hard"].filter(k=>counts[k]).map(k=>counts[k]+" "+k).join(", ");
     const barCol=st[0]==="done"?"#0A0A0A":r.meta.ink;
@@ -584,7 +588,7 @@ function renderHome(){
       </div>
       <div class="hm-next-body">
         <span class="t">${esc(shortTitle(e.title))}</span>
-        <span class="foot">${lvChip(e.lvl)}<span class="dk-mono">${x.done?p+" of "+x.total:"New"}</span><span class="go">${x.done?"Continue →":"Start →"}</span></span>
+        <span class="foot">${lvChip(e.lvl)}<span class="dk-mono">${x.done?p+" of "+x.total:"Not started"}</span><span class="go">${x.done?"Continue →":"Start →"}</span></span>
       </div></a>`;
   }).join("");
 
@@ -632,7 +636,7 @@ function renderHome(){
       <h2 class="hm-h2" id="hm-cat">By category</h2>
       <div class="hm-cats">${cats}</div>
     </section>
-    <footer class="dk-footer">Made with <span class="dk-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a></footer>`;
+    <footer class="dk-footer">Made with <span class="dk-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a> · <span class="ft-tm">Not affiliated with Microsoft. Excel is a trademark of Microsoft Corporation.</span></footer>`;
   // a category tile opens the course page filtered to that category
   el.querySelectorAll(".hm-cat").forEach(a=>a.addEventListener("click",()=>{ Object.assign(courseUI,{courseId:c.id,cat:a.dataset.cat,q:"",unsolved:false,sort:"course"}); }));
 }
@@ -676,7 +680,7 @@ function openEx(exId, opts){
   const ex=EX[exId]; if(!ex) return showNotFound();
   if(!currentCourse || !flatEx(currentCourse).includes(exId)) currentCourse=courseOfEx(exId);
   currentEx=ex; currentExId=exId; lsSet(LS_LAST, exId);
-  hintViewed = false; solutionClickCount = 0; briefResult = null;
+  hintViewed = false; solutionClickCount = 0; checkAttempts = 0; briefResult = null;
   clearTimeout(_sheetTimer);
   if(opts&&opts.fresh) clearSheet(exId);
   const saved = loadSheet(exId);
@@ -807,7 +811,7 @@ function renderOutline(){
       <span class="omod">${esc(mod.title)}</span>
       <span class="ol-prog">${modDone} / ${modTotal}</span>
     </div>
-    ${mod.ex.map(xid => `<a class="oex ${doneEx.has(xid)?"done":""} ${xid===currentExId?"cur":""}" href="#/practice/${encodeURIComponent(xid)}">
+    ${mod.ex.map(xid => `<a class="oex ${doneEx.has(xid)?"done":""} ${assistedEx.has(xid)?"assisted":""} ${xid===currentExId?"cur":""}" ${assistedEx.has(xid)?"title=\"Solved with the solution open\"":""} href="#/practice/${encodeURIComponent(xid)}">
       <span class="tick"></span><span>${esc(shortTitle(EX[xid].title))}</span></a>`).join("")}
     ${isComplete && nextMod ? `
       <a class="ol-next" href="#/practice/${encodeURIComponent(nextExOf(nextMod.ex))}">
@@ -825,6 +829,13 @@ function renderOutline(){
 /* exercise brief: one delegated click handler (the brief is re-rendered per exercise) */
 let hintViewed = false;
 let solutionClickCount = 0;
+let checkAttempts = 0;
+/* after a wrong answer, put the selection back on the answer cell (spec P0-05) */
+function backToAnswer(msg){
+  if(!currentEx||currentEx.pick) return;
+  const m=/Cell ([A-Z]{1,2}d{1,3})/.exec(String(msg)), p=parseRef(m?m[1]:targetRefs[0]);
+  if(p) select(p.r,p.c);
+}
 document.getElementById("concept").addEventListener("click",e=>{
   const b=e.target.closest("[data-act]"); if(!b) return;
   const act=b.dataset.act;
@@ -876,9 +887,49 @@ function expectedAt(ex,ref){
   if(saved)cells[ref]=saved; else delete cells[ref];
   return {v,sol};
 }
+/* ---- The answer must move with the data (spec ticket P0-03) ----
+   A right number can still be typed in: =SUM(574.9) or =SUM(B2:B4)+170.
+   So once the result is right, every number in the exercise data is nudged
+   and the student's formula is recalculated beside the stored solution on
+   the same nudged sheet, twice. A real formula moves with the data; a
+   typed-in number does not. Structural numbers (MATCH …,0 · MOD …,3 ·
+   ROUND …,2) behave the same in both, so they never trip it. */
+function nudgeNum(v,i,seed){ return Number.isInteger(v) ? v+seed*((i%3)+1) : +(v+seed*0.37*((i%3)+1)).toFixed(6); }
+function sameVal(a,b){
+  if(isErr(a)||isErr(b)) return isErr(a)&&isErr(b)&&a.__err===b.__err;
+  if(typeof a==="number"&&typeof b==="number") return Math.abs(a-b)<=1e-9*Math.max(1,Math.abs(a),Math.abs(b));
+  return String(a)===String(b);
+}
+function evalOn(sheet,ref){ resetCells(sheet); try{ return cellValue(ref,new Set()); }catch(e){ return isErr(e)?e:{__err:"#VALUE!"}; } }
+function hardcodeIssue(ex,ref,sol){
+  const data=ex.data||{}, keys=Object.keys(data).filter(k=>typeof data[k]==="number");
+  if(!keys.length||!sol) return null;
+  const live=cells; let moved=true;
+  try{
+    for(const seed of [1,2]){
+      const a=JSON.parse(JSON.stringify(live));
+      keys.forEach((k,i)=>{ const c=a[k], v=c&&c.raw!=null&&c.raw!==""?Number(c.raw):NaN; if(isFinite(v)) c.raw=String(nudgeNum(v,i,seed)); });
+      const b=JSON.parse(JSON.stringify(a)); b[ref]={raw:sol};
+      if(!sameVal(evalOn(a,ref),evalOn(b,ref))){ moved=false; break; }
+    }
+  } finally { resetCells(live); }
+  if(moved) return null;
+  // name the typed number when it is one of the data values
+  const raw=String((cells[ref]||{}).raw||"");
+  try{
+    for(const t of tokenize(raw.replace(/^=/,""))){
+      if(t.t!=="num") continue;
+      const hit=keys.find(k=>Number(data[k])===t.v);
+      if(hit) return "Use the cells, not the numbers. Replace <b>"+esc(String(t.v))+"</b> with a reference to <b>"+hit+"</b>.";
+    }
+  }catch(e){}
+  return "Right number, but it's typed in. Build it from the data cells so it updates when the data changes.";
+}
+
 function checkEx(ex){
   if(editing)commitEdit(true);
-  const fail=msg=>showResult("bad",msg);
+  checkAttempts++;
+  const fail=msg=>{ showResult("bad",msg); backToAnswer(msg); };
   if(ex.pick){
     for(const ref in ex.pick){
       const raw=(getCell(ref)||{}).raw||"";
@@ -901,6 +952,7 @@ function checkEx(ex){
       if(!eq) return fail("Cell "+ref+" returns <b>"+esc(toText(actual))+"</b>, expected <b>"+esc(toText(exp))+"</b>."
         +(raw.includes("$")?" Check whether $ locks are preventing the reference from shifting.":" If you copied the formula, check that its references shifted to this row.")
         +diagnose(ex,raw,null,exp,sol));
+      const hc=hardcodeIssue(ex,ref,sol); if(hc) return fail("Cell "+ref+": "+hc);
     }
     const firstRef=rc[0]; const up=((getCell(firstRef)||{}).raw||"").toUpperCase();
     for(const r of (ex.refsRequired||[])) if(!up.includes(r)) return fail("Cell "+firstRef+" must reference <code>"+r+"</code>.");
@@ -923,6 +975,7 @@ function checkEx(ex){
   const exp=expectedValue(ex);
   const eq = (typeof exp==="number"&&typeof actual==="number") ? Math.abs(exp-actual)<1e-9 : String(exp)===String(actual);
   if(!eq) return fail("Result is <b>"+esc(toText(actual))+"</b>, expected <b>"+esc(toText(exp))+"</b>."+diagnose(ex,raw,null,exp,ex.solution));
+  const hc=hardcodeIssue(ex,ex.target,ex.solution); if(hc) return fail(hc);
   pass(ex,"<code>"+esc(raw)+"</code> returns "+esc(toText(exp))+".");
 }
 function pass(ex,msg){
@@ -937,9 +990,15 @@ function pass(ex,msg){
   // a bracket Excel-style auto-closed on Enter still passes, with a nudge to type it yourself
   const autoNote=targetRefs.some(r=>cells[r]&&cells[r].ac)
     ? '<div class="ws-note">Excel closed the bracket for you — get in the habit of typing <code>)</code> yourself.</div>' : "";
-  showResult("ok",msg+autoNote,{newlyDone:!wasDone,formulaDone,autoNote});
+  const assisted=solutionClickCount===2;
+  if(assisted) assistedEx.add(currentExId); else assistedEx.delete(currentExId);
+  saveAssisted();
+  const assistNote=assisted?"<div class=\"ws-note\">Solved with the solution open, so it is marked <b>assisted</b>. Come back later and do it on your own.</div>":"";
+  showResult("ok",msg+autoNote+assistNote,{newlyDone:!wasDone,formulaDone,autoNote:autoNote+assistNote});
   updateStreak(); renderOutline(); renderAll();
   phoneAfterPass(!wasDone);
+  // Enter continues: focus the Next button (laptop only; on a phone it would pop the keyboard state)
+  if(!isPhone()) setTimeout(()=>{ const n=document.querySelector("#briefFoot .ws-primary"); if(n) n.focus({preventScroll:true}); },0);
 }
 /* Feedback lives in the brief and on the sheet: no popup.
    Pass: the answer cells get a stamp and "+1" floats by the progress bar.
@@ -967,7 +1026,15 @@ document.getElementById("btnExportProg").onclick=()=>{
   a.href=URL.createObjectURL(blob); a.download="tyrocell-progress.json"; a.click();
   URL.revokeObjectURL(a.href);
 };
-document.getElementById("btnImportProg").onclick=()=>document.getElementById("progFile").click();
+document.getElementById("btnImportProg").onclick=()=>{ setProgMenu(false); document.getElementById("progFile").click(); };
+/* Progress menu in the Courses header (spec C1) */
+function setProgMenu(open){
+  const pop=document.getElementById("progMenu"), btn=document.getElementById("btnProgMenu"); if(!pop) return;
+  pop.hidden=!open; btn.setAttribute("aria-expanded",String(open));
+}
+document.getElementById("btnProgMenu").addEventListener("click",e=>{ e.stopPropagation(); setProgMenu(document.getElementById("progMenu").hidden); });
+document.addEventListener("click",e=>{ if(!e.target.closest(".dk-pmenu")) setProgMenu(false); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") setProgMenu(false); });
 document.getElementById("progFile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f)return;
   const rd=new FileReader();
@@ -990,7 +1057,8 @@ const KEYDOCS=[
   [["Ctrl","Home"],"Go to A1"],
   [["Ctrl","End"],"Go to the last used cell"],
   [["Tab"],"Move right · Shift+Tab moves left"],
-  [["Enter"],"Move down · Shift+Enter moves up"]]],
+  [["Enter"],"Move down · Shift+Enter moves up"],
+  [["Ctrl","Enter"],"Check answer (when not typing)"]]],
  ["Selecting",[
   [["Shift","↑↓←→"],"Extend the selection"],
   [["Ctrl","Shift","↑↓←→"],"Extend to the edge of the data"],
@@ -1058,6 +1126,7 @@ window.COLS     = COLS;
 window.ROWS     = ROWS;
 window.openEx   = openEx;
 window.checkEx  = checkEx;
+window.commitRaw = commitRaw;
 Object.defineProperty(window,"_cells",      {get:()=>Engine._cells, configurable:true});
 Object.defineProperty(window,"_cells_direct",    {value:ref=>Engine._cells[ref], configurable:true});
 Object.defineProperty(window,"_cells_direct_set",{value:(ref,v)=>{Engine._cells[ref]=v;}, configurable:true});

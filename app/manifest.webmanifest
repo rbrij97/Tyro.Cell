@@ -1,0 +1,17 @@
+{
+  "name": "tyro.cell — Practise Excel formulas",
+  "short_name": "tyro.cell",
+  "start_url": "/app/#/home",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#FAF7F0",
+  "theme_color": "#FAF7F0",
+  "icons": [
+    {
+      "src": "/app/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

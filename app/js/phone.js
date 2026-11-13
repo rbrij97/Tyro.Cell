@@ -46,7 +46,7 @@ async function continueOnLaptop(){
     catch(e){ if(e&&e.name==="AbortError") return; }
   }
   try{ await navigator.clipboard.writeText(url); toast("Link copied. Send it to yourself and open it on your laptop."); }
-  catch(e){ window.prompt("Copy this link and open it on your laptop:",url); }
+  catch(e){ try{ window.prompt("Copy this link and open it on your laptop:",url); }catch(e2){ toast("Could not copy the link on this browser."); } }
 }
 /* #/sync/v1/<ids>/<days>/<last> — merge, never remove */
 function applySync(parts){
@@ -109,6 +109,7 @@ function nextEasyEx(){
 }
 function phoneAfterOpen(exId){
   closePhoneCard();
+  if(isPhone()&&targetRefs[0]&&TD[targetRefs[0]]) setTimeout(()=>TD[targetRefs[0]].scrollIntoView({block:"nearest",inline:"nearest"}),60);
   const ex=EX[exId];
   if(isPhone()&&ex&&ex.lvl!=="easy"&&!triedAnyway.has(exId)) phoneCard("gate");
 }
@@ -117,9 +118,12 @@ const LS_NUDGE="tyro_phone_nudge_v1";
 function phoneAfterPass(newlyDone){
   if(!isPhone()||!newlyDone) return;
   passesThisSitting++;
-  if(passesThisSitting>=3&&lsGet(LS_NUDGE)!==dayKey()){
+  if(passesThisSitting>=3&&lsGet(LS_NUDGE)!==dayKey()&&!phoneCard._nudged){
+    phoneCard._nudged=true;   // once per sitting even when saving is off (?test)
     lsSet(LS_NUDGE,dayKey());
-    setTimeout(()=>{ if(isPhone()) phoneCard("nudge"); },1400);   // after the pass stamp has played
+    const exId=currentExId;
+    // after the pass stamp has played; skip if the student moved on or another card is up
+    setTimeout(()=>{ if(isPhone()&&currentExId===exId&&!document.getElementById("phoneCard")) phoneCard("nudge"); },1400);
   }
 }
 
@@ -175,7 +179,7 @@ function placeKeys(){
 }
 function syncKeys(){
   const on=isPhone()&&!!activeEditor()&&document.getElementById("view-app").classList.contains("on");
-  if(on&&!keyStrip.classList.contains("on")){ renderKeys(); placeKeys(); }
+  if(on&&!keyStrip.classList.contains("on")){ renderKeys(); placeKeys(); keyStrip.scrollLeft=0; }
   keyStrip.classList.toggle("on",on);
   document.body.classList.toggle("ph-typing",on);
 }
@@ -188,7 +192,8 @@ if(window.visualViewport){
 
 /* ---------- formula bar on a phone: remember the cell, save on leaving ---------- */
 let fEditRef=null, fEditStart="";
-fInput.addEventListener("focus",()=>{ fEditRef=refOf(sel.r,sel.c); fEditStart=fInput.value; });
+let fFocusAt=0;
+fInput.addEventListener("focus",()=>{ fEditRef=refOf(sel.r,sel.c); fEditStart=fInput.value; fFocusAt=Date.now(); });
 // Enter and Escape in the formula bar already commit / cancel: forget the pending edit first
 fInput.addEventListener("keydown",e=>{
   if(e.key==="Enter"||e.key==="Escape"){
@@ -215,6 +220,8 @@ grid.addEventListener("mousedown",e=>{
   // (unless this tap is adding a reference to the formula)
   if(document.activeElement===fInput){
     const v=fInput.value;
+    // the task folds away when the formula bar opens, so the grid jumps: a double-tap lands on another cell
+    if(Date.now()-fFocusAt<450){ e.preventDefault(); e.stopImmediatePropagation(); _tapSel=null; return; }
     // tapping the cell being edited keeps you typing (unless a formula wants that reference)
     if(td.dataset.ref===fEditRef&&!(v[0]==="="&&refInsertable(v))){ e.preventDefault(); e.stopImmediatePropagation(); _tapSel=null; return; }
     const pointing=v[0]==="="&&(refInsertable(v)||(point&&point.inputEl===fInput));
@@ -227,7 +234,7 @@ grid.addEventListener("click",e=>{
   if(!isPhone()||!_tapSel) return;
   const td=e.target.closest("td");
   if(td&&td.dataset.ref===_tapSel&&!(currentEx&&currentEx.pick&&currentEx.pick[_tapSel])){
-    fInput.focus(); const n=fInput.value.length; fInput.setSelectionRange(n,n);
+    fFocusAt=Date.now(); fInput.focus(); const n=fInput.value.length; fInput.setSelectionRange(n,n);
   }
   _tapSel=null;
 });

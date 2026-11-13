@@ -101,6 +101,7 @@ function paintSelection(){
   for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++) TD[refOf(r,c)].classList.add("insel");
   const aref=refOf(sel.r,sel.c);
   TD[aref].classList.add("sel");
+  grid.querySelectorAll("td[aria-selected]").forEach(t=>t.removeAttribute("aria-selected")); TD[aref].setAttribute("aria-selected","true");
   for(let c=c1;c<=c2;c++) document.querySelector(`th[data-col="${COLNAMES[c]}"]`).classList.add("hl");
   for(let r=r1;r<=r2;r++) document.querySelector(`th[data-row="${r}"]`).classList.add("hl");
   nameBox.value=aref;
@@ -391,8 +392,14 @@ function closeParens(v){
   if(depth<=0||inStr) return {raw:v,added:0};
   return {raw:v+")".repeat(depth),added:depth};
 }
+/* Excel capitalises function names and references when you press Enter:
+   =sum(b2:b6) becomes =SUM(B2:B6). Text inside quotes is left alone (spec P0-06). */
+function upperFormula(v){
+  v=String(v); if(v[0]!=="=") return v;
+  return v.split(/("(?:[^"]|"")*"?)/).map(p=>p[0]==="\""?p:p.toUpperCase()).join("");
+}
 function commitRaw(ref,v){
-  const f=closeParens(v); setRaw(ref,f.raw);
+  const f=closeParens(upperFormula(v)); setRaw(ref,f.raw);
   const c=cells[ref]; if(c){ if(f.added) c.ac=1; else delete c.ac; }
   return f.added;
 }
@@ -560,7 +567,13 @@ document.addEventListener("keydown",e=>{
   if(!document.getElementById("view-app").classList.contains("on"))return;
   if(editing||document.activeElement===fInput||document.activeElement===nameBox)return;
   if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#tab-outline,#ws-pager"))return;
+  // a button in the brief has focus (Next after a pass): Enter/Space/Tab act on it, any other key goes back to the sheet
+  if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#concept")){
+    if(e.key==="Enter"||e.key===" "||e.key==="Tab") return;
+    document.activeElement.blur();
+  }
   const k=e.key, mod=e.ctrlKey||e.metaKey;
+  if(k==="Enter"&&mod&&!e.shiftKey){ e.preventDefault(); if(currentEx) checkEx(currentEx); return; }   // spec P0-05
 
   if(k==="ArrowUp"||k==="ArrowDown"||k==="ArrowLeft"||k==="ArrowRight"){
     e.preventDefault();

@@ -588,6 +588,30 @@ suite("UI · State transitions", t => {
   });
 });
 
+
+/* Answer check must use the data (spec P0-03) and Excel-style capitals (P0-06) */
+suite("Checker · Hard-coding and capitals", t => {
+  const doc = () => iframe.contentDocument;
+  const win = () => iframe.contentWindow;
+  const amazon = (w, f) => { w.openEx("sum_quarterly",{fresh:true}); w.commitRaw("B8", f); w.checkEx(w.EX.sum_quarterly);
+    const rc = doc().getElementById("resultCard"); return rc && rc.className.includes("ok") ? "pass" : "fail"; };
+  [["=SUM(574.9)","fail"],["=SUM(B2:B4)+170","fail"],["=SUM(127.4,134.4,143.1,170)","fail"],["=SUM(B2:B4,170)","fail"],
+   ["=SUM(B2:B5)","pass"],["=sum(b2:b5","pass"],["=SUM(B2,B3,B4,B5)","pass"]].forEach(([f,want]) =>
+    t("Amazon "+f+" → "+want, () => { const got = amazon(win(), f); return { pass: got===want, actual: got, expected: want }; }));
+  t("=sum(b2:b5 is stored as =SUM(B2:B5)", () => { const w = win(); w.openEx("sum_quarterly",{fresh:true}); w.commitRaw("B8","=sum(b2:b5");
+    const raw = w.getCell("B8").raw; return { pass: raw==="=SUM(B2:B5)", actual: raw, expected: "=SUM(B2:B5)" }; });
+  t("text in quotes keeps its case", () => { const w = win(); w.openEx("sum_quarterly",{fresh:true}); w.commitRaw("D1","=countif(a2:a5,\"q1 2023\")");
+    const raw = w.getCell("D1").raw; return { pass: raw==="=COUNTIF(A2:A5,\"q1 2023\")", actual: raw, expected: "=COUNTIF(A2:A5,\"q1 2023\")" }; });
+  t("every stored solution passes the new check", () => { const w = win(), bad = [];
+    for(const c of w.COURSES) for(const id of c.modules.flatMap(m=>m.ex)){ const ex = w.EX[id]; w.openEx(id,{fresh:true});
+      if(ex.pick) for(const r in ex.pick) w.setRaw(r, ex.pick[r].answer);
+      else if(ex.targetRange){ const rc = w.rangeCells(...ex.targetRange.split(":")).flat(), b = w.parseRef(rc[0]);
+        rc.forEach(r => { const p = w.parseRef(r); w.setRaw(r, w.shiftFormula(ex.solution, p.r-b.r, p.c-b.c)); }); }
+      else w.setRaw(ex.target, ex.solution);
+      w.checkEx(ex); const rc = doc().getElementById("resultCard"); if(!(rc && rc.className.includes("ok"))) bad.push(id); }
+    return { pass: bad.length===0, actual: bad.length ? bad.join(", ") : "all pass", expected: "all pass" }; });
+});
+
 /* -------- runner -------- */
 
 function statusPill(text, cls){ S_VERDICT.textContent = text; S_VERDICT.className = "verdict " + cls; }
