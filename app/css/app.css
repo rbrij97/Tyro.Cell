@@ -1402,3 +1402,7 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 
 /* trademark line in the footers (spec P0-11) */
 .ft-tm{white-space:normal}
+
+/* "Report a problem" link in the brief (spec P1-13) */
+.ws-report{align-self:flex-start;font:12.5px var(--sans);color:var(--dk-t2);text-decoration:underline;text-underline-offset:3px}
+.ws-report:hover{color:var(--dk-ink)}

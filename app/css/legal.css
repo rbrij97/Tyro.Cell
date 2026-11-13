@@ -1,0 +1,16 @@
+/* Privacy and Terms pages: same "study desk" look as the app, no fonts from Google
+   (so these pages themselves send nothing to third parties). */
+:root{--paper:#FAF7F0;--ink:#171512;--t2:#57524A;--line:#E7E1D4;--yellow:#FFE680}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.lg{max-width:720px;margin:0 auto;padding:40px 16px 64px}
+.lg-brand{display:inline-block;margin-bottom:28px;font-weight:800;font-size:18px;color:var(--ink);text-decoration:none;letter-spacing:-.3px}
+h1{margin:0 0 4px;font-size:clamp(32px,6vw,44px);line-height:1.1;letter-spacing:-.03em}
+h2{margin:32px 0 6px;font-size:20px;letter-spacing:-.01em}
+p,li{color:#3A362F}
+.lg-date{margin:0 0 24px;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--t2)}
+ul{padding-left:20px}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#fff;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+a{color:var(--ink);text-underline-offset:3px}
+a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.lg-foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:14px}

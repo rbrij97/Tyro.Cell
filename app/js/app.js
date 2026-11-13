@@ -636,7 +636,7 @@ function renderHome(){
       <h2 class="hm-h2" id="hm-cat">By category</h2>
       <div class="hm-cats">${cats}</div>
     </section>
-    <footer class="dk-footer">Made with <span class="dk-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a> · <span class="ft-tm">Not affiliated with Microsoft. Excel is a trademark of Microsoft Corporation.</span></footer>`;
+    <footer class="dk-footer">Made with <span class="dk-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a> · <a href="/app/privacy.html">Privacy</a> · <a href="/app/terms.html">Terms</a> · <span class="ft-tm">Not affiliated with Microsoft. Excel is a trademark of Microsoft Corporation.</span></footer>`;
   // a category tile opens the course page filtered to that category
   el.querySelectorAll(".hm-cat").forEach(a=>a.addEventListener("click",()=>{ Object.assign(courseUI,{courseId:c.id,cat:a.dataset.cat,q:"",unsolved:false,sort:"course"}); }));
 }
@@ -750,6 +750,7 @@ function renderConcept(ex){
         <button class="ws-tool" id="btnSolution" data-act="solution">Solution</button>
         <button class="ws-tool" id="btnResetEx" data-act="reset">Reset</button>
       </div>
+      <a class="ws-report" href="#" data-act="report">Something wrong with this exercise? Report it</a>
       <div class="hintbox" id="hintBox"><b>Hint</b><p>${esc(ex.hint||"")}</p></div>
       <div class="nudgebox" id="nudgeBox"><b>Try the hint first</b><p>Learning sticks when you struggle a little. Read the hint above, then take another swing at it. Click <b>Solution</b> again if you're still stuck.</p></div>
       <div class="solutionbox" id="solutionBox"><b>Solution</b><p>${esc(ex.solution||"")}</p></div>
@@ -826,6 +827,16 @@ function renderOutline(){
   `;
 }
 
+/* "Report a problem" (spec P1-13): opens the student's email app with the exercise id
+   and their current answer filled in. Address is temporary until a project inbox exists;
+   it is joined at runtime so it does not sit in the page as plain text. */
+const REPORT_TO=["moon.knight9797","gmail.com"];
+function reportProblem(){
+  if(!currentEx) return;
+  const answer=targetRefs.slice(0,6).map(r=>r+": "+((getCell(r)||{}).raw||"(empty)")).join("\n");
+  const body="Exercise: "+currentExId+" ("+currentEx.title+")\nLink: "+location.origin+location.pathname+"#/practice/"+currentExId+"\nMy answer:\n"+answer+"\n\nWhat went wrong:\n";
+  location.href="mailto:"+REPORT_TO.join("@")+"?subject="+encodeURIComponent("tyro.cell problem: "+currentExId)+"&body="+encodeURIComponent(body);
+}
 /* exercise brief: one delegated click handler (the brief is re-rendered per exercise) */
 let hintViewed = false;
 let solutionClickCount = 0;
@@ -841,6 +852,7 @@ document.getElementById("concept").addEventListener("click",e=>{
   const act=b.dataset.act;
   if(act==="check"){ if(currentEx) checkEx(currentEx); }
   else if(act==="reset"||act==="repeat"){ if(currentExId) openEx(currentExId,{fresh:true}); }
+  else if(act==="report"){ e.preventDefault(); reportProblem(); }
   else if(act==="brief"){
     briefMini=!briefMini;
     document.getElementById("concept").classList.toggle("mini",briefMini);
