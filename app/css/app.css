@@ -1406,3 +1406,23 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 /* "Report a problem" link in the brief (spec P1-13) */
 .ws-report{align-self:flex-start;font:12.5px var(--sans);color:var(--dk-t2);text-decoration:underline;text-underline-offset:3px}
 .ws-report:hover{color:var(--dk-ink)}
+
+/* account control: Sign in with Google / avatar menu (js/account.js) */
+.acct{position:relative;display:flex;align-items:center}
+.acct[hidden]{display:none}
+.acct-in{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #DDD5C5;background:#fff;font:600 13.5px var(--sans);color:#171512;cursor:pointer}
+.acct-in:hover{background:#FFE680}
+.acct-me{position:relative;width:36px;height:36px;border-radius:50%;border:1.5px solid #0A0A0A;background:#FFE680;cursor:pointer;padding:0}
+.acct-av{font:800 15px var(--sans);color:#0A0A0A}
+.acct-dot{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;border:2px solid #fff;background:#B5AE9F}
+.acct-dot.ok{background:#1E9E5A}.acct-dot.syncing{background:#F2A516}.acct-dot.error{background:#E2483D}
+.acct-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:40;min-width:230px;padding:12px;background:#fff;border:1.5px solid #0A0A0A;border-radius:10px;box-shadow:4px 4px 0 #0A0A0A;display:flex;flex-direction:column;gap:4px}
+.acct-pop[hidden]{display:none}
+.acct-name{font:700 14.5px var(--sans);color:#171512}
+.acct-mail{font:12.5px var(--mono);color:#57524A;word-break:break-all}
+.acct-sync{margin:6px 0 4px;font:12.5px var(--sans);color:#57524A}
+.acct-sync.ok{color:#0F6B3E}.acct-sync.error{color:#B42A20}
+.acct-out{align-self:flex-start;margin-top:4px;min-height:34px;padding:0 12px;border-radius:7px;border:1px solid #DDD5C5;background:#fff;font:600 13px var(--sans);color:#171512;cursor:pointer}
+.acct-out:hover{background:#FFF9DB}
+@media(max-width:700px){ .acct-in span{display:none} .acct-in{padding:0 9px} }
+.acct-g{min-height:32px;display:flex;align-items:center}

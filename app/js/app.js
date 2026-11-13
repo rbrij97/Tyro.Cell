@@ -1009,6 +1009,7 @@ function pass(ex,msg){
   showResult("ok",msg+autoNote+assistNote,{newlyDone:!wasDone,formulaDone,autoNote:autoNote+assistNote});
   updateStreak(); renderOutline(); renderAll();
   phoneAfterPass(!wasDone);
+  if(typeof accountAfterPass==="function") accountAfterPass(currentExId);   // signed in: save to the account (js/account.js)
   // Enter continues: focus the Next button (laptop only; on a phone it would pop the keyboard state)
   if(!isPhone()) setTimeout(()=>{ const n=document.querySelector("#briefFoot .ws-primary"); if(n) n.focus({preventScroll:true}); },0);
 }
