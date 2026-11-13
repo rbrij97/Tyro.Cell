@@ -12,6 +12,7 @@ function moduleForEx(course,exId){
   if(!course) return null;
   return course.modules.find(m=>m.ex.includes(exId)) || null;
 }
+const FLAME_SVG='<svg class="dk-flame" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 2c.5 3.2 3.6 4.9 3.6 9.1 0 .9-.2 1.7-.5 2.4.9-.5 1.6-1.4 1.9-2.6 1.1 1.4 1.7 3.1 1.7 4.8C18.7 19.6 15.7 22 12 22s-6.7-2.4-6.7-6.3c0-3.3 2.2-5.6 3.9-7.6.3 1.6 1 2.8 2.1 3.4C11.2 8.6 10.9 5 12 2z"/></svg>';
 function updateStreak(){
   const el=document.getElementById("ws-streak");
   if(el) el.textContent = String(doneEx.size);
@@ -351,9 +352,9 @@ function updateHeaderProgress(){
   const done=liveCourses().reduce((n,c)=>n+courseDone(c),0);
   const pct=total?Math.round(done/total*100):0;
   document.querySelectorAll(".dk-progfill").forEach(el=>{ el.style.width=pct+"%"; });
-  document.querySelectorAll(".dk-progtext").forEach(el=>{ el.innerHTML="<b>"+done+"</b> / "+total+" done"; });
+  document.querySelectorAll(".dk-progtext").forEach(el=>{ el.innerHTML="<b>"+done+"</b><span class=\"dk-of\"> / "+total+"</span><span class=\"dk-done\"> done</span>"; });
   const st=streakDays();
-  document.querySelectorAll(".dk-streak").forEach(el=>{ el.hidden=!st; el.textContent=st+"-day streak"; });
+  document.querySelectorAll(".dk-streak").forEach(el=>{ el.hidden=!st; el.innerHTML=FLAME_SVG+"<span>"+st+(st===1?" day":" days")+"</span>"; el.title=st+"-day practice streak"; });
 }
 const nextExOf=list=>list.find(x=>!doneEx.has(x))||list[0];
 const courseNum=c=>"Course "+String(COURSES.indexOf(c)+1).padStart(2,"0");

@@ -1439,3 +1439,33 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 .acct-card-no:hover{color:#171512}
 .hm .hm-save{margin:-6px 0 14px;font:13px var(--mono);color:#6B665D}
 .hm .hm-save.ok{color:#0F6B3E}
+
+/* ---- header design A (2026-11-14): logo unchanged; highlighter nav; one capsule for streak, progress, account ---- */
+.desk .dk-nav nav{gap:22px;margin-left:12px}
+.desk .dk-nav .dk-navlink{padding:4px 2px;border-radius:0;color:var(--dk-t2);font-weight:500;transition:color .15s ease}
+.desk .dk-nav .dk-navlink:hover{color:var(--dk-ink)}
+.desk .dk-nav .dk-navlink.on{background:linear-gradient(transparent 58%,var(--dk-yellow) 58%);color:var(--dk-ink);font-weight:700}
+.desk .dk-cap{display:flex;align-items:center;gap:12px;min-height:40px;padding:4px 4px 4px 14px;background:#fff;border:1px solid var(--dk-line2);border-radius:999px}
+.desk .dk-cap .dk-streak{padding:0;background:none;border-radius:0;gap:5px;font:600 13px var(--sans);color:var(--dk-ink)}
+.desk .dk-cap .dk-streak::before{content:none}
+.desk .dk-cap .dk-flame{fill:#C2410C}
+.desk .dk-cap .dk-prog{gap:8px;font-size:12.5px}
+.desk .dk-cap .dk-streak:not([hidden])+.dk-prog{padding-left:12px;border-left:1px solid var(--dk-line2)}
+.desk .dk-cap .dk-progbar{width:44px;height:5px;border-radius:3px}
+.desk .dk-cap .dk-done{display:none}
+.desk .dk-cap .acct{gap:8px}
+.desk .dk-cap .acct-me{width:30px;height:30px}
+.desk .dk-cap .acct-note{font-size:11px}
+.desk .dk-cap .acct-g{min-height:30px}
+@media(max-width:600px){
+  /* phones: logo and capsule on row one, Home / Courses on row two */
+  .desk .dk-nav{row-gap:6px}
+  .desk .dk-nav nav{order:3;width:100%;gap:20px;margin-left:0}
+  .desk .dk-cap{gap:8px;padding-left:10px}
+  .desk .dk-cap .dk-streak:not([hidden])+.dk-prog{padding-left:8px}
+}
+
+/* landing header: logo and button line up with the 1320px content column; never closer than 24px to the edge */
+@media(min-width:701px){
+  #view-landing .lp-nav{padding-left:max(24px, calc((100% - 1320px) / 2 + 40px));padding-right:max(24px, calc((100% - 1320px) / 2 + 40px))}
+}
