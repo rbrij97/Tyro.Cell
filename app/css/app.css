@@ -1426,3 +1426,16 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 .acct-out:hover{background:#FFF9DB}
 @media(max-width:700px){ .acct-in span{display:none} .acct-in{padding:0 9px} }
 .acct-g{min-height:32px;display:flex;align-items:center}
+
+/* sign-in is optional: note by the header button, one-time card, Home status line */
+.acct{gap:10px}
+.acct-note{font:11.5px/1.25 var(--mono);color:#6B665D;text-align:right}
+@media(max-width:900px){ .acct-note{display:none} }
+.acct-card{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:10px;background:#FFF9DB;border:1.5px solid #0A0A0A;box-shadow:3px 3px 0 #0A0A0A;animation:ws-rise .4s cubic-bezier(.2,.8,.2,1) both}
+.acct-card b{font:800 15px var(--sans);color:#171512}
+.acct-card p{margin:0;font-size:13.5px;line-height:1.5;color:#3A362F}
+.acct-card-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+.acct-card-no{border:none;background:none;padding:6px 0;font:600 13px var(--sans);color:#57524A;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.acct-card-no:hover{color:#171512}
+.hm .hm-save{margin:-6px 0 14px;font:13px var(--mono);color:#6B665D}
+.hm .hm-save.ok{color:#0F6B3E}

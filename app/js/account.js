@@ -75,7 +75,9 @@ async function acctInit(){
     acctUser=u;
     if(u&&changed) setTimeout(syncAll,0);
     if(event==="SIGNED_IN") backAfterLogin();
+    if(u) hideSigninPrompt();
     renderAcct(changed);
+    if(changed&&document.getElementById("view-home").classList.contains("on")) renderHome();   // refresh the save-status line
   });
   await sb.auth.getSession();   // finishes a Google return (?code=…) before anything else
   cleanAuthUrl();
@@ -133,8 +135,39 @@ async function syncAll(){
     if(pulled) toast(`Synced: ${pulled} exercise${pulled>1?"s":""} added from your account.`);
   }catch(e){ syncState="error"; renderAcct(); }
 }
+/* ---- the one-time "keep your progress safe" card (spec P1-02) ----
+   Shown once, under the result, after a guest's 3rd completed exercise.
+   "Continue as guest" hides it for good on this browser. Never blocks anything. */
+const LS_SIGNIN_PROMPT="tyro_signin_prompt_v1";
+function signinPromptWanted(){
+  return PERSIST&&!!sb&&!acctUser&&(gisReady||gisFailed)&&doneEx.size>=3&&lsGet(LS_SIGNIN_PROMPT)!=="done";
+}
+function showSigninPrompt(){
+  const foot=document.getElementById("briefFoot"); if(!foot||foot.querySelector(".acct-card")) return;
+  lsSet(LS_SIGNIN_PROMPT,"done");   // once per browser, whatever the student picks
+  const n=doneEx.size, card=document.createElement("div");
+  card.className="acct-card"; card.setAttribute("role","status");
+  card.innerHTML=`<b>Keep your progress safe</b>
+    <p>You've solved ${n} exercises. They're saved in this browser only. Sign in with Google to keep them on any device.</p>
+    <div class="acct-card-row"><div class="acct-card-g"></div><button class="acct-card-no" type="button">No thanks, continue as guest</button></div>`;
+  foot.appendChild(card);
+  const g=card.querySelector(".acct-card-g");
+  if(gisReady) google.accounts.id.renderButton(g,{type:"standard",theme:"filled_black",size:"large",text:"signin_with",shape:"pill"});
+  else g.innerHTML=`<button class="acct-in" type="button">${G_ICON}<span>Sign in with Google</span></button>`, g.firstChild.onclick=acctSignIn;
+  card.querySelector(".acct-card-no").onclick=()=>card.remove();
+}
+function hideSigninPrompt(){ document.querySelectorAll(".acct-card").forEach(c=>c.remove()); }
+/* Home: where progress is saved */
+function acctStatusHTML(){
+  if(!PERSIST) return "";
+  return acctUser
+    ? `<p class="hm-save ok">Saved to your account <span aria-hidden="true">✓</span></p>`
+    : `<p class="hm-save">Saved in this browser only · Sign in (top right) to keep it on every device</p>`;
+}
+
 /* after each pass (called from pass() in app.js) */
 async function accountAfterPass(exId){
+  if(!acctUser&&signinPromptWanted()){ setTimeout(()=>{ if(signinPromptWanted()) showSigninPrompt(); },500); return; }
   if(!sb||!acctUser||!EX[exId]) return;
   const uid=acctUser.id;
   syncState="syncing"; renderAcct();
@@ -166,12 +199,14 @@ function renderAcct(force){
       const want=gisReady?"gis":gisFailed?"fallback":"loading";
       if(!force&&slot.dataset.state===want) return;
       slot.dataset.state=want;
+      // signing in is optional: say what it's for, next to the button (hidden on phones)
+      const note='<span class="acct-note">Optional · saves progress<br>across devices</span>';
       if(want==="gis"){
-        slot.innerHTML='<div class="acct-g"></div>';
-        google.accounts.id.renderButton(slot.firstChild,{type:isPhone()?"icon":"standard",theme:"outline",size:"medium",
+        slot.innerHTML=note+'<div class="acct-g"></div>';
+        google.accounts.id.renderButton(slot.querySelector(".acct-g"),{type:isPhone()?"icon":"standard",theme:"outline",size:"medium",
           text:"signin",shape:"pill",logo_alignment:"left"});
       } else if(want==="fallback"){
-        slot.innerHTML=`<button class="acct-in" data-acct-act="in" title="Save your progress to your Google account">${G_ICON}<span>Sign in</span></button>`;
+        slot.innerHTML=note+`<button class="acct-in" data-acct-act="in" title="Save your progress to your Google account">${G_ICON}<span>Sign in</span></button>`;
       } else slot.innerHTML="";
       return;
     }
@@ -203,4 +238,6 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&document.querySelector('[data-acct][data-open="1"]')){ document.querySelectorAll("[data-acct]").forEach(s=>s.dataset.open="0"); renderAcct(); } });
 
+// Home was drawn before this file loaded: redraw it once so the save-status line appears
+if(document.getElementById("view-home").classList.contains("on")) renderHome();
 acctInit();

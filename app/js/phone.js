@@ -117,6 +117,8 @@ let passesThisSitting=0;
 const LS_NUDGE="tyro_phone_nudge_v1";
 function phoneAfterPass(newlyDone){
   if(!isPhone()||!newlyDone) return;
+  // a guest about to see the one-time sign-in card gets that instead (it solves the same problem better)
+  if(typeof signinPromptWanted==="function"&&signinPromptWanted()) return;
   passesThisSitting++;
   if(passesThisSitting>=3&&lsGet(LS_NUDGE)!==dayKey()&&!phoneCard._nudged){
     phoneCard._nudged=true;   // once per sitting even when saving is off (?test)

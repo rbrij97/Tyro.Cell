@@ -617,6 +617,7 @@ function renderHome(){
     </section>
     <section aria-labelledby="hm-prog">
       <h2 class="hm-h2" id="hm-prog">Your progress</h2>
+      ${typeof acctStatusHTML==="function"?acctStatusHTML():""}
       <div class="hm-tiles">
         <div class="hm-tile"><span class="lbl">Practice streak</span><span class="big">${streak} <small>${streak===1?"day":"days"}</small></span>
           <div class="hm-week" role="img" aria-label="This week: practised on ${[...days].filter(k=>k>=dayKey(monday)).length} days">${week}</div></div>
