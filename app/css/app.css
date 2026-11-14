@@ -1621,3 +1621,68 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 .tr-status .dk-flame{fill:#C2410C}
 .tr-status b{color:var(--dk-ink)}
 @media(max-width:600px){ .tr-card h1{font-size:32px;padding-right:0} .tr-stamp{position:static;transform:rotate(-8deg)} }
+
+/* ---- practice screen v2 (2026-11-14): same header as Home/Courses, slim outline rail ---- */
+/* header: logo · formula chip · ← step → · (test dots) · capsule — matches .dk-nav */
+.ws #titlebar{background:#fff;color:var(--dk-ink);border-bottom:1px solid var(--dk-line);padding:10px 24px;gap:10px 16px;flex-wrap:nowrap}
+.ws #titlebar .brand{font-family:var(--dk-head);font-weight:700;font-size:18px;letter-spacing:-.4px;color:var(--dk-ink)}
+.ws .ws-crumbs>a,.ws .ws-crumbs>span[aria-hidden]{display:none}
+.ws .ws-crumbs{margin-left:6px}
+.ws .ws-pager{gap:2px}
+.ws .ws-navbtn{min-width:30px;min-height:30px;border:none;background:none;border-radius:8px;font-size:15px;color:var(--dk-t2)}
+.ws .ws-navbtn:hover:not(:disabled){background:#F3EFE6;color:var(--dk-ink)}
+.ws .ws-pos{min-height:30px;padding:0 8px;border:none;background:none;font:600 12.5px var(--mono);color:var(--dk-t2)}
+.ws .ws-pos:hover{background:#F3EFE6;color:var(--dk-ink)}
+.ws #titlebar .dk-cap{flex:none}
+.ws #titlebar .ws-progwrap{padding-left:12px}
+.ws .dk-cap .ws-plus1{right:-6px;top:-16px}
+/* test mode keeps the same light header; the dots carry the test */
+.ws.testing #titlebar{background:#fff;color:var(--dk-ink);border-bottom-color:var(--dk-line)}
+.ws.testing #titlebar .brand,.ws.testing #titlebar .brand span{color:var(--dk-ink)}
+.ws.testing #titlebar .brand-mark{stroke:#0A0A0A}
+.ws.testing #titlebar .brand-mark rect[fill]{fill:#0A0A0A}
+.ws.testing .ws-progwrap{display:flex}
+.ws-testdots span{border-color:#DDD5C5;color:var(--dk-t3)}
+.ws-testdots span.cur{background:var(--dk-black);border-color:var(--dk-black);color:var(--dk-yellow)}
+.ws-testdots em{color:var(--dk-t2)}
+.ws.testing #ws-crumb{background:var(--dk-black)!important;color:var(--dk-yellow)!important}
+
+/* outline: a 56px rail of rings; the full outline slides out over the page */
+.ws .ws-side{position:relative;flex:0 0 56px;padding:0;overflow:visible;gap:0;z-index:25}
+.wsd-railwrap{height:100%;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;box-sizing:border-box}
+.wsd-toggle{flex:none;width:36px;height:36px;border-radius:9px;border:1px solid var(--dk-line2);background:#fff;color:var(--dk-ink);display:grid;place-items:center;cursor:pointer}
+.wsd-toggle:hover,.ws-side.open .wsd-toggle{background:var(--dk-yellow);border-color:var(--dk-black)}
+.wsd-rail{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0}
+.wsd-rail::-webkit-scrollbar{display:none}
+.wsd-r{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center}
+.wsd-r:hover{background:#F3EFE6}
+.wsd-r.here{background:var(--dk-yellow);box-shadow:0 0 0 1.5px var(--dk-black)}
+.wsd-r.gap{margin-top:12px;position:relative}
+.wsd-r.gap::before{content:"";position:absolute;top:-8px;left:9px;right:9px;height:1.5px;background:var(--dk-line2)}
+.wsd-panel{display:none;position:absolute;left:56px;top:0;bottom:0;width:290px;flex-direction:column;gap:12px;padding:16px 12px;overflow-y:auto;background:#fff;border:1px solid var(--dk-line2);border-left:none;box-shadow:8px 0 24px rgba(23,21,18,.12);animation:wsd-in .18s ease-out both}
+.ws-side.open .wsd-panel{display:flex}
+@keyframes wsd-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@media(max-width:1180px){ .ws .ws-side{display:flex} }
+@media(max-width:900px){ .ws .ws-side{display:none} }   /* below 900px the screen stacks; the "2 of 3" menu covers the outline */
+@media (prefers-reduced-motion:reduce){ .wsd-panel{animation:none} }
+
+/* task panel: a little narrower so the sheet gets the room */
+@media(min-width:901px){ .ws #concept.on{flex:0 1 330px;min-width:270px;max-width:340px} }
+@media(max-width:700px){ .ws #titlebar{flex-wrap:wrap;padding:8px 12px} .ws #titlebar .spacer:first-of-type{display:none} }
+/* rail v2: only this formula's steps — calm, no column of empty circles */
+.wsd-railwrap{gap:14px;padding:12px 0}
+.wsd-rail{flex:none;overflow:visible;gap:8px;padding:0;position:relative}
+.wsd-rail::before{content:"";position:absolute;left:50%;top:6px;bottom:6px;width:2px;margin-left:-1px;background:var(--dk-line)}
+.wsd-s{position:relative;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#fff;border:1.5px solid var(--dk-line2);font:700 12px var(--mono);color:var(--dk-t2);text-decoration:none}
+.wsd-s:hover{border-color:var(--dk-black);color:var(--dk-ink)}
+.wsd-s.done{background:#DDF4E6;border-color:#1E9E5A;color:#0F6B3E}
+.wsd-s.now{background:var(--dk-yellow);border-color:var(--dk-black);color:var(--dk-ink)}
+.wsd-s.t{border-style:dashed;color:#8A4D00}
+.wsd-s.t.now{border-style:solid}
+.wsd-s.t.done{border-style:solid}
+/* header and formula bar tidy-ups: full formula name, no extra toolbar row on smaller laptops */
+.ws .ws-crumbs{flex:none}
+.ws .ws-fnchip{max-width:none}
+.ws #formulabar{flex-wrap:nowrap}
+@media(max-width:1100px){ .ws #formulabar .ws-fmt{display:none} }
+@media(max-width:700px){ .ws .ws-fnchip{max-width:150px} }

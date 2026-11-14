@@ -813,6 +813,7 @@ function openEx(exId, opts){
   document.getElementById("btnPrev").disabled = !P.prev;
   document.getElementById("btnNext").disabled = !P.next;
 
+  if(!testing){ const um=moduleForAny(currentCourse,exId); conceptOpen=!um||um.ex[0]===exId; }
   updateStreak();
   renderConcept(ex);
   renderOutline();
@@ -972,7 +973,8 @@ function renderSide(exId){
   el.hidden=false;
   const units=c.modules, completed=units.filter(unitDone).length, cur=testRun?testRun.m:moduleForAny(c,exId);
   const stages=c.stages||[{n:1,title:"Formulas"}];
-  el.innerHTML=`
+  el.classList.remove("open");
+  el.innerHTML=railHTML(units,cur)+`<div class="wsd-panel" role="dialog" aria-label="Course outline">
     <a class="wsd-course" href="#/course/${c.id}"><b>${esc(c.title)}</b>
       <span class="wsd-bar"><span style="width:${Math.round(completed/units.length*100)}%"></span></span>
       <span class="wsd-count">${completed} of ${units.length} completed</span></a>
@@ -993,9 +995,32 @@ function renderSide(exId){
           return `<div class="wsd-unit${here?" here":""}${s.completed?" done":""}"><a class="wsd-unit-h" href="${here?"#/formula/"+slug:unitView(m).href}"><span class="dot" aria-hidden="true">${mark}</span><span class="nm">${esc(m.title)}</span><span class="sc">${score}</span></a>${steps}</div>`;
         }).join(""):""}
       </div>`;
-    }).join("")}`;
-  const h=el.querySelector(".wsd-unit.here"); if(h) h.scrollIntoView({block:"nearest"});
+    }).join("")}</div>`;
+  
 }
+/* The outline sits as a slim rail of progress rings (one per formula, stages split by a
+   gap). A click on a ring opens that formula; the button on top slides the full
+   outline out over the page; a click outside, Esc or opening an exercise closes it. */
+function railHTML(units,cur){
+  // the rail shows only this formula: its practice steps and its test, as small tiles
+  const steps=cur?cur.ex.map((id,i)=>{
+    const now=!testRun&&id===currentExId, done=doneEx.has(id);
+    return `<a class="wsd-s${done?" done":""}${now?" now":""}" href="#/practice/${encodeURIComponent(id)}" title="Practice ${i+1}" aria-label="Practice ${i+1}${done?", done":""}">${done&&!now?"✓":i+1}</a>`;
+  }).join("")+`<a class="wsd-s t${testRun?" now":""}${unitDone(cur)?" done":""}" href="#/formula/${unitSlug(cur)}/test" title="Final test" aria-label="Final test">${unitDone(cur)?"✓":"T"}</a>`:"";
+  return `<div class="wsd-railwrap"><button type="button" class="wsd-toggle" aria-expanded="false" aria-controls="ws-side" title="Course outline" aria-label="Open course outline"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>${steps?`<div class="wsd-rail" aria-label="${esc(cur.title)} steps">${steps}</div>`:""}</div>`;
+}
+function setSide(open){
+  const el=document.getElementById("ws-side"); if(!el) return;
+  el.classList.toggle("open",open);
+  const b=el.querySelector(".wsd-toggle"); if(b){ b.setAttribute("aria-expanded",String(open)); b.setAttribute("aria-label",open?"Close course outline":"Open course outline"); }
+  if(open){ const h=el.querySelector(".wsd-unit.here"); if(h) h.scrollIntoView({block:"nearest"}); }
+}
+document.addEventListener("click",e=>{
+  const side=document.getElementById("ws-side"); if(!side) return;
+  if(e.target.closest&&e.target.closest(".wsd-toggle")){ setSide(!side.classList.contains("open")); return; }
+  if(side.classList.contains("open")&&!side.contains(e.target)) setSide(false);
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ const side=document.getElementById("ws-side"); if(side&&side.classList.contains("open")) setSide(false); } });
 // stage headers in the outline open the course page at that stage
 document.addEventListener("click",e=>{
   const a=e.target.closest&&e.target.closest(".wsd-stage-h"); if(!a) return;
