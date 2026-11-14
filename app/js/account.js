@@ -171,6 +171,7 @@ async function syncAll(){
     if(push.length){ const r=await sb.from("progress").upsert(push); if(r.error) throw r.error; }
     if(pushDays.length){ const r=await sb.from("practice_days").upsert(pushDays); if(r.error) throw r.error; }
     saveDone(); saveAssisted(); saveTests();
+    await syncDrafts();
     syncState="ok"; renderAcct(); refreshAfterSync();
     if(pulled) toast(`Synced: ${pulled} exercise${pulled>1?"s":""} added from your account.`);
   }catch(e){ syncState="error"; renderAcct(); }
@@ -203,6 +204,54 @@ function acctStatusHTML(){
   return acctUser
     ? `<p class="hm-save ok">Saved to your account <span aria-hidden="true">✓</span></p>`
     : `<p class="hm-save">Saved in this browser only · Sign in (top right) to keep it on every device</p>`;
+}
+
+/* ---- work in progress, saved to the account as you go ----
+   Unfinished final tests ("test:unit_sum") and half-written sheets ("sheet:sum_weekly")
+   are written to the drafts table shortly after each change (one write per key per
+   0.6s), so another device can pick them up. null deletes (a finished test, a Reset). */
+const draftTimers={}, draftPending={};
+function accountSaveDraft(key,data){
+  if(!sb||!acctUser||!/^(test|sheet):[a-z0-9_]{1,64}$/.test(key)) return;
+  clearTimeout(draftTimers[key]); draftPending[key]=data;
+  draftTimers[key]=setTimeout(()=>flushDraft(key), data==null?0:600);
+}
+async function flushDraft(key){
+  if(!(key in draftPending)||!sb||!acctUser) return;
+  const data=draftPending[key]; delete draftPending[key]; clearTimeout(draftTimers[key]);
+  try{
+    const r=data==null
+      ? await sb.from("drafts").delete().eq("user_id",acctUser.id).eq("key",key)
+      : await sb.from("drafts").upsert({user_id:acctUser.id,key,data,updated_at:new Date().toISOString()});
+    if(r.error) throw r.error;
+    syncState="ok";
+  }catch(e){ syncState="error"; }
+  renderAcct();
+}
+// leaving or hiding the page: send anything still waiting
+addEventListener("pagehide",()=>Object.keys(draftPending).forEach(flushDraft));
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") Object.keys(draftPending).forEach(flushDraft); });
+/* on sign-in and each load: take the drafts this browser lacks, send the ones the account lacks */
+async function syncDrafts(){
+  const dr=await sb.from("drafts").select("key,data");
+  if(dr.error) return;   // table not there yet: drafts stay in this browser
+  const remote=new Set(), tdrafts=loadTestDrafts();
+  let gotTests=false;
+  for(const row of dr.data){
+    remote.add(row.key);
+    const i=row.key.indexOf(":"), kind=row.key.slice(0,i), id=row.key.slice(i+1);
+    if(kind==="sheet"&&EX[id]&&!lsGet(LS_SHEET+id)) lsSet(LS_SHEET+id, JSON.stringify(row.data));
+    if(kind==="test"&&!tdrafts[id]&&row.data&&Array.isArray(row.data.ids)){ tdrafts[id]=row.data; gotTests=true; }
+  }
+  if(gotTests) lsSet(LS_TESTDRAFT, JSON.stringify(tdrafts));
+  Object.keys(tdrafts).forEach(k=>{ if(!remote.has("test:"+k)) accountSaveDraft("test:"+k, tdrafts[k]); });
+  try{
+    for(let n=0;n<localStorage.length;n++){
+      const k=localStorage.key(n); if(!k||!k.startsWith(LS_SHEET)) continue;
+      const id=k.slice(LS_SHEET.length);
+      if(EX[id]&&!remote.has("sheet:"+id)) accountSaveDraft("sheet:"+id, JSON.parse(localStorage.getItem(k)));
+    }
+  }catch(e){}
 }
 
 /* after each pass (called from pass() in app.js) */

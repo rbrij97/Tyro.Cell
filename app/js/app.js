@@ -81,7 +81,7 @@ function saveSheetSoon(){
   _sheetTimer=setTimeout(()=>{
     if(id!==currentExId) return;
     const s=JSON.stringify(cells);
-    if(s!==_sheetLast){ _sheetLast=s; lsSet(LS_SHEET+id, s); }
+    if(s!==_sheetLast){ _sheetLast=s; lsSet(LS_SHEET+id, s); if(typeof accountSaveDraft==="function") accountSaveDraft("sheet:"+id, JSON.parse(s)); }
   },300);
 }
 /* Home dashboard data: the exercise you last opened, and the days you practised
@@ -97,7 +97,7 @@ function streakDays(){
   return n;
 }
 function loadSheet(id){ try{ const s=lsGet(LS_SHEET+id); return s?JSON.parse(s):null; }catch(e){ return null; } }
-function clearSheet(id){ lsDel(LS_SHEET+id); _sheetLast=null; }
+function clearSheet(id){ lsDel(LS_SHEET+id); _sheetLast=null; if(typeof accountSaveDraft==="function") accountSaveDraft("sheet:"+id, null); }
 
 /* ================= ROUTER =================
    Every screen has its own URL, so Back, Forward, Refresh, bookmarks and
@@ -535,10 +535,12 @@ function loadTestDrafts(){ try{ const o=JSON.parse(lsGet(LS_TESTDRAFT)||"{}"); r
 function saveTestDraft(){
   if(!testRun) return;
   const all=loadTestDrafts();
-  all[unitKey(testRun.m)]={ids:testRun.ids,results:testRun.results.map(r=>({id:r.id,ok:r.ok,msg:r.msg}))};
+  const key=unitKey(testRun.m);
+  all[key]={ids:testRun.ids,results:testRun.results.map(r=>({id:r.id,ok:r.ok,msg:r.msg}))};
   lsSet(LS_TESTDRAFT,JSON.stringify(all));
+  if(typeof accountSaveDraft==="function") accountSaveDraft("test:"+key, all[key]);   // signed in: saved to the account too
 }
-function clearTestDraft(m){ const all=loadTestDrafts(); delete all[unitKey(m)]; lsSet(LS_TESTDRAFT,JSON.stringify(all)); }
+function clearTestDraft(m){ const all=loadTestDrafts(); delete all[unitKey(m)]; lsSet(LS_TESTDRAFT,JSON.stringify(all)); if(typeof accountSaveDraft==="function") accountSaveDraft("test:"+unitKey(m), null); }
 function loadTestDraft(m){
   const d=loadTestDrafts()[unitKey(m)];
   if(!d||!Array.isArray(d.ids)||!Array.isArray(d.results)) return null;
