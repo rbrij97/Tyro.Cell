@@ -225,9 +225,15 @@ async function flushDraft(key){
       : await sb.from("drafts").upsert({user_id:acctUser.id,key,data,updated_at:new Date().toISOString()});
     if(r.error) throw r.error;
     syncState="ok";
-  }catch(e){ syncState="error"; }
+  }catch(e){
+    if(!(key in draftPending)) draftPending[key]=data;   // keep it for the retry (unless a newer one is already waiting)
+    syncState="error";
+  }
   renderAcct();
 }
+// back online (or back to the tab): retry anything that failed, and re-merge everything
+addEventListener("online",()=>{ if(sb&&acctUser){ Object.keys(draftPending).forEach(flushDraft); syncAll(); } });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&sb&&acctUser&&syncState==="error") syncAll(); });
 // leaving or hiding the page: send anything still waiting
 addEventListener("pagehide",()=>Object.keys(draftPending).forEach(flushDraft));
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") Object.keys(draftPending).forEach(flushDraft); });

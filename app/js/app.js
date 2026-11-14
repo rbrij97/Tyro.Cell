@@ -75,7 +75,12 @@ function loadDone(){
 }
 let _sheetTimer=null, _sheetLast=null;
 function saveSheetSoon(){
-  if(!PERSIST || !currentExId || testRun) return;
+  if(!PERSIST || !currentExId) return;
+  if(testRun){   // in a test: the current question's sheet travels with the test draft
+    clearTimeout(_sheetTimer);
+    _sheetTimer=setTimeout(()=>{ if(!testRun||testRun.answered) return; testRun.cur={id:currentExId,cells:JSON.parse(JSON.stringify(cells))}; saveTestDraft(); },300);
+    return;
+  }
   const id=currentExId;
   clearTimeout(_sheetTimer);
   _sheetTimer=setTimeout(()=>{
@@ -520,7 +525,7 @@ function startTest(mi){
   currentCourse=c;
   if(testRun&&testRun.m===m) return openTestQuestion();   // already in this test (e.g. tapping T again)
   const d=loadTestDraft(m);
-  if(d){ testRun={mi,m,ids:d.ids,i:d.results.length,results:d.results,answered:null}; return openTestQuestion(); }
+  if(d){ testRun={mi,m,ids:d.ids,i:d.results.length,results:d.results,answered:null,cur:d.cur||null}; return openTestQuestion(); }
   const pool=m.testPool.slice();
   for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
   testRun={mi,m,ids:pool.slice(0,5),i:0,results:[],answered:null};
@@ -537,6 +542,7 @@ function saveTestDraft(){
   const all=loadTestDrafts();
   const key=unitKey(testRun.m);
   all[key]={ids:testRun.ids,results:testRun.results.map(r=>({id:r.id,ok:r.ok,msg:r.msg}))};
+  if(testRun.cur&&!testRun.answered&&testRun.cur.id===testRun.ids[testRun.results.length]) all[key].cur=testRun.cur;
   lsSet(LS_TESTDRAFT,JSON.stringify(all));
   if(typeof accountSaveDraft==="function") accountSaveDraft("test:"+key, all[key]);   // signed in: saved to the account too
 }
@@ -548,13 +554,18 @@ function loadTestDraft(m){
   return d;
 }
 function openTestQuestion(){
-  openEx(testRun.ids[testRun.i],{fresh:true,test:true});
+  const id=testRun.ids[testRun.i];
+  openEx(id,{fresh:true,test:true});
+  // put back what was typed on this question before leaving
+  if(testRun.cur&&testRun.cur.id===id&&testRun.cur.cells){ resetCells(JSON.parse(JSON.stringify(testRun.cur.cells))); renderAll(); }
+  else testRun.cur=null;
   setRoute("/formula/"+unitSlug(testRun.m)+"/test", testRun.m.title+" · Final test");
 }
 function testAnswered(ok,msg){
   if(!testRun||testRun.answered) return;
   testRun.answered={ok,msg};
   testRun.results.push({id:currentExId,ok,msg});
+  testRun.cur=null;
   saveTestDraft();
   if(ok){ passedRefs=targetRefs.slice(); renderAll(); }
   renderBriefFoot(); renderTestDots();
