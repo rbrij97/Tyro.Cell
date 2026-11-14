@@ -150,19 +150,27 @@ async function syncAll(){
     const remote=new Map(p.data.map(r=>[r.exercise_id,r.status]));
     let pulled=0;
     remote.forEach((st,id)=>{
+      // a completed formula (final test passed) is stored as "unit_<slug>"; the score itself stays on the device that took it
+      if(/^unit_[a-z0-9_]+$/.test(id)){
+        const t=testScores[id];
+        if(!t||t.best<PASS_MARK){ testScores[id]={best:PASS_MARK,last:t?t.last:PASS_MARK,at:t?t.at:dayKey()}; pulled++; }
+        return;
+      }
       if(!EX[id]) return;
       if(!doneEx.has(id)){ doneEx.add(id); pulled++; if(st==="assisted") assistedEx.add(id); }
       else if(st==="done") assistedEx.delete(id);
     });
     const push=[...doneEx].filter(id=>EX[id]&&(!remote.has(id)||(remote.get(id)==="assisted"&&!assistedEx.has(id))))
       .map(id=>({user_id:uid,exercise_id:id,status:assistedEx.has(id)?"assisted":"done"}));
+    Object.keys(testScores).filter(k=>/^unit_[a-z0-9_]+$/.test(k)&&testScores[k].best>=PASS_MARK&&!remote.has(k))
+      .forEach(k=>push.push({user_id:uid,exercise_id:k,status:"done"}));
     const rdays=new Set(d.data.map(r=>String(r.day).slice(0,10))), ldays=loadDays();
     const allDays=[...new Set(ldays.concat([...rdays]))].sort();
     lsSet(LS_DAYS,JSON.stringify(allDays.slice(-400)));
     const pushDays=ldays.filter(x=>!rdays.has(x)).map(day=>({user_id:uid,day}));
     if(push.length){ const r=await sb.from("progress").upsert(push); if(r.error) throw r.error; }
     if(pushDays.length){ const r=await sb.from("practice_days").upsert(pushDays); if(r.error) throw r.error; }
-    saveDone(); saveAssisted();
+    saveDone(); saveAssisted(); saveTests();
     syncState="ok"; renderAcct(); refreshAfterSync();
     if(pulled) toast(`Synced: ${pulled} exercise${pulled>1?"s":""} added from your account.`);
   }catch(e){ syncState="error"; renderAcct(); }
@@ -212,10 +220,23 @@ async function accountAfterPass(exId){
   }catch(e){ syncState="error"; }
   renderAcct();
 }
+/* after a passed final test (called from finishTest() in app.js) */
+async function accountAfterTest(m){
+  if(!sb||!acctUser||!unitDone(m)) return;
+  syncState="syncing"; renderAcct();
+  try{
+    const r=await sb.from("progress").upsert({user_id:acctUser.id,exercise_id:unitKey(m),status:"done",updated_at:new Date().toISOString()});
+    if(r.error) throw r.error;
+    const r2=await sb.from("practice_days").upsert({user_id:acctUser.id,day:dayKey()}); if(r2.error) throw r2.error;
+    syncState="ok";
+  }catch(e){ syncState="error"; }
+  renderAcct();
+}
 function refreshAfterSync(){
   const on=v=>document.getElementById("view-"+v).classList.contains("on");
   if(on("home")) renderHome();
   if(on("courses")) renderCourses();
+  if(on("course")&&currentCourse) openCourse(currentCourse.id);
   if(typeof updateStreak==="function") updateStreak();
 }
 

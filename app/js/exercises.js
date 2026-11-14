@@ -1023,55 +1023,67 @@ const EX={
   hint:"COUNTBLANK = 3 (SGA, Tax Rate, Terminal). (10-3)/10 × 100 = 70%."},
 };
 const COURSES=[
- {id:"excel",title:"Excel Formula Fundamentals",level:"Beginner / Intermediate",hours:"~5 hours",prereq:"None",
-  desc:"Every formula from SUM to XLOOKUP, each a short pack of practice cases on real company data — quick drills first, then case studies.",
+ {id:"excel",title:"Excel Formula Fundamentals",level:"Beginner to intermediate",hours:"~6 hours",prereq:"None",
+  desc:"33 formulas in three stages, most-used first. Each one is a short unit: learn it, practise it, pass a short test at 80%.",
+  /* 2026-11-14: ordered by how much finance work and Excel job tests use each formula
+     (research: CFI, FE Training, ICAEW, interview-test guides). Stage 1 = must know,
+     2 = good to know, 3 = extras. Exercise ids never change, so saved progress is safe. */
+  stages:[{n:1,title:"Start here",sub:"The formulas every finance job and Excel test uses."},
+          {n:2,title:"Build on it",sub:"Cleaning exported data, dates and growth rates."},
+          {n:3,title:"Extra practice",sub:"Useful extras, rarely tested. Optional."}],
   modules:[
-   {title:"SUM",ex:["sum","sum_quarterly","sum_weekly","sum_regions_blank","sum_per_month","sum_case_opex","sum_case_portfolio_div","sum_case_subtotal","sum_case_netcash","sum_case_sector"]},
-   {title:"AVERAGE",ex:["avg","avg_us_pe","avg_nifty_pe","avg_ev_ebitda","avg_target_price","avg_jpm_eps","avg_reliance_growth","avg_sector_yield"]},
-   {title:"MIN & MAX",ex:["minmax","max_nifty_high","min_sbi_low","minmax_sensex","max_yield_spread","max_broker","min_worst_eps","minmax_sector","minmax_spread","minmax_drawdown"]},
-   {title:"COUNT & COUNTA",ex:["count","count_reported","counta_coverage"]},
-   {title:"IF",ex:["if","nestedif","if_profit_loss","if_budget_flag","nestedif_rating","nestedif_commission"]},
-   {title:"COUNTIF",ex:["countif","countif_buy","countif_above_pe"]},
-   {title:"SUMIF & SUMIFS",ex:["sumif","sumifs2","sumif_sector_revenue","sumif_positive_cashflow"]},
-   {title:"ROUND",ex:["round","round_eps","round_margin"]},
-   {title:"Text join (&, CONCAT)",ex:["concat","concat_lookup_key","concat_label"]},
-   {title:"Fill handle & relative refs",ex:["rowfill"]},
-   {title:"Dates (DATE, DAYS)",ex:["datediff","today_maturity","days_receivable","days_holding","date_maturity","date_fy_start"]},
-   {title:"VLOOKUP",ex:["vlookup","vlookup_cmp","vlookup_mcap","vlookup_pe","vlookup_rating","vlookup_taxslab","vlookup_dividend"]},
-   {title:"INDEX + MATCH",ex:["indexmatch","idxm_cmp","idxm_mcap","idxm_left","idxm_twoway","idxm_concat_key","idxm_fill"]},
-   {title:"XLOOKUP",ex:["xlookup1","xlookup_cmp","xlookup_notfound","xlookup_reverse","xlookup_target","xlookup_premium","xlookup_upside"]},
-   {title:"IFERROR",ex:["iferror_vlookup","iferror_div","iferror_idxm","iferror_chain"]},
-   {title:"COUNTIFS",ex:["countifs_sector","countifs_screen","countifs_triple"]},
-   {title:"AVERAGEIFS",ex:["avgifs_sector","avgifs_bank_cheap","avgifs_quality"]},
-   {title:"TRIM",ex:["trim_broken_lookup","trim_name_cleanup"]},
-   {title:"LEFT, RIGHT & MID",ex:["left_exchange","right_quarter","left_fy_classify","mid_isin_country","mid_find_ticker"]},
-   {title:"LEN",ex:["len_isin_validate","len_hidden_spaces"]},
-   {title:"FIND",ex:["find_separator"]},
-   {title:"SUBSTITUTE",ex:["sub_indian_number","sub_bloomberg","sub_double_clean"]},
-   {title:"ABS",ex:["abs_variance","abs_tracking_error","abs_flag"]},
-   {title:"AND & OR",ex:["and_loan_eligible","and_quality_screen","or_alert","or_coverage"]},
-   {title:"HLOOKUP",ex:["hlookup_quarter","hlookup_metric","hlookup_dynamic"]},
-   {title:"POWER (CAGR)",ex:["power_fd","power_cagr_revenue","power_cagr_stock","power_target_aum"]},
-   {title:"ROUNDUP & ROUNDDOWN",ex:["roundup_emi","roundup_provision","rounddown_nav","rounddown_bonus"]},
-   {title:"UPPER, LOWER & PROPER",ex:["upper_ticker","upper_vlookup","lower_email","proper_kyc","proper_company"]},
-   {title:"TEXTJOIN",ex:["textjoin_watchlist","textjoin_skip_blanks"]},
-   {title:"YEAR, MONTH & DAY",ex:["year_extract","year_fy","month_extract","month_quarter","day_payment"]},
-   {title:"TEXT",ex:["text_date_label","text_percentage","text_amount"]},
-   {title:"MOD",ex:["mod_quarter_end","mod_installment"]},
-   {title:"INT",ex:["int_lot_size","int_tenure_years"]},
-   {title:"SQRT",ex:["sqrt_annualize"]},
-   {title:"PRODUCT",ex:["product_compound","product_discount"]},
-   {title:"MEDIAN",ex:["median_pe","median_deal"]},
-   {title:"AVERAGEIF",ex:["avgif_sector","avgif_positive"]},
-   {title:"NOT",ex:["not_exclude","not_invert_screen"]},
-   {title:"ISNUMBER & ISBLANK",ex:["isnumber_validate","isblank_mandatory","isblank_default"]},
-   {title:"COUNTBLANK",ex:["countblank_coverage","countblank_completeness"]}]},
+   {title:"SUM",stage:1,family:"Totals and counts",all:["sum","sum_quarterly","sum_weekly","sum_regions_blank","sum_per_month","sum_case_opex","sum_case_portfolio_div","sum_case_subtotal","sum_case_netcash","sum_case_sector"]},
+   {title:"AVERAGE",stage:1,family:"Totals and counts",all:["avg","avg_us_pe","avg_nifty_pe","avg_ev_ebitda","avg_target_price","avg_jpm_eps","avg_reliance_growth","avg_sector_yield"]},
+   {title:"MIN & MAX",stage:1,family:"Totals and counts",all:["minmax","max_nifty_high","min_sbi_low","minmax_sensex","max_yield_spread","max_broker","min_worst_eps","minmax_sector","minmax_spread","minmax_drawdown"]},
+   {title:"Counting",stage:1,family:"Totals and counts",all:["count","count_reported","counta_coverage","countblank_coverage","countblank_completeness"]},
+   {title:"IF",stage:1,family:"Conditions",all:["if","nestedif","if_profit_loss","if_budget_flag","nestedif_rating","nestedif_commission"]},
+   {title:"IFERROR",stage:1,family:"Conditions",all:["iferror_vlookup","iferror_div","iferror_idxm","iferror_chain"]},
+   {title:"SUMIF & SUMIFS",stage:1,family:"Conditions",all:["sumif","sumifs2","sumif_sector_revenue","sumif_positive_cashflow"]},
+   {title:"COUNTIF",stage:1,family:"Conditions",all:["countif","countif_buy","countif_above_pe"]},
+   {title:"COUNTIFS",stage:1,family:"Conditions",all:["countifs_sector","countifs_screen","countifs_triple"]},
+   {title:"VLOOKUP",stage:1,family:"Lookups",all:["vlookup","vlookup_cmp","vlookup_mcap","vlookup_pe","vlookup_rating","vlookup_taxslab","vlookup_dividend"]},
+   {title:"XLOOKUP",stage:1,family:"Lookups",all:["xlookup1","xlookup_cmp","xlookup_notfound","xlookup_reverse","xlookup_target","xlookup_premium","xlookup_upside"]},
+   {title:"INDEX + MATCH",stage:1,family:"Lookups",all:["indexmatch","idxm_cmp","idxm_mcap","idxm_left","idxm_twoway","idxm_concat_key","idxm_fill"]},
+   {title:"ROUND",stage:1,family:"Rounding, dates and references",all:["round","round_eps","round_margin"]},
+   {title:"Dates (DATE, DAYS)",stage:1,family:"Rounding, dates and references",all:["datediff","today_maturity","days_receivable","days_holding","date_maturity","date_fy_start"]},
+   {title:"Fill handle & relative refs",stage:1,family:"Rounding, dates and references",all:["rowfill"]},
+   {title:"AVERAGEIFS",stage:2,family:"Smarter conditions",all:["avgifs_sector","avgifs_bank_cheap","avgifs_quality","avgif_sector","avgif_positive"]},
+   {title:"AND, OR & NOT",stage:2,family:"Smarter conditions",all:["and_loan_eligible","and_quality_screen","or_alert","or_coverage","not_exclude","not_invert_screen"]},
+   {title:"TRIM",stage:2,family:"Clean text",all:["trim_broken_lookup","trim_name_cleanup"]},
+   {title:"Text slicing (LEFT, RIGHT, MID, FIND)",stage:2,family:"Clean text",all:["left_exchange","right_quarter","left_fy_classify","mid_isin_country","mid_find_ticker","find_separator"]},
+   {title:"LEN",stage:2,family:"Clean text",all:["len_isin_validate","len_hidden_spaces"]},
+   {title:"SUBSTITUTE",stage:2,family:"Clean text",all:["sub_indian_number","sub_bloomberg","sub_double_clean"]},
+   {title:"Text join (&, CONCAT)",stage:2,family:"Clean text",all:["concat","concat_lookup_key","concat_label"]},
+   {title:"TEXT",stage:2,family:"Dates and numbers",all:["text_date_label","text_percentage","text_amount"]},
+   {title:"YEAR, MONTH & DAY",stage:2,family:"Dates and numbers",all:["year_extract","year_fy","month_extract","month_quarter","day_payment"]},
+   {title:"ROUNDUP & ROUNDDOWN",stage:2,family:"Dates and numbers",all:["roundup_emi","roundup_provision","rounddown_nav","rounddown_bonus"]},
+   {title:"POWER (CAGR)",stage:2,family:"Dates and numbers",all:["power_fd","power_cagr_revenue","power_cagr_stock","power_target_aum"]},
+   {title:"ABS",stage:2,family:"Dates and numbers",all:["abs_variance","abs_tracking_error","abs_flag"]},
+   {title:"MEDIAN",stage:2,family:"Dates and numbers",all:["median_pe","median_deal"]},
+   {title:"HLOOKUP",stage:3,family:"Extras",all:["hlookup_quarter","hlookup_metric","hlookup_dynamic"]},
+   {title:"UPPER, LOWER & PROPER",stage:3,family:"Extras",all:["upper_ticker","upper_vlookup","lower_email","proper_kyc","proper_company"]},
+   {title:"TEXTJOIN",stage:3,family:"Extras",all:["textjoin_watchlist","textjoin_skip_blanks"]},
+   {title:"Maths helpers (INT, MOD, SQRT, PRODUCT)",stage:3,family:"Extras",all:["int_lot_size","int_tenure_years","mod_quarter_end","mod_installment","sqrt_annualize","product_compound","product_discount"]},
+   {title:"ISNUMBER & ISBLANK",stage:3,family:"Extras",all:["isnumber_validate","isblank_mandatory","isblank_default"]}]},
  {id:"fin",title:"Financial Statements Fundamentals",level:"Beginner / Intermediate",hours:"~2 hours",prereq:"Excel Formula Fundamentals (recommended)",upcoming:true,
   desc:"Income-statement and balance-sheet metrics: gross profit and margin on real Tesla FY2023 figures, expense classification, segment fill-down, working capital.",
   modules:[
    {title:"Income statement",ex:["grossprofit","grossmargin","expenseclass","segmentgp"]},
    {title:"Balance sheet & liquidity",ex:["ncwc","currentratio"]}]},
 ];
+/* Each unit: practice = its easiest exercises (3 when it has 5 or more, 2 when 3–4, else 1),
+   the rest are its final-test pool. A pool smaller than 3 draws from every exercise in the unit.
+   m.ex (practice) is what progress, Next and the outline walk through; m.all is everything. */
+(function(){
+  const rank={easy:0,medium:1,hard:2};
+  COURSES.forEach(c=>c.modules.forEach(m=>{
+    if(!m.all){ m.all=m.ex.slice(); m.test=[]; m.testPool=[]; return; }
+    const sorted=m.all.slice().sort((a,b)=>(rank[EX[a].lvl]??1)-(rank[EX[b].lvl]??1));
+    const n=sorted.length, k=n>=5?3:n>=3?2:1;
+    m.ex=sorted.slice(0,k); m.test=sorted.slice(k);
+    m.testPool=m.test.length>=3?m.test:sorted;
+  }));
+})();
 
 /* ================= FORMULA CATEGORIES & CARD COPY =================
    Drives the course page's formula cards: each module (keyed by its exact
@@ -1088,6 +1100,10 @@ const FORMULA_CATS={
   "Sheet skills":   {fill:"#ECE8E0",ink:"#4A4438",anim:"sheet"}
 };
 const FORMULA_META={
+  "Counting":["Aggregation","Count numbers, filled cells and gaps — data coverage."],
+  "AND, OR & NOT":["Logic & checks","Combine and flip conditions inside an IF."],
+  "Text slicing (LEFT, RIGHT, MID, FIND)":["Text","Cut text apart — tickers, ISINs, delimiters."],
+  "Maths helpers (INT, MOD, SQRT, PRODUCT)":["Maths","Whole numbers, remainders, roots and products."],
   "SUM":["Aggregation","Add up a range — totals, subtotals, net cash flow."],
   "AVERAGE":["Aggregation","Mean of a range — comps P/E, consensus targets."],
   "MIN & MAX":["Aggregation","Highs, lows and spreads — 52-week range, drawdown."],
@@ -1099,7 +1115,7 @@ const FORMULA_META={
   "SUMIF & SUMIFS":["Conditional","Sum rows that meet one or more conditions."],
   "COUNTIFS":["Conditional","Count rows that meet several conditions."],
   "AVERAGEIF":["Conditional","Average rows that meet one condition."],
-  "AVERAGEIFS":["Conditional","Average rows that meet several conditions."],
+  "AVERAGEIFS":["Conditional","Average rows that meet one or more conditions."],
   "IFERROR":["Conditional","Catch #N/A and #DIV/0! with a clean fallback."],
   "VLOOKUP":["Lookup","Pull a value from a table by its first column."],
   "INDEX + MATCH":["Lookup","Look up in any direction, including leftwards."],

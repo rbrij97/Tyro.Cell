@@ -8,6 +8,37 @@ const assistedEx=new Set();   // passed with the solution open (spec P0-14); a c
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 const flatEx=course=>course.modules.flatMap(m=>m.ex);
 const courseDone=course=>flatEx(course).filter(id=>doneEx.has(id)).length;
+const allEx=course=>course.modules.flatMap(m=>m.all||m.ex);
+/* Each formula ("unit") has a readable slug for its URL (#/formula/countifs) and a key
+   for saving its test score and syncing it ("unit_countifs"). */
+const unitSlug=m=>m.title.toLowerCase().replace(/&/g," ").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const unitKey=m=>"unit_"+unitSlug(m).replace(/-/g,"_").slice(0,58);
+function findUnit(slug){
+  for(const c of COURSES.filter(x=>!x.upcoming)){ const mi=c.modules.findIndex(m=>unitSlug(m)===slug); if(mi>=0) return {c,m:c.modules[mi],mi}; }
+  return null;
+}
+/* Final tests: best score per unit; 80% or more = the formula is completed. */
+const LS_TESTS="tyro_tests_v1", PASS_MARK=0.8;
+let testScores={};
+function loadTests(){ try{ const o=JSON.parse(lsGet(LS_TESTS)||"{}"); if(o&&typeof o==="object") testScores=o; }catch(e){} }
+function saveTests(){ lsSet(LS_TESTS, JSON.stringify(testScores)); }
+const unitDone=m=>!!(testScores[unitKey(m)]&&testScores[unitKey(m)].best>=PASS_MARK);
+function unitState(m){
+  const n=m.ex.length, d=m.ex.filter(x=>doneEx.has(x)).length, t=testScores[unitKey(m)];
+  return {n,d,completed:unitDone(m),tried:!!t,best:t?t.best:null,practiceDone:d>=n};
+}
+const testSize=m=>Math.min(5,m.testPool.length);
+/* The one next step in a course: the first unit not completed — its next practice, or its test. */
+function nextStep(c){
+  for(let mi=0;mi<c.modules.length;mi++){
+    const m=c.modules[mi], s=unitState(m); if(s.completed) continue;
+    if(!s.practiceDone){ const id=nextExOf(m.ex); return {type:"practice",m,mi,id,href:"#/practice/"+encodeURIComponent(id)}; }
+    return {type:"test",m,mi,href:"#/formula/"+unitSlug(m)+"/test"};
+  }
+  return {type:"done",m:c.modules[0],mi:0,href:"#/practice/"+encodeURIComponent(c.modules[0].ex[0])};
+}
+// the unit an exercise belongs to, practice or test pool
+function moduleForAny(course,exId){ return course?course.modules.find(m=>(m.all||m.ex).includes(exId))||null:null; }
 function moduleForEx(course,exId){
   if(!course) return null;
   return course.modules.find(m=>m.ex.includes(exId)) || null;
@@ -44,7 +75,7 @@ function loadDone(){
 }
 let _sheetTimer=null, _sheetLast=null;
 function saveSheetSoon(){
-  if(!PERSIST || !currentExId) return;
+  if(!PERSIST || !currentExId || testRun) return;
   const id=currentExId;
   clearTimeout(_sheetTimer);
   _sheetTimer=setTimeout(()=>{
@@ -109,7 +140,7 @@ function showNotFound(){
   show("404");
   setRoute(location.hash.replace(/^#/,"")||"/","Page not found");
 }
-function courseOfEx(exId){ return COURSES.find(c=>flatEx(c).includes(exId))||null; }
+function courseOfEx(exId){ return COURSES.find(c=>allEx(c).includes(exId))||null; }
 function closeOverlays(){ setPanel(); hideFnHelp(); closePhoneCard(); }   // outline dropdown, shortcuts dialog, formula help
 function route(){
   const path=location.hash.replace(/^#/,"")||"/";
@@ -121,7 +152,14 @@ function routeTo(path){
   closeOverlays();
   if(editing) commitEdit(true);
   const p=path.split("/").filter(Boolean).map(decodeURIComponent);
+  if(!(p[0]==="formula"&&p[2]==="test")){ testRun=null; document.getElementById("view-app").classList.remove("testing"); }
   if(p.length===0) return showLanding();
+  if(p[0]==="formula" && p.length>=2 && p.length<=3){
+    const u=findUnit(p[1]);
+    if(u && p.length===2) return openCourse(u.c.id, u.mi, true);
+    if(u && p[2]==="test") return startTest(u.mi);
+    if(u && p[2]==="result") return showTestResult(u.mi);
+  }
   if(p[0]==="courses" && p.length===1) return showCourses();
   if(p[0]==="home" && p.length===1) return showHome();
   if(p[0]==="sandbox" && p.length===1) return openSandbox();
@@ -187,7 +225,7 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
   const live=COURSES.find(c=>!c.upcoming)||COURSES[0];
   const counts={
     functions:Object.keys(FUNCS).length,
-    exercises:flatEx(live).length,   // open exercises only (locked courses excluded)
+    exercises:allEx(live).length,   // open exercises only (locked courses excluded)
     formulas:live.modules.length
   };
   scroller.querySelectorAll("[data-count]").forEach(el=>{
@@ -251,7 +289,7 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
   };
   const cards=Object.keys(FORMULA_CATS).map((k,i)=>{
     const mods=live.modules.filter(m=>formulaMeta(m.title).cat===k); if(!mods.length) return "";
-    const f=FORMULA_CATS[k], ex=mods.reduce((n,m)=>n+m.ex.length,0);
+    const f=FORMULA_CATS[k], ex=mods.reduce((n,m)=>n+(m.all||m.ex).length,0);
     return `<article class="lp2-card">
       <div class="lp2-card-band" style="background:${f.fill};color:${f.ink}">
         <span class="lp2-card-n">${String(i+1).padStart(2,"0")}</span>
@@ -348,11 +386,11 @@ document.querySelectorAll(".nav-scroll").forEach(a=>{
 /* Header progress shown on every "desk" screen: exercises done across live courses. */
 const liveCourses=()=>COURSES.filter(c=>!c.upcoming);
 function updateHeaderProgress(){
-  const total=liveCourses().reduce((n,c)=>n+flatEx(c).length,0);
-  const done=liveCourses().reduce((n,c)=>n+courseDone(c),0);
+  const total=liveCourses().reduce((n,c)=>n+c.modules.length,0);
+  const done=liveCourses().reduce((n,c)=>n+c.modules.filter(unitDone).length,0);
   const pct=total?Math.round(done/total*100):0;
   document.querySelectorAll(".dk-progfill").forEach(el=>{ el.style.width=pct+"%"; });
-  document.querySelectorAll(".dk-progtext").forEach(el=>{ el.innerHTML="<b>"+done+"</b><span class=\"dk-of\"> / "+total+"</span><span class=\"dk-done\"> done</span>"; });
+  document.querySelectorAll(".dk-progtext").forEach(el=>{ el.innerHTML="<b>"+done+"</b><span class=\"dk-of\"> / "+total+"</span><span class=\"dk-done\"> completed</span>"; el.title=done+" of "+total+" formulas completed"; });
   const st=streakDays();
   document.querySelectorAll(".dk-streak").forEach(el=>{ el.hidden=!st; el.innerHTML=FLAME_SVG+"<span>"+st+(st===1?" day":" days")+"</span>"; el.title=st+"-day practice streak"; });
 }
@@ -391,129 +429,168 @@ function renderCourses(){
   }).join("");
 }
 
-/* Course page: formula cards with search, "unsolved only", sort and category filters.
-   Filter state survives re-renders within a course and resets when you switch course. */
-const courseUI={courseId:null,cat:"All",q:"",unsolved:false,sort:"course",gen:0};
-function openCourse(id, soloMi){
+/* Course page: one obvious next step, the path through 3 stages, then each stage's
+   formulas. Stage 1 in family cards (ring, state, badge); stages 2 and 3 as chips. */
+const RING_C=94.2;
+function unitView(m){
+  const s=unitState(m), slug=unitSlug(m), pct=s.best!=null?Math.round(s.best*100):null;
+  const practiceHref="#/practice/"+encodeURIComponent(nextExOf(m.ex)), testHref="#/formula/"+slug+"/test";
+  if(s.completed) return {s,cls:"done",ring:1,line:"Completed · test "+pct+"%",badge:"Test "+pct+"% ✓",href:"#/practice/"+encodeURIComponent(m.ex[0])};
+  if(s.practiceDone) return {s,cls:"test",ring:.9,line:s.tried?"Test "+pct+"% · 80% needed":"Practice done · test ready",badge:s.tried?"Retake test":"Take test",href:testHref};
+  if(s.d>0) return {s,cls:"prog",ring:.9*s.d/s.n,line:"Practice "+(s.d+1)+" of "+s.n,badge:(s.n-s.d)+" left",href:practiceHref};
+  return {s,cls:"new",ring:0,line:s.n+" practice + "+testSize(m)+"-question test",badge:"Start",href:practiceHref};
+}
+const ringSVG=(frac,cls,size)=>'<svg class="cs-ring '+cls+'" width="'+size+'" height="'+size+'" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="tr"/><circle cx="18" cy="18" r="15" class="fg" stroke-dasharray="'+RING_C+'" stroke-dashoffset="'+(RING_C*(1-frac)).toFixed(1)+'" transform="rotate(-90 18 18)"/></svg>';
+function openCourse(id, soloMi, byFormula){
   const c=COURSES.find(x=>x.id===id);
   if(!c) return showNotFound();
-  if(courseUI.courseId!==id||soloMi!=null) Object.assign(courseUI,{courseId:id,cat:"All",q:"",unsolved:false,sort:"course"});
   currentCourse=c;
   updateHeaderProgress();
-  const all=flatEx(c), total=all.length, done=courseDone(c), pct=Math.round(done/total*100);
-  const nextId=nextExOf(all), nextMod=moduleForEx(c,nextId)||c.modules[0];
-  const cta=done===0?"Start: "+nextMod.title
-          :done===total?"Review the course"
-          :"Continue: "+nextMod.title+" "+(nextMod.ex.indexOf(nextId)+1)+" of "+nextMod.ex.length;
+  const units=c.modules, total=units.length, completed=units.filter(unitDone).length;
+  const ns=nextStep(c), nsState=unitState(ns.m);
+  const stages=c.stages||[{n:1,title:"Formulas",sub:""}];
+  const stageOf=m=>m.stage||1;
+  const curStage=ns.type==="done"?0:stageOf(ns.m);
+  // up next card
+  let upTitle, upSub, upKicker, upCta;
+  if(ns.type==="practice"){ const e=EX[ns.id]; upKicker="Up next · practice"; upTitle=ns.m.title+" · Practice "+(ns.m.ex.indexOf(ns.id)+1)+" of "+ns.m.ex.length; upSub=shortTitle(e.title); upCta=completed||doneEx.size?"Continue →":"Start →"; }
+  else if(ns.type==="test"){ upKicker="Up next · final test"; upTitle=ns.m.title+" · Final test"; upSub=testSize(ns.m)+" questions · 80% to pass · no hints"; upCta="Start the test →"; }
+  else { upKicker="Course completed"; upTitle="Every formula completed"; upSub="Review any formula, or retake a test to beat your score."; upCta="Review →"; }
+  const path=stages.map(st=>{
+    const us=units.filter(m=>stageOf(m)===st.n), dn=us.filter(unitDone).length, here=st.n===curStage;
+    return `<a class="cs-step${here?" here":""}${dn===us.length?" full":""}" href="#cs-stage-${st.n}">
+      <span class="num">${dn===us.length?"✓":st.n}</span>
+      <span class="txt"><b>${esc(st.title)}</b><span>${dn} of ${us.length} completed${here?" · you are here":""}</span></span></a>`;
+  }).join("");
+  const row=(m)=>{ const v=unitView(m), meta=formulaMeta(m.title);
+    return `<a class="cs-row ${v.cls}" href="${v.href}" data-slug="${unitSlug(m)}" aria-label="${esc(m.title)}: ${esc(v.line)}">
+      ${ringSVG(v.ring,v.cls,30)}
+      <span class="cs-name"><b>${esc(m.title)}</b><span>${esc(v.line)}</span></span>
+      <span class="cs-badge ${v.cls}">${esc(v.badge)}</span></a>`; };
+  const chip=(m)=>{ const v=unitView(m);
+    return `<a class="cs-chip ${v.cls}" href="${v.href}" data-slug="${unitSlug(m)}" title="${esc(m.title)}: ${esc(v.line)}">${v.cls==="done"?'<span class="tick" aria-hidden="true">✓</span>':v.cls==="new"?"":ringSVG(v.ring,v.cls,16)}${esc(m.title)}</a>`; };
+  const stageHTML=stages.map(st=>{
+    const us=units.filter(m=>stageOf(m)===st.n); if(!us.length) return "";
+    let body;
+    if(st.n===1){
+      const fams=[...new Set(us.map(m=>m.family||"Formulas"))];
+      body=`<div class="cs-fams">${fams.map(f=>{
+        const fu=us.filter(m=>(m.family||"Formulas")===f), meta=formulaMeta(fu[0].title), dn=fu.filter(unitDone).length;
+        return `<div class="cs-fam"><div class="cs-fam-head" style="background:${meta.fill};color:${meta.ink}"><b>${esc(f)}</b><span>${dn} of ${fu.length} completed</span></div>${fu.map(row).join("")}</div>`;
+      }).join("")}</div>`;
+    } else body=`<div class="cs-chips">${us.map(chip).join("")}</div>`;
+    return `<section class="cs-stage" id="cs-stage-${st.n}">
+      <div class="cs-stage-head"><h2>${st.n} · ${esc(st.title)}</h2><span>${esc(st.sub||"")}</span></div>${body}</section>`;
+  }).join("");
   const detail=document.getElementById("coursedetail");
   detail.innerHTML=`
-    <section class="dk-chead dk-enter">
-      <div class="dk-chead-main">
+    <section class="cs-top dk-enter">
+      <div class="cs-intro">
         <div class="dk-crumb"><a href="#/courses">Courses</a><span aria-hidden="true">/</span><span class="dk-tag">${courseNum(c)}</span><span>${esc(c.level)} · ${esc(c.hours)}</span></div>
         <h1 class="dk-h1">${hlLastWord(c.title)}</h1>
         <p class="dk-sub">${esc(c.desc)}</p>
+        <div class="cs-overall"><span class="dk-bar"><span class="dk-fill" style="width:${Math.round(completed/total*100)}%"></span></span><b>${completed} of ${total} completed</b></div>
       </div>
-      <div class="dk-chead-side">
-        <div class="dk-bigpct"><b>${pct}%</b><span class="dk-mono">${done} / ${total} exercises</span></div>
-        <div class="dk-bar"><div class="dk-fill" style="width:${pct}%"></div></div>
-        <a class="dk-btn" id="courseStart" href="#/practice/${encodeURIComponent(nextId)}">${esc(cta)} →</a>
-      </div>
+      <a class="cs-up" href="${ns.href}" id="courseStart">
+        <span class="k">${esc(upKicker)}</span>
+        <span class="t">${esc(upTitle)}</span>
+        <span class="s">${esc(upSub)}</span>
+        <span class="b">${esc(upCta)}</span>
+      </a>
     </section>
-    <div class="dk-toolbar">
-      <label class="dk-search">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#57524A" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-        <input type="search" id="fq" aria-label="Search formulas" placeholder="Search formulas — try “lookup” or “CAGR”" autocomplete="off">
-      </label>
-      <button class="dk-toggle" id="funsolved" aria-pressed="false"><span class="box" aria-hidden="true"></span>Unsolved only</button>
-      <label class="dk-sortlabel">Sort
-        <select id="fsort">
-          <option value="course">Course order</option>
-          <option value="easy">Easiest first</option>
-          <option value="hard">Hardest first</option>
-          <option value="progress">Most progress</option>
-        </select>
-      </label>
-    </div>
-    <div class="dk-filters" id="ffilters" role="group" aria-label="Filter by category"></div>
-    <div class="dk-mono" id="fcount" aria-live="polite"></div>
-    <div class="dk-empty" id="fempty" hidden><b>No formula matches that.</b>Try a function name like SUMIF, or a use like “dates”.</div>
-    <div class="dk-grid" id="fgrid"></div>
-    <div class="dk-legend"><span>Each square is one exercise:</span><span><i style="background:#2FB36B"></i>Easy</span><span><i style="background:#F2A516"></i>Medium</span><span><i style="background:#E2483D"></i>Hard</span></div>`;
-
-  const q=detail.querySelector("#fq"), un=detail.querySelector("#funsolved"), so=detail.querySelector("#fsort");
-  q.value=courseUI.q; so.value=courseUI.sort; un.setAttribute("aria-pressed",String(courseUI.unsolved));
-  un.querySelector(".box").textContent=courseUI.unsolved?"✓":"";
-  q.addEventListener("input",()=>{ courseUI.q=q.value; renderFormulaCards(c); });
-  so.addEventListener("change",()=>{ courseUI.sort=so.value; renderFormulaCards(c); });
-  un.addEventListener("click",()=>{
-    courseUI.unsolved=!courseUI.unsolved;
-    un.setAttribute("aria-pressed",String(courseUI.unsolved));
-    un.querySelector(".box").textContent=courseUI.unsolved?"✓":"";
-    renderFormulaCards(c);
-  });
-  renderFormulaCards(c);
-
+    <nav class="cs-path" aria-label="Your path">${path}</nav>
+    ${stageHTML}`;
   show("course");
   detail.parentElement.scrollTop=0;
-  // #/course/<id>/<n> points at formula n: bring its card into view and flash it.
   if(soloMi!=null){
-    const card=detail.querySelector('.dk-fcard[data-mi="'+soloMi+'"]');
-    if(card){ card.scrollIntoView({block:"center"}); card.classList.add("flash"); }
+    const el=detail.querySelector('[data-slug="'+unitSlug(units[soloMi])+'"]');
+    if(el){ el.scrollIntoView({block:"center"}); el.classList.add("flash"); }
   }
-  setRoute("/course/"+c.id+(soloMi!=null?"/"+(soloMi+1):""),
-           soloMi!=null ? c.modules[soloMi].title+" · "+c.title : c.title);
+  setRoute(byFormula&&soloMi!=null?"/formula/"+unitSlug(units[soloMi]):"/course/"+c.id+(soloMi!=null?"/"+(soloMi+1):""),
+           soloMi!=null ? units[soloMi].title+" · "+c.title : c.title);
 }
 
-function renderFormulaCards(c){
-  const LV={easy:1,medium:2,hard:3};
-  const rows=c.modules.map((m,mi)=>{
-    const meta=formulaMeta(m.title), total=m.ex.length, done=m.ex.filter(x=>doneEx.has(x)).length;
-    const lv=m.ex.map(x=>EX[x].lvl);
-    return {m,mi,meta,total,done,lv,avg:lv.reduce((s,l)=>s+(LV[l]||2),0)/lv.length};
-  });
-  const q=courseUI.q.trim().toLowerCase();
-  const base=rows.filter(r=>(!q||(r.m.title+" "+r.meta.cat+" "+r.meta.purpose).toLowerCase().includes(q))
-                          &&(!courseUI.unsolved||r.done<r.total));
-  const cats=["All",...Object.keys(FORMULA_CATS).filter(k=>rows.some(r=>r.meta.cat===k))];
-  if(!cats.includes(courseUI.cat)) courseUI.cat="All";
-  const f=document.getElementById("ffilters");
-  f.innerHTML=cats.map(k=>{
-    const n=k==="All"?base.length:base.filter(r=>r.meta.cat===k).length;
-    const col=k==="All"?"background:#fff;color:#171512;border-color:#DDD5C5":`background:${FORMULA_CATS[k].fill};color:${FORMULA_CATS[k].ink}`;
-    return `<button class="dk-filter" data-cat="${esc(k)}" aria-pressed="${k===courseUI.cat}" style="${col}">${esc(k)}<span class="n">${n}</span></button>`;
-  }).join("");
-  f.querySelectorAll(".dk-filter").forEach(b=>b.onclick=()=>{ courseUI.cat=b.dataset.cat; renderFormulaCards(c); });
-
-  let list=base.filter(r=>courseUI.cat==="All"||r.meta.cat===courseUI.cat);
-  if(courseUI.sort==="easy") list=list.slice().sort((a,b)=>a.avg-b.avg);
-  if(courseUI.sort==="hard") list=list.slice().sort((a,b)=>b.avg-a.avg);
-  if(courseUI.sort==="progress") list=list.slice().sort((a,b)=>b.done/b.total-a.done/a.total);
-
-  document.getElementById("fcount").textContent="Showing "+list.length+" of "+rows.length+" formulas";
-  document.getElementById("fempty").hidden=list.length>0;
-  const g=document.getElementById("fgrid");
-  courseUI.gen++;
-  g.className="dk-grid "+(courseUI.gen%2?"ga":"gb");   // swapping restarts the card stagger
-  g.innerHTML=list.map(r=>{
-    const st=r.done===r.total?["done","Done"]:r.done>0?["prog","In progress"]:["new","Not started"];
-    const counts={easy:0,medium:0,hard:0}; r.lv.forEach(l=>counts[l]=(counts[l]||0)+1);
-    const mixLabel=r.total+" exercises: "+["easy","medium","hard"].filter(k=>counts[k]).map(k=>counts[k]+" "+k).join(", ");
-    const barCol=st[0]==="done"?"#0A0A0A":r.meta.ink;
-    return `<a class="dk-fcard dk-lift" data-mi="${r.mi}" href="#/practice/${encodeURIComponent(nextExOf(r.m.ex))}" aria-label="${esc(r.m.title)} — ${st[1]}, ${r.done} of ${r.total} done">
-      <div class="dk-band" style="background:${r.meta.fill};color:${r.meta.ink}">
-        <div class="col"><span class="nm">${esc(r.m.title)}</span><span class="dk-status ${st[0]}">${st[1]}</span></div>
-        ${miniSheet(r.meta)}
-      </div>
-      <div class="dk-fbody">
-        <span class="dk-fcat" style="color:${r.meta.ink}">${esc(r.meta.cat)}</span>
-        <span class="dk-fpurpose">${esc(r.meta.purpose)}</span>
-        <div class="dk-ffoot">
-          <span class="dk-mix" role="img" aria-label="${mixLabel}">${r.lv.map(l=>'<i class="'+l+'"></i>').join("")}</span>
-          <span class="dk-fcount">${r.done} / ${r.total}</span>
-        </div>
-        <div class="dk-fbar"><div class="dk-fill" style="width:${Math.round(r.done/r.total*100)}%;background:${barCol}"></div></div>
-      </div></a>`;
-  }).join("");
+/* ================= FINAL TEST =================
+   #/formula/<slug>/test: up to 5 questions drawn from the unit's test pool, in a new
+   order each attempt; no hints, one check per question. 80% or more completes the
+   formula. The result lives at #/formula/<slug>/result. */
+let testRun=null, lastTest=null;
+function startTest(mi){
+  const c=COURSES.find(x=>!x.upcoming), m=c&&c.modules[mi]; if(!m) return showNotFound();
+  currentCourse=c;
+  const pool=m.testPool.slice();
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  testRun={mi,m,ids:pool.slice(0,5),i:0,results:[],answered:null};
+  openTestQuestion();
+}
+function openTestQuestion(){
+  openEx(testRun.ids[testRun.i],{fresh:true,test:true});
+  setRoute("/formula/"+unitSlug(testRun.m)+"/test", testRun.m.title+" · Final test");
+}
+function testAnswered(ok,msg){
+  if(!testRun||testRun.answered) return;
+  testRun.answered={ok,msg};
+  testRun.results.push({id:currentExId,ok,msg});
+  if(ok){ passedRefs=targetRefs.slice(); renderAll(); }
+  renderBriefFoot(); renderTestDots();
+  setTimeout(()=>{ const n=document.querySelector("#briefFoot .ws-primary"); if(n&&!isPhone()) n.focus({preventScroll:true}); },0);
+}
+function nextTestQuestion(){
+  if(!testRun) return;
+  testRun.i++; testRun.answered=null;
+  if(testRun.i>=testRun.ids.length) return finishTest();
+  openTestQuestion();
+}
+function finishTest(){
+  const r=testRun, ok=r.results.filter(x=>x.ok).length, score=ok/r.ids.length, key=unitKey(r.m), prev=testScores[key];
+  testScores[key]={best:Math.max(score,prev?prev.best:0),last:score,at:dayKey()};
+  saveTests(); recordPracticeDay();
+  lastTest={mi:r.mi,ok,n:r.ids.length,score,results:r.results,firstPass:score>=PASS_MARK&&!(prev&&prev.best>=PASS_MARK)};
+  testRun=null;
+  document.getElementById("view-app").classList.remove("testing");
+  if(typeof accountAfterTest==="function") accountAfterTest(r.m);
+  showTestResult(r.mi);
+}
+function renderTestDots(){
+  const el=document.getElementById("ws-testdots"); if(!el) return;
+  if(!testRun){ el.innerHTML=""; return; }
+  el.innerHTML=testRun.ids.map((id,i)=>{
+    const r=testRun.results[i], cls=r?(r.ok?"ok":"bad"):i===testRun.i?"cur":"";
+    return `<span class="${cls}">${r?(r.ok?"✓":"✕"):i+1}</span>`;
+  }).join("")+`<em>Pass: ${Math.ceil(PASS_MARK*testRun.ids.length)} of ${testRun.ids.length}</em>`;
+}
+function showTestResult(mi){
+  const c=COURSES.find(x=>!x.upcoming), m=c&&c.modules[mi]; if(!m) return showNotFound();
+  currentCourse=c;
+  const slug=unitSlug(m), t=testScores[unitKey(m)], L=lastTest&&lastTest.mi===mi?lastTest:null;
+  const score=L?L.score:t?t.last:null, passed=score!=null&&score>=PASS_MARK;
+  const meta=formulaMeta(m.title), units=c.modules, completed=units.filter(unitDone).length;
+  const ns=nextStep(c), streak=streakDays();
+  const bars=L?L.results.map(r=>`<span class="${r.ok?"ok":"bad"}"></span>`).join(""):"";
+  const missed=L?L.results.filter(r=>!r.ok):[];
+  const missedHTML=missed.map(r=>`<div class="tr-miss"><span class="x" aria-hidden="true">✕</span><div><b>${esc(shortTitle(EX[r.id].title))}</b><div>${r.msg}</div></div></div>`).join("");
+  const nextLabel=ns.type==="practice"?ns.m.title:ns.type==="test"?ns.m.title+" test":"Back to the course";
+  document.getElementById("resultMain").innerHTML=`
+    <a class="tr-brand" href="#/course/${c.id}">← ${esc(c.title)}</a>
+    <div class="tr-card ${passed?"pass":"fail"}">
+      <span class="tr-kicker" style="color:${meta.ink}">${esc(meta.cat)} · formula ${mi+1} of ${units.length}</span>
+      <h1>${passed?`${esc(m.title)} <span class="dk-hl">completed</span>`:score==null?esc(m.title)+" test":`${esc(m.title)}: <span class="dk-hl">not yet</span>`}</h1>
+      ${score!=null?`<div class="tr-score"><b>${L?L.ok+" / "+L.n:Math.round(score*100)+"%"}</b><span class="${passed?"ok":"bad"}">${Math.round(score*100)}% · ${passed?"passed":"80% needed"}</span></div>`:""}
+      ${bars?`<div class="tr-bars" role="img" aria-label="${L.ok} of ${L.n} correct">${bars}</div>`:""}
+      ${passed?`<div class="tr-stamp" aria-hidden="true">TYRO<br>CELL<br>✓ ${Math.round(score*100)}%</div>`:""}
+    </div>
+    ${missedHTML?`<div class="tr-misses"><h2>${missed.length===1?"One to look at again":"To look at again"}</h2>${missedHTML}</div>`:""}
+    <div class="tr-actions">
+      ${passed
+        ?`<a class="tr-next" href="${ns.href}"><span>${ns.type==="done"?"All formulas completed":"Up next"}</span><b>${esc(nextLabel)} →</b></a>`
+        :`<a class="tr-next" href="#/formula/${slug}/test"><span>Ready again?</span><b>Retake the test →</b></a>
+          <a class="tr-alt" href="#/practice/${encodeURIComponent(m.ex[0])}">Practise again</a>`}
+      <a class="tr-alt" href="#/course/${c.id}">Back to course</a>
+    </div>
+    <div class="tr-status">${FLAME_SVG}<b>${streak}-day streak</b><span>·</span><span><b>${completed} of ${units.length}</b> formulas completed</span></div>`;
+  show("result");
+  document.querySelector("#view-result .pagescroll").scrollTop=0;
+  setRoute("/formula/"+slug+"/result", m.title+" · Test result");
 }
 
 /* ================= HOME DASHBOARD =================
@@ -579,7 +656,7 @@ function renderHome(){
     return `<span class="hm-day"><span class="box ${did?"did":today?"today":future?"future":""}">${did?"✓":""}</span><span class="lab">${lab}</span></span>`;
   }).join("");
   const mods=c.modules.map(m=>({m,meta:formulaMeta(m.title),done:m.ex.filter(x=>doneEx.has(x)).length,total:m.ex.length}));
-  const mastered=mods.filter(x=>x.done===x.total), inprog=mods.filter(x=>x.done>0&&x.done<x.total);
+  const mastered=mods.filter(x=>unitDone(x.m)), inprog=mods.filter(x=>x.done>0&&!unitDone(x.m));
   const chip=(x,label)=>`<span class="hm-chip" style="background:${x.meta.fill};color:${x.meta.ink}">${esc(label)}</span>`;
   const chipList=(arr,fmt)=>arr.slice(0,4).map(x=>chip(x,fmt(x))).join("")+(arr.length>4?`<span class="hm-more">+${arr.length-4} more</span>`:"");
   const pct=Math.round(done/total*100);
@@ -608,8 +685,21 @@ function renderHome(){
       <span class="hm-bar"><span class="dk-fill" style="width:${Math.round(d/t*100)}%;background:${f.ink}"></span></span></a>`;
   }).join("");
 
+  const hs=nextStep(c);
+  const testHero=hs.type==="test"?`<section class="hm-continue-wrap dk-enter">
+      <h1 class="dk-h1">Ready for your <span class="dk-hl">${esc(hs.m.title)} test?</span></h1>
+      <div class="hm-continue">
+        <div class="hm-continue-main">
+          <div class="hm-meta"><span class="hm-fn">${esc(hs.m.title)}</span><span class="dk-mono">Practice done</span></div>
+          <h2>Final test · ${testSize(hs.m)} questions</h2>
+          <p>No hints, one check per question. Score 80% or more to complete ${esc(hs.m.title)} and move on.</p>
+          <div class="hm-cta"><a class="dk-btn" href="${hs.href}">Start the test →</a></div>
+        </div>
+        ${sheetPreview(EX[hs.m.ex[0]],null)}
+      </div>
+    </section>`:null;
   el.innerHTML=`
-    <section class="hm-continue-wrap dk-enter">
+    ${testHero||`<section class="hm-continue-wrap dk-enter">
       <h1 class="dk-h1">${heading}</h1>
       <div class="hm-continue">
         <div class="hm-continue-main">
@@ -621,7 +711,7 @@ function renderHome(){
         </div>
         ${sheetPreview(ex,savedRaw)}
       </div>
-    </section>
+    </section>`}
     <section aria-labelledby="hm-prog">
       <h2 class="hm-h2" id="hm-prog">Your progress</h2>
       ${typeof acctStatusHTML==="function"?acctStatusHTML():""}
@@ -630,8 +720,8 @@ function renderHome(){
           <div class="hm-week" role="img" aria-label="This week: practised on ${[...days].filter(k=>k>=dayKey(monday)).length} days">${week}</div></div>
         <div class="hm-tile"><span class="lbl">Exercises completed</span><span class="big">${done}<small> / ${total}</small></span>
           <span class="hm-bar"><span class="dk-fill" style="width:${pct}%;background:#0A0A0A"></span></span></div>
-        <div class="hm-tile"><span class="lbl">Formulas mastered</span><span class="big">${mastered.length}<small> / ${mods.length}</small></span>
-          <span class="hm-chips">${mastered.length?chipList(mastered,x=>x.m.title):`<span class="hm-empty">Finish every exercise in a formula to master it.</span>`}</span></div>
+        <div class="hm-tile"><span class="lbl">Formulas completed</span><span class="big">${mastered.length}<small> / ${mods.length}</small></span>
+          <span class="hm-chips">${mastered.length?chipList(mastered,x=>x.m.title):`<span class="hm-empty">Pass a formula's final test at 80% to complete it.</span>`}</span></div>
         <div class="hm-tile"><span class="lbl">In progress</span><span class="big">${inprog.length}</span>
           <span class="hm-chips">${inprog.length?chipList(inprog,x=>x.m.title+" "+x.done+"/"+x.total):`<span class="hm-empty">Nothing half-done.</span>`}</span></div>
       </div>
@@ -646,7 +736,6 @@ function renderHome(){
     </section>
     <footer class="dk-footer">Made with <span class="dk-heart">♥</span> in Amdavad · <a href="https://www.linkedin.com/in/rbrij97" target="_blank" rel="noopener">LinkedIn</a> · <a href="/app/privacy.html">Privacy</a> · <a href="/app/terms.html">Terms</a> · <span class="ft-tm">Not affiliated with Microsoft. Excel is a trademark of Microsoft Corporation.</span></footer>`;
   // a category tile opens the course page filtered to that category
-  el.querySelectorAll(".hm-cat").forEach(a=>a.addEventListener("click",()=>{ Object.assign(courseUI,{courseId:c.id,cat:a.dataset.cat,q:"",unsolved:false,sort:"course"}); }));
 }
 
 /* ================= WORKSPACE ================= */
@@ -686,8 +775,11 @@ const shortTitle=t=>{
    one; pass {fresh:true} to start from the original data (Reset, Repeat). */
 function openEx(exId, opts){
   const ex=EX[exId]; if(!ex) return showNotFound();
-  if(!currentCourse || !flatEx(currentCourse).includes(exId)) currentCourse=courseOfEx(exId);
-  currentEx=ex; currentExId=exId; lsSet(LS_LAST, exId);
+  const testing=!!(opts&&opts.test&&testRun);
+  if(!currentCourse || !allEx(currentCourse).includes(exId)) currentCourse=courseOfEx(exId);
+  currentEx=ex; currentExId=exId;
+  if(!testing) lsSet(LS_LAST, exId);
+  document.getElementById("view-app").classList.toggle("testing",testing);
   hintViewed = false; solutionClickCount = 0; checkAttempts = 0; briefResult = null;
   clearTimeout(_sheetTimer);
   if(opts&&opts.fresh) clearSheet(exId);
@@ -706,15 +798,17 @@ function openEx(exId, opts){
 
   const P=exPlace(exId), mod=P.mod;
   const crumb=document.getElementById("ws-crumb");
-  crumb.textContent = mod ? mod.title : shortTitle(ex.title);
-  if(mod){ const m=formulaMeta(mod.title); crumb.style.background=m.fill; crumb.style.color=m.ink; } else crumb.removeAttribute("style");
+  const umod=testing?testRun.m:(mod||moduleForAny(currentCourse,exId));
+  crumb.textContent = testing ? "Final test · "+umod.title : umod ? umod.title : shortTitle(ex.title);
+  if(umod){ const m=formulaMeta(umod.title); crumb.style.background=m.fill; crumb.style.color=m.ink; } else crumb.removeAttribute("style");
   const showCourse=!!currentCourse;
   document.getElementById("ws-sep2").style.display = showCourse?"":"none";
   document.getElementById("ws-sep3").style.display = "";
   const wc=document.getElementById("ws-course");
   wc.style.display = showCourse?"":"none";
   if(showCourse){ wc.textContent=currentCourse.title; wc.setAttribute("href","#/course/"+currentCourse.id); }
-  document.getElementById("ws-pager").style.display="";
+  document.getElementById("ws-pager").style.display=testing?"none":"";
+  renderTestDots();
   document.getElementById("ws-pos").innerHTML = P.pos+" of "+P.of+" <span class=\"ws-caret\" aria-hidden=\"true\">▾</span>";
   document.getElementById("btnPrev").disabled = !P.prev;
   document.getElementById("btnNext").disabled = !P.next;
@@ -722,9 +816,11 @@ function openEx(exId, opts){
   updateStreak();
   renderConcept(ex);
   renderOutline();
+  renderSide(exId);
   renderAll();
   show("app");
   positionSelBox(); positionFillHandle();
+  if(testing){ closePhoneCard(); return; }   // the test sets its own address (#/formula/<slug>/test)
   setRoute("/practice/"+exId, (mod?mod.title+" — ":"")+shortTitle(ex.title));
   phoneAfterOpen(exId);   // phones: case studies first show the "bigger screen" card (js/phone.js)
   // the guided tour points at desktop controls, so phones skip it
@@ -737,6 +833,7 @@ let briefMini = false;             // phones: task folded to its title line ("Hi
 let briefResult = null;            // {type:"ok"|"bad", msg, newlyDone, formulaDone}
 const LEVEL_LABEL={easy:"Easy",medium:"Medium",hard:"Hard"};
 function renderConcept(ex){
+  if(testRun) return renderTestBrief(ex);
   const cp=document.getElementById("concept");
   cp.classList.add("on"); cp.classList.toggle("mini",briefMini);
   const P=exPlace(currentExId), mod=P.mod;
@@ -768,24 +865,22 @@ function renderConcept(ex){
 }
 function renderBriefFoot(){
   const foot=document.getElementById("briefFoot"); if(!foot) return;
+  if(testRun) return renderTestFoot(foot);
   const R=briefResult, P=exPlace(currentExId);
   let html="";
-  if(R&&R.type==="ok"&&R.formulaDone&&P.mod){
-    const m=formulaMeta(P.mod.title), lv={easy:0,medium:0,hard:0};
-    P.mod.ex.forEach(x=>{ lv[EX[x].lvl]=(lv[EX[x].lvl]||0)+1; });
-    const nextMod=P.course.modules[P.mi+1];
-    html+=`<div class="ws-cert" role="status">
-      <div class="ws-cert-top"><span class="ws-cert-cat" style="background:${m.fill};color:${m.ink}">${esc(m.cat)}</span><span class="dk-mono">Formula ${P.mi+1} of ${P.course.modules.length}</span></div>
-      <div class="ws-cert-title">${esc(P.mod.title)} <span class="ws-cert-hl">mastered</span></div>
-      <div class="ws-cert-ticks" role="img" aria-label="All ${P.mod.ex.length} exercises passed">${P.mod.ex.map(()=>"<i>✓</i>").join("")}</div>
-      <div class="ws-cert-sum">${P.mod.ex.length} exercises · ${["easy","medium","hard"].filter(k=>lv[k]).map(k=>lv[k]+" "+k).join(", ")}</div>
-      <span class="ws-cert-stamp" aria-hidden="true">TYRO<br>CELL<br>✓</span>
+  const unitReady=R&&R.type==="ok"&&P.mod&&unitState(P.mod).practiceDone&&!unitDone(P.mod);
+  if(unitReady){
+    html+=`<div class="ws-ready" role="status">
+      <span class="ws-ready-k">Practice done</span>
+      <b>Ready for the ${esc(P.mod.title)} test?</b>
+      <span>${testSize(P.mod)} questions · no hints · 80% to pass</span>
     </div>
     ${R.autoNote||""}
     <div class="ws-actions">
-      ${nextMod?`<a class="ws-primary" href="#/practice/${encodeURIComponent(nextExOf(nextMod.ex))}">Next: ${esc(nextMod.title)} →</a>`:`<a class="ws-primary" href="#/course/${P.course.id}">Back to the course →</a>`}
-      <a class="ws-secondary" href="#/course/${P.course?P.course.id:""}">All formulas</a>
-    </div>`;
+      <a class="ws-primary" href="#/formula/${unitSlug(P.mod)}/test">Start the test →</a>
+      <button class="ws-secondary" data-act="repeat">Repeat</button>
+    </div>
+    <div id="resultCard" class="result-card ok ws-sr">${R.msg}</div>`;
   } else if(R&&R.type==="ok"){
     html+=`<div id="resultCard" class="result-card ok ws-res" role="status"><span class="ws-res-icon" aria-hidden="true">✓</span><div><b>Correct — nicely done.</b><div class="ws-res-msg">${R.msg}</div></div></div>
     <div class="ws-actions">
@@ -796,8 +891,7 @@ function renderBriefFoot(){
     if(R&&R.type==="bad") html+=`<div id="resultCard" class="result-card bad ws-res" role="status"><span class="ws-res-icon" aria-hidden="true">✕</span><div><b>Not quite.</b><div class="ws-res-msg">${R.msg}</div></div></div>`;
     html+=`<button class="ws-check" id="btnCheck" data-act="check">${R&&R.type==="bad"?"Check again":"Check answer"}</button>`;
   }
-  // when a formula is finished the certificate replaces the result card; keep #resultCard for the test harness
-  if(R&&R.type==="ok"&&R.formulaDone) html+=`<div id="resultCard" class="result-card ok ws-sr">${R.msg}</div>`;
+
   foot.innerHTML=html;
 }
 
@@ -812,7 +906,7 @@ function renderOutline(){
   const mod = modIdx >= 0 ? currentCourse.modules[modIdx] : currentCourse.modules[0];
   const modDone = mod.ex.filter(x => doneEx.has(x)).length;
   const modTotal = mod.ex.length;
-  const isComplete = modDone === modTotal;
+  const isComplete = unitDone(mod);
   const nextMod = modIdx >= 0 && modIdx < currentCourse.modules.length - 1 ? currentCourse.modules[modIdx + 1] : null;
   el.innerHTML = `
     <a class="ol-back" href="#/course/${currentCourse.id}">← All formulas</a>
@@ -822,6 +916,7 @@ function renderOutline(){
     </div>
     ${mod.ex.map(xid => `<a class="oex ${doneEx.has(xid)?"done":""} ${assistedEx.has(xid)?"assisted":""} ${xid===currentExId?"cur":""}" ${assistedEx.has(xid)?"title=\"Solved with the solution open\"":""} href="#/practice/${encodeURIComponent(xid)}">
       <span class="tick"></span><span>${esc(shortTitle(EX[xid].title))}</span></a>`).join("")}
+    <a class="oex test ${unitDone(mod)?"done":""}" href="#/formula/${unitSlug(mod)}/test"><span class="tick"></span><span>Final test · ${testSize(mod)} questions</span></a>
     ${isComplete && nextMod ? `
       <a class="ol-next" href="#/practice/${encodeURIComponent(nextExOf(nextMod.ex))}">
         <small>Next formula</small>
@@ -845,6 +940,69 @@ function reportProblem(){
   const body="Exercise: "+currentExId+" ("+currentEx.title+")\nLink: "+location.origin+location.pathname+"#/practice/"+currentExId+"\nMy answer:\n"+answer+"\n\nWhat went wrong:\n";
   location.href="mailto:"+REPORT_TO.join("@")+"?subject="+encodeURIComponent("tyro.cell problem: "+currentExId)+"&body="+encodeURIComponent(body);
 }
+/* ---- final test: the brief shows the question only (no concept, hint or solution) ---- */
+function renderTestBrief(ex){
+  const cp=document.getElementById("concept");
+  cp.classList.add("on"); cp.classList.remove("mini");
+  const r=testRun, paras=String(ex.desc||"").split(/\n\n+/).map(p=>`<p class="ws-task">${esc(p.trim())}</p>`).join("");
+  const answer=ex.targetRange?ex.targetRange:targetRefs.length>3?targetRefs[0]+" … "+targetRefs[targetRefs.length-1]:targetRefs.join(", ");
+  cp.innerHTML=`
+    <div class="ws-brief-scroll">
+      <div class="ws-meta"><span class="ws-testtag">Final test</span><span class="dk-mono">Question ${r.i+1} of ${r.ids.length}</span></div>
+      <h1 class="ws-title">${esc(shortTitle(ex.title))}</h1>
+      ${paras}
+      <div class="ws-answer">Answer${targetRefs.length>1?"s":""} in <span class="ws-answer-cell">${esc(answer)}</span></div>
+      <div class="ws-testnote">No hints in the test. One check per question.</div>
+    </div>
+    <div class="ws-brief-foot" id="briefFoot"></div>`;
+  renderBriefFoot();
+}
+function renderTestFoot(foot){
+  const r=testRun, a=r.answered, last=r.i>=r.ids.length-1;
+  if(!a){ foot.innerHTML=`<button class="ws-check" id="btnCheck" data-act="check">Check answer</button>`; return; }
+  foot.innerHTML=`<div id="resultCard" class="result-card ${a.ok?"ok":"bad"} ws-res" role="status"><span class="ws-res-icon" aria-hidden="true">${a.ok?"✓":"✕"}</span><div><b>${a.ok?"Correct.":"Not quite."}</b><div class="ws-res-msg">${a.ok?"Nicely done.":a.msg}</div></div></div>
+    <div class="ws-actions"><button class="ws-primary" data-act="testnext">${last?"See your result →":"Next question →"}</button></div>`;
+}
+
+/* ---- course outline beside the practice screen (wide screens; the "2 of 7" menu covers small ones) ---- */
+function renderSide(exId){
+  const el=document.getElementById("ws-side"); if(!el) return;
+  const c=currentCourse;
+  if(!c||c.upcoming){ el.hidden=true; return; }
+  el.hidden=false;
+  const units=c.modules, completed=units.filter(unitDone).length, cur=testRun?testRun.m:moduleForAny(c,exId);
+  const stages=c.stages||[{n:1,title:"Formulas"}];
+  el.innerHTML=`
+    <a class="wsd-course" href="#/course/${c.id}"><b>${esc(c.title)}</b>
+      <span class="wsd-bar"><span style="width:${Math.round(completed/units.length*100)}%"></span></span>
+      <span class="wsd-count">${completed} of ${units.length} completed</span></a>
+    ${stages.map(st=>{
+      const us=units.filter(m=>(m.stage||1)===st.n), open=us.includes(cur)||st.n===1;
+      return `<div class="wsd-stage"><a class="wsd-stage-h" href="#cs-stage-${st.n}" data-course="${c.id}">${st.n} · ${esc(st.title)}<span>${us.filter(unitDone).length}/${us.length}</span></a>
+        ${open?us.map(m=>{
+          const s=unitState(m), here=m===cur, slug=unitSlug(m);
+          const mark=s.completed?"✓":here?"▶":"";
+          const score=s.completed?Math.round(s.best*100)+"%":"";
+          let steps="";
+          if(here){
+            steps=`<div class="wsd-steps">${m.ex.map((id,i)=>{
+              const now=!testRun&&id===exId, done=doneEx.has(id);
+              return `<a class="wsd-step${now?" now":""}${done?" done":""}" href="#/practice/${encodeURIComponent(id)}"><i aria-hidden="true">${done?"✓":now?"▶":"○"}</i>Practice ${i+1}</a>`;
+            }).join("")}<a class="wsd-step test${testRun?" now":""}${s.completed?" done":""}" href="#/formula/${slug}/test"><i aria-hidden="true">${s.completed?"✓":"★"}</i>Final test · ${testSize(m)} questions</a></div>`;
+          }
+          return `<div class="wsd-unit${here?" here":""}${s.completed?" done":""}"><a class="wsd-unit-h" href="${here?"#/formula/"+slug:unitView(m).href}"><span class="dot" aria-hidden="true">${mark}</span><span class="nm">${esc(m.title)}</span><span class="sc">${score}</span></a>${steps}</div>`;
+        }).join(""):""}
+      </div>`;
+    }).join("")}`;
+  const h=el.querySelector(".wsd-unit.here"); if(h) h.scrollIntoView({block:"nearest"});
+}
+// stage headers in the outline open the course page at that stage
+document.addEventListener("click",e=>{
+  const a=e.target.closest&&e.target.closest(".wsd-stage-h"); if(!a) return;
+  e.preventDefault(); const id=a.dataset.course, sec=a.getAttribute("href");
+  openCourse(id); const t=document.querySelector(sec); if(t) t.scrollIntoView({block:"start"});
+});
+
 /* exercise brief: one delegated click handler (the brief is re-rendered per exercise) */
 let hintViewed = false;
 let solutionClickCount = 0;
@@ -861,6 +1019,7 @@ document.getElementById("concept").addEventListener("click",e=>{
   if(act==="check"){ if(currentEx) checkEx(currentEx); }
   else if(act==="reset"||act==="repeat"){ if(currentExId) openEx(currentExId,{fresh:true}); }
   else if(act==="report"){ e.preventDefault(); reportProblem(); }
+  else if(act==="testnext"){ nextTestQuestion(); }
   else if(act==="brief"){
     briefMini=!briefMini;
     document.getElementById("concept").classList.toggle("mini",briefMini);
@@ -948,8 +1107,9 @@ function hardcodeIssue(ex,ref,sol){
 
 function checkEx(ex){
   if(editing)commitEdit(true);
+  if(testRun&&testRun.answered) return;
   checkAttempts++;
-  const fail=msg=>{ showResult("bad",msg); backToAnswer(msg); };
+  const fail=msg=>{ if(testRun) return testAnswered(false,msg); showResult("bad",msg); backToAnswer(msg); };
   if(ex.pick){
     for(const ref in ex.pick){
       const raw=(getCell(ref)||{}).raw||"";
@@ -999,6 +1159,7 @@ function checkEx(ex){
   pass(ex,"<code>"+esc(raw)+"</code> returns "+esc(toText(exp))+".");
 }
 function pass(ex,msg){
+  if(testRun){ testAnswered(true,msg); return; }
   const wasDone=doneEx.has(currentExId);
   const P=exPlace(currentExId);
   const modWasDone=!!P.mod&&P.mod.ex.every(x=>doneEx.has(x));
@@ -1162,6 +1323,7 @@ renderOutline();
 renderAll();
 select(1,0);
 loadDone();
+loadTests();
 updateStreak();
 
 

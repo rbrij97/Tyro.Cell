@@ -251,6 +251,11 @@
 <!-- ============ VIEW: WORKSPACE ============ -->
 <!-- "study desk" design: two bars above the grid (top bar + formula bar), the task brief on the left with
      Check answer pinned at its foot, feedback inline (no popup). Styles: WORKSPACE block in css/app.css. -->
+<!-- ============ VIEW: TEST RESULT (#/formula/<slug>/result) ============ -->
+<div class="view desk" id="view-result">
+  <div class="pagescroll"><main class="tr-wrap" id="resultMain"></main></div>
+</div>
+
 <div class="view desk ws" id="view-app">
   <div id="titlebar" class="ws-top">
     <span class="brand" data-go="landing"><svg class="brand-mark" viewBox="124 136 366 280" height="18" width="24" fill="none" stroke="#0A0A0A" stroke-width="18" stroke-linecap="round" aria-hidden="true"><rect x="202" y="216" width="270" height="182"/><path d="M193 145V216"/><path d="M133 216H202"/><g stroke="none" fill="#0A0A0A"><rect x="250" y="277" width="88" height="22"/><rect x="250" y="320" width="88" height="22"/></g></svg><span class="brand-name">tyro<span class="dot">.</span>cell</span></span>
@@ -263,6 +268,7 @@
       <span class="ws-fnchip" id="ws-crumb" aria-current="page">Sandbox</span>
     </nav>
     <span class="spacer"></span>
+    <div class="ws-testdots" id="ws-testdots" aria-label="Test progress"></div>
     <div class="ws-pager" id="ws-pager">
       <button class="ws-navbtn" id="btnPrev" aria-label="Previous exercise" title="Previous exercise">←</button>
       <button class="ws-pos" id="ws-pos" aria-haspopup="true" aria-expanded="false" aria-controls="tab-outline" title="Exercises in this formula"></button>
@@ -286,6 +292,7 @@
     </div>
   </div>
   <div id="main">
+    <aside id="ws-side" class="ws-side" aria-label="Course outline" hidden></aside>
     <aside id="concept" class="ws-brief" aria-label="Exercise brief"></aside>
     <div id="gridwrap"><table id="grid" role="grid" aria-label="Spreadsheet grid"></table><div id="selbox" aria-hidden="true"></div><div id="fillhandle" title="Fill handle — drag to copy with relative references"></div></div>
   </div>
