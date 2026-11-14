@@ -152,7 +152,7 @@ function routeTo(path){
   closeOverlays();
   if(editing) commitEdit(true);
   const p=path.split("/").filter(Boolean).map(decodeURIComponent);
-  if(!(p[0]==="formula"&&p[2]==="test")){ testRun=null; document.getElementById("view-app").classList.remove("testing"); }
+  if(!(p[0]==="formula"&&p[2]==="test")){ if(testRun) saveTestDraft(); testRun=null; document.getElementById("view-app").classList.remove("testing"); }
   if(p.length===0) return showLanding();
   if(p[0]==="formula" && p.length>=2 && p.length<=3){
     const u=findUnit(p[1]);
@@ -518,10 +518,32 @@ let testRun=null, lastTest=null;
 function startTest(mi){
   const c=COURSES.find(x=>!x.upcoming), m=c&&c.modules[mi]; if(!m) return showNotFound();
   currentCourse=c;
+  if(testRun&&testRun.m===m) return openTestQuestion();   // already in this test (e.g. tapping T again)
+  const d=loadTestDraft(m);
+  if(d){ testRun={mi,m,ids:d.ids,i:d.results.length,results:d.results,answered:null}; return openTestQuestion(); }
   const pool=m.testPool.slice();
   for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
   testRun={mi,m,ids:pool.slice(0,5),i:0,results:[],answered:null};
+  saveTestDraft();
   openTestQuestion();
+}
+/* An unfinished test is kept as a draft (questions, checked answers, position), so leaving
+   it — a practice step, the course page, a refresh — and coming back resumes it. Finishing
+   the test, or Retake from its result, starts fresh. */
+const LS_TESTDRAFT="tyro_testdraft_v1";
+function loadTestDrafts(){ try{ const o=JSON.parse(lsGet(LS_TESTDRAFT)||"{}"); return o&&typeof o==="object"?o:{}; }catch(e){ return {}; } }
+function saveTestDraft(){
+  if(!testRun) return;
+  const all=loadTestDrafts();
+  all[unitKey(testRun.m)]={ids:testRun.ids,results:testRun.results.map(r=>({id:r.id,ok:r.ok,msg:r.msg}))};
+  lsSet(LS_TESTDRAFT,JSON.stringify(all));
+}
+function clearTestDraft(m){ const all=loadTestDrafts(); delete all[unitKey(m)]; lsSet(LS_TESTDRAFT,JSON.stringify(all)); }
+function loadTestDraft(m){
+  const d=loadTestDrafts()[unitKey(m)];
+  if(!d||!Array.isArray(d.ids)||!Array.isArray(d.results)) return null;
+  if(!d.ids.length||d.ids.some(id=>!m.testPool.includes(id))||d.results.length>=d.ids.length){ clearTestDraft(m); return null; }
+  return d;
 }
 function openTestQuestion(){
   openEx(testRun.ids[testRun.i],{fresh:true,test:true});
@@ -531,6 +553,7 @@ function testAnswered(ok,msg){
   if(!testRun||testRun.answered) return;
   testRun.answered={ok,msg};
   testRun.results.push({id:currentExId,ok,msg});
+  saveTestDraft();
   if(ok){ passedRefs=targetRefs.slice(); renderAll(); }
   renderBriefFoot(); renderTestDots();
   setTimeout(()=>{ const n=document.querySelector("#briefFoot .ws-primary"); if(n&&!isPhone()) n.focus({preventScroll:true}); },0);
@@ -544,7 +567,7 @@ function nextTestQuestion(){
 function finishTest(){
   const r=testRun, ok=r.results.filter(x=>x.ok).length, score=ok/r.ids.length, key=unitKey(r.m), prev=testScores[key];
   testScores[key]={best:Math.max(score,prev?prev.best:0),last:score,at:dayKey()};
-  saveTests(); recordPracticeDay();
+  saveTests(); recordPracticeDay(); clearTestDraft(r.m);
   lastTest={mi:r.mi,ok,n:r.ids.length,score,results:r.results,firstPass:score>=PASS_MARK&&!(prev&&prev.best>=PASS_MARK)};
   testRun=null;
   document.getElementById("view-app").classList.remove("testing");
