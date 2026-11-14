@@ -816,7 +816,7 @@ function openEx(exId, opts){
   currentEx=ex; currentExId=exId;
   if(!testing) lsSet(LS_LAST, exId);
   document.getElementById("view-app").classList.toggle("testing",testing);
-  hintViewed = false; solutionClickCount = 0; checkAttempts = 0; briefResult = null;
+  hintViewed = false; solutionClickCount = 0; checkAttempts = 0; briefResult = null; exOpenedAt = Date.now();
   clearTimeout(_sheetTimer);
   if(opts&&opts.fresh) clearSheet(exId);
   const saved = loadSheet(exId);
@@ -1166,11 +1166,28 @@ function hardcodeIssue(ex,ref,sol){
   return "Right number, but it's typed in. Build it from the data cells so it updates when the data changes.";
 }
 
+/* ---- attempt log (spec P1-04): every answer check, practice or test ----
+   Kept in this browser (newest 500); when signed in, sent to the account and
+   removed locally once stored. Used later for feedback, review and weak areas. */
+const LS_ATTEMPTS="tyro_attempts_v1";
+let exOpenedAt=Date.now();
+function loadAttempts(){ try{ const a=JSON.parse(lsGet(LS_ATTEMPTS)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function logAttempt(ok,msg){
+  if(!currentEx||!currentExId) return;
+  const um=testRun?testRun.m:moduleForAny(currentCourse,currentExId);
+  const raw=String(((getCell(targetRefs[0])||{}).raw)||"").slice(0,500);
+  const text=String(msg||"").replace(/<br\s*\/?>/gi," ").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&").replace(/\s+/g," ").trim().slice(0,300);
+  const rec={exercise_id:currentExId,unit:um?unitKey(um):null,mode:testRun?"test":"practice",formula:raw,result:ok?"pass":"fail",
+             message:ok?null:text,attempt_no:checkAttempts,ms_since_open:Math.max(0,Math.round(Date.now()-exOpenedAt)),
+             used_hint:!!hintViewed,used_solution:solutionClickCount===2,created_at:new Date().toISOString()};
+  const all=loadAttempts(); all.push(rec); lsSet(LS_ATTEMPTS,JSON.stringify(all.slice(-500)));
+  if(typeof accountSendAttempts==="function") accountSendAttempts();
+}
 function checkEx(ex){
   if(editing)commitEdit(true);
   if(testRun&&testRun.answered) return;
   checkAttempts++;
-  const fail=msg=>{ if(testRun) return testAnswered(false,msg); showResult("bad",msg); backToAnswer(msg); };
+  const fail=msg=>{ logAttempt(false,msg); if(testRun) return testAnswered(false,msg); showResult("bad",msg); backToAnswer(msg); };
   if(ex.pick){
     for(const ref in ex.pick){
       const raw=(getCell(ref)||{}).raw||"";
@@ -1220,6 +1237,7 @@ function checkEx(ex){
   pass(ex,"<code>"+esc(raw)+"</code> returns "+esc(toText(exp))+".");
 }
 function pass(ex,msg){
+  logAttempt(true,msg);
   if(testRun){ testAnswered(true,msg); return; }
   const wasDone=doneEx.has(currentExId);
   const P=exPlace(currentExId);

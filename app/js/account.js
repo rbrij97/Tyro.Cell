@@ -172,6 +172,7 @@ async function syncAll(){
     if(pushDays.length){ const r=await sb.from("practice_days").upsert(pushDays); if(r.error) throw r.error; }
     saveDone(); saveAssisted(); saveTests();
     await syncDrafts();
+    await sendAttempts();   // answers checked as a guest are attached to the account now
     syncState="ok"; renderAcct(); refreshAfterSync();
     if(pulled) toast(`Synced: ${pulled} exercise${pulled>1?"s":""} added from your account.`);
   }catch(e){ syncState="error"; renderAcct(); }
@@ -260,6 +261,73 @@ async function syncDrafts(){
   }catch(e){}
 }
 
+/* ---- attempts: the browser's queue is sent in batches, then cleared ---- */
+let attemptTimer=null, attemptsSending=false;
+function accountSendAttempts(){ if(!sb||!acctUser) return; clearTimeout(attemptTimer); attemptTimer=setTimeout(sendAttempts,800); }
+async function sendAttempts(){
+  if(!sb||!acctUser||attemptsSending) return;
+  const queue=loadAttempts(); if(!queue.length) return;
+  attemptsSending=true;
+  try{
+    const r=await sb.from("attempts").insert(queue.map(a=>Object.assign({user_id:acctUser.id},a)));
+    if(r.error) throw r.error;
+    // keep anything logged while this batch was in flight
+    lsSet(LS_ATTEMPTS, JSON.stringify(loadAttempts().slice(queue.length)));
+  }catch(e){ syncState="error"; renderAcct(); }
+  attemptsSending=false;
+}
+
+/* ---- your data (spec P1-14): download it all, or delete the account ---- */
+async function downloadMyData(){
+  if(!sb||!acctUser) return;
+  toast("Preparing your data…");
+  const q=async t=>{ const r=await sb.from(t).select("*"); return r.error?{error:r.error.message}:r.data; };
+  const out={
+    exported_at:new Date().toISOString(), app:"tyro.cell",
+    account:{email:acctUser.email, name:(acctUser.user_metadata||{}).full_name||null, created_at:acctUser.created_at},
+    progress:await q("progress"), practice_days:await q("practice_days"), drafts:await q("drafts"), attempts:await q("attempts"),
+    this_browser:{completed_exercises:[...doneEx], assisted:[...assistedEx], test_scores:testScores, practice_days:loadDays(), unsent_attempts:loadAttempts()}
+  };
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}));
+  a.download="tyrocell-my-data.json"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function openDeleteDialog(){
+  closeDeleteDialog();
+  const back=document.createElement("div");
+  back.className="acct-del-back"; back.id="acctDelete";
+  back.innerHTML=`<div class="acct-del" role="dialog" aria-modal="true" aria-labelledby="acctDelTitle">
+      <h2 id="acctDelTitle">Delete your account?</h2>
+      <p>This permanently deletes your tyro.cell account and everything saved in it: progress, test results, work in progress and answer history. It can't be undone.</p>
+      <label class="acct-del-check"><input type="checkbox" id="acctDelLocal" checked> Also clear the progress saved in this browser</label>
+      <div class="acct-del-actions"><button type="button" class="acct-del-cancel">Cancel</button><button type="button" class="acct-del-go">Delete account</button></div>
+    </div>`;
+  document.body.appendChild(back);
+  back.querySelector(".acct-del-cancel").focus();
+  back.addEventListener("click",e=>{
+    if(e.target===back||e.target.closest(".acct-del-cancel")) closeDeleteDialog();
+    else if(e.target.closest(".acct-del-go")) deleteMyAccount(back.querySelector("#acctDelLocal").checked);
+  });
+}
+function closeDeleteDialog(){ const d=document.getElementById("acctDelete"); if(d) d.remove(); }
+async function deleteMyAccount(clearLocal){
+  const btn=document.querySelector(".acct-del-go"); if(btn){ btn.disabled=true; btn.textContent="Deleting…"; }
+  const r=await sb.rpc("delete_my_account");
+  if(r.error){ if(btn){ btn.disabled=false; btn.textContent="Delete account"; } toast("Couldn't delete the account. Please try again."); return; }
+  try{ await sb.auth.signOut({scope:"local"}); }catch(e){}
+  acctUser=null; syncState="idle";
+  if(clearLocal){
+    try{ Object.keys(localStorage).filter(k=>k.startsWith("tyro_")&&k!=="tyro_onboard").forEach(k=>localStorage.removeItem(k)); }catch(e){}
+    doneEx.clear(); assistedEx.clear(); testScores={};
+  }
+  closeDeleteDialog();
+  if(gisReady) armGis(); else renderAcct(true);
+  if(typeof refreshAfterSync==="function") refreshAfterSync();
+  toast("Your account has been deleted.");
+}
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDeleteDialog(); });
+
 /* after each pass (called from pass() in app.js) */
 async function accountAfterPass(exId){
   if(!acctUser&&signinPromptWanted()){ setTimeout(()=>{ if(signinPromptWanted()) showSigninPrompt(); },500); return; }
@@ -325,6 +393,7 @@ function renderAcct(force){
         <div class="acct-name">${esc(name)}</div>
         ${acctUser.email?`<div class="acct-mail">${esc(acctUser.email)}</div>`:""}
         <div class="acct-sync ${syncState}">${SYNC_TEXT[syncState]}</div>
+        <div class="acct-links"><button class="acct-link" data-acct-act="download">Download my data</button><button class="acct-link danger" data-acct-act="delete">Delete account</button></div>
         <button class="acct-out" data-acct-act="out">Sign out</button>
       </div>`;
   });
@@ -339,6 +408,8 @@ document.addEventListener("click",e=>{
     const act=b.dataset.acctAct, slot=b.closest("[data-acct]");
     if(act==="in") acctSignIn();
     else if(act==="out"){ slot.dataset.open="0"; acctSignOut(); return; }
+    else if(act==="download"){ slot.dataset.open="0"; downloadMyData(); }
+    else if(act==="delete"){ slot.dataset.open="0"; openDeleteDialog(); }
     else if(act==="menu") slot.dataset.open=slot.dataset.open==="1"?"0":"1";
   }
   renderAcct();

@@ -1686,3 +1686,19 @@ table#grid{border-collapse:collapse;table-layout:fixed;background:#fff;border:1p
 .ws #formulabar{flex-wrap:nowrap}
 @media(max-width:1100px){ .ws #formulabar .ws-fmt{display:none} }
 @media(max-width:700px){ .ws .ws-fnchip{max-width:150px} }
+
+/* account menu: your data, and the delete dialog (spec P1-14) */
+.acct-links{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:4px;padding-top:8px;border-top:1px solid #E7E1D4}
+.acct-link{border:none;background:none;padding:4px 0;font:600 13px var(--sans);color:#57524A;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.acct-link:hover{color:#171512}
+.acct-link.danger{color:#B42A20}
+.acct-del-back{position:fixed;inset:0;z-index:100;background:rgba(23,21,18,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.acct-del{width:100%;max-width:440px;background:#fff;border:1.5px solid #0A0A0A;border-radius:14px;box-shadow:6px 6px 0 #0A0A0A;padding:24px;display:flex;flex-direction:column;gap:12px;color:#171512;font-family:var(--sans)}
+.acct-del h2{margin:0;font-family:"Bricolage Grotesque",sans-serif;font-size:24px;font-weight:800;letter-spacing:-.02em}
+.acct-del p{margin:0;font-size:14.5px;line-height:1.55;color:#3A362F}
+.acct-del-check{display:flex;align-items:center;gap:8px;font-size:14px}
+.acct-del-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+.acct-del-cancel,.acct-del-go{min-height:42px;padding:0 16px;border-radius:10px;font:700 14px var(--sans);cursor:pointer}
+.acct-del-cancel{border:1px solid #DDD5C5;background:#fff;color:#171512}
+.acct-del-go{border:none;background:#B42A20;color:#fff}
+.acct-del-go:disabled{opacity:.6;cursor:default}
